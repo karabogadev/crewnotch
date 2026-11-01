@@ -17,7 +17,7 @@ enum AppWindows {
 
     static func showSettings(pane: SettingsPane = .general) {
         SettingsNavigation.shared.pane = pane
-        present(&settings, title: "CrewNotch Settings", size: NSSize(width: 760, height: 560)) {
+        present(&settings, title: "CrewNotch Settings", size: NSSize(width: 760, height: 560), managesToolbar: true) {
             SettingsView()
         }
     }
@@ -45,6 +45,7 @@ enum AppWindows {
         size: NSSize,
         resizable: Bool = true,
         alwaysDark: Bool = false,
+        managesToolbar: Bool = false,
         @ViewBuilder content: () -> Content
     ) {
         if slot == nil {
@@ -57,12 +58,19 @@ enum AppWindows {
                 defer: false
             )
             window.title = title
-            window.titlebarAppearsTransparent = true
             window.isReleasedWhenClosed = false
             let root = alwaysDark
                 ? AnyView(content().preferredColorScheme(.dark))
                 : AnyView(ThemedWindowContent(content: content()))
-            window.contentViewController = NSHostingController(rootView: root)
+            let host = NSHostingController(rootView: root)
+            if managesToolbar {
+                // SwiftUI owns the toolbar and title, so a scrolled pane slides
+                // under a proper title bar instead of showing through the title
+                host.sceneBridgingOptions = [.toolbars, .title]
+            } else {
+                window.titlebarAppearsTransparent = true
+            }
+            window.contentViewController = host
             window.setContentSize(size)
             window.center()
             slot = window
