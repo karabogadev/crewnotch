@@ -194,7 +194,7 @@ class HookSocketServer {
     static let shared = HookSocketServer()
     /// Lives in ~/.crewnotch (mode 0700) rather than /tmp so other local users
     /// can't impersonate the app and answer approval requests.
-    static let defaultSocketPath = FileManager.default.homeDirectoryForCurrentUser
+    nonisolated static let defaultSocketPath = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent(".crewnotch/crewnotch.sock").path
 
     /// Where the server listens; set once by `start` (tests pass their own).
