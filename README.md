@@ -29,6 +29,8 @@ You run Claude Code in one terminal, Codex in another, Cursor and Antigravity in
 - **Keep Awake.** Agents keep running when the display sleeps or the screen locks. It works on power adapter only, stops below a battery threshold and turns itself off after a time limit.
 - **Make it yours.** Six working indicators, notch animations, materials and colors, sounds per event, text size and much more.
 - **Private by design.** No account and no analytics. Everything stays on your Mac.
+- **Speaks your language.** English, 简体中文, हिन्दी, Español, Français, العربية, Português (Brasil), Русский, 日本語 and Türkçe. Switch any time in Settings → General.
+- **Reply from any terminal.** Type a reply in the notch chat and CrewNotch delivers it to the agent's Ghostty, Terminal, iTerm2 or tmux session.
 
 ## Supported agents
 
