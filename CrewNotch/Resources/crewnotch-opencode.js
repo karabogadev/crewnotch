@@ -104,17 +104,26 @@ export const CrewNotch = async ({ client, directory, worktree, serverUrl }) => {
     await reply(props.sessionID, props.id, answer.decision === "deny" ? "reject" : savesRule ? "always" : "once")
   }
 
-  // What the request would do, in the shape CrewNotch shows for other agents
+  // Arguments of tool calls in flight, so a permission request can show the real command
+  const toolArgs = new Map()
+
+  // What the request would do, in the shape CrewNotch shows for other agents.
+  // Only the tool's actual arguments are shown as the command; OpenCode's
+  // permission patterns (which may be wildcards) stay labeled as patterns.
   const requestInput = (props) => {
-    const patterns = [].concat(props.patterns || props.pattern || []).filter((p) => typeof p === "string")
     const input = {}
-    const meta = props.metadata || {}
-    for (const [key, value] of Object.entries(meta)) {
-      if (typeof value === "string" && value.length < 4000) input[key] = value
+    const copyStrings = (source) => {
+      for (const [key, value] of Object.entries(source || {})) {
+        if (typeof value === "string" && value.length < 8000) input[key] = value
+      }
     }
-    if ((props.permission || props.type) === "bash" && patterns.length) input.command = patterns.join(" && ")
-    else if (patterns.length) input.pattern = patterns.join(", ")
-    if (input.filepath && !input.file_path) input.file_path = input.filepath
+    copyStrings(props.metadata)
+    const callID = (props.tool && props.tool.callID) || props.callID
+    if (callID && toolArgs.has(callID)) copyStrings(toolArgs.get(callID))
+    const patterns = [].concat(props.patterns || props.pattern || []).filter((p) => typeof p === "string")
+    if (patterns.length) input.patterns = patterns.join(", ")
+    const path = input.filePath || input.filepath
+    if (path && !input.file_path) input.file_path = path
     return input
   }
 
@@ -179,6 +188,10 @@ export const CrewNotch = async ({ client, directory, worktree, serverUrl }) => {
     },
 
     "tool.execute.before": async (input, output) => {
+      if (input.callID && output && output.args && typeof output.args === "object") {
+        toolArgs.set(input.callID, output.args)
+        if (toolArgs.size > 200) toolArgs.delete(toolArgs.keys().next().value)
+      }
       send(input.sessionID, "PreToolUse", "running_tool", {
         tool: input.tool,
         tool_input: (output && output.args) || {},
@@ -187,6 +200,7 @@ export const CrewNotch = async ({ client, directory, worktree, serverUrl }) => {
     },
 
     "tool.execute.after": async (input) => {
+      toolArgs.delete(input.callID)
       send(input.sessionID, "PostToolUse", "processing", { tool: input.tool, tool_use_id: input.callID })
     },
   }
