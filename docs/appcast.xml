@@ -3,6 +3,28 @@
     <channel>
         <title>CrewNotch</title>
         <item>
+            <title>1.3.0</title>
+            <pubDate>Sun, 01 Nov 2026 13:29:48 +0300</pubDate>
+            <link>https://karabogadev.github.io/crewnotch/</link>
+            <sparkle:fullReleaseNotesLink>https://github.com/karabogadev/crewnotch/releases</sparkle:fullReleaseNotesLink>
+            <sparkle:version>11</sparkle:version>
+            <sparkle:shortVersionString>1.3.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.6</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[## A cleaner notch
+
+The opened notch has a new, quieter look that puts the important things first.
+
+- **Rows instead of cards.** Sessions are divided by fine lines. A small square lamp shows each one's state: it breathes while the agent works, turns amber when it needs you and green when it's done.
+- **A stopwatch for each turn.** Working sessions show how long the current turn has been running.
+- **Requests are easier to read.** The tool, the folder and the full command sit on one plate, with Deny, Always and Allow below it. Their keyboard shortcuts are shown right on the buttons. Risky commands get a red outline.
+- **Plan usage looks ahead.** Usage is shown as a segmented meter. Faint segments show where you'll be by the reset if you keep your current pace. If a limit is going to run out before it resets, you'll see when, for example "out in 1d 6h". This works for Claude Code and Codex.
+- **A new working indicator, Scanner,** is now the default. If you picked a different style in Settings, you keep it.
+- The header shows how many agents you have and what needs you first.
+
+]]></description>
+            <enclosure url="https://github.com/karabogadev/crewnotch/releases/download/v1.3.0/CrewNotch-1.3.0.dmg" length="5979282" type="application/octet-stream" sparkle:edSignature="9ucVHxJN/K6XmOEdxdwbDZRmfDUq9DWt/2MBh+JwGmgic3DXwhjFWIDoL8x8QAkncTrdCJ2Zn2itg2uzXOI5Dw=="/>
+        </item>
+        <item>
             <title>1.2.2</title>
             <pubDate>Sun, 01 Nov 2026 12:25:26 +0300</pubDate>
             <link>https://karabogadev.github.io/crewnotch/</link>
@@ -34,46 +56,6 @@
 
 ]]></description>
             <enclosure url="https://github.com/karabogadev/crewnotch/releases/download/v1.2.1/CrewNotch-1.2.1.dmg" length="5949615" type="application/octet-stream" sparkle:edSignature="KaoxlfqUD7QaoCqp0RzxqMu29U8zwuMPxplFRxT8SLJvJ5uHFpVh2wHInbzje1pEzrXLEevbO8hg3QnX+9m6Bw=="/>
-        </item>
-        <item>
-            <title>1.2.0</title>
-            <pubDate>Sun, 01 Nov 2026 10:30:38 +0300</pubDate>
-            <link>https://karabogadev.github.io/crewnotch/</link>
-            <sparkle:fullReleaseNotesLink>https://github.com/karabogadev/crewnotch/releases</sparkle:fullReleaseNotesLink>
-            <sparkle:version>8</sparkle:version>
-            <sparkle:shortVersionString>1.2.0</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>15.6</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[## What's new
-
-**Know what you approve**
-- Approvals show the whole command, the diff of an edit or the start of a new file before you allow them.
-- Risky requests get a red warning: deleting files, force-pushing, `sudo`, running downloaded scripts, editing secrets or files outside the project.
-- **Always** saves the rule Claude Code suggests (like `Bash(npm test:*)`) so it stops asking.
-- **OpenCode** requests can now be answered from the notch too.
-
-**Answer Claude's questions in the notch**
-- When Claude Code asks you to choose, pick an option, tick several or type your own answer, right in the notch.
-
-**Keyboard first**
-- A global shortcut opens the notch from any app (⌃⌥N by default; change it in Settings → General).
-- Then ⌘↩ allows, ⌘⇧↩ always allows, ⌘⌫ denies, 1–9 picks an answer and ⎋ closes.
-
-**More in every row**
-- The git branch, how full the context window is (Claude Code, Codex), and the agent's own to-do progress, like *3/7 · Writing tests*.
-- A session that has been working without a sound for a while is marked as quiet, so a stuck one is easy to spot and clear.
-
-**When you're away**
-- Mac notifications and pushes to your phone through ntfy, always or only after you've stepped away. Both are off until you turn them on in Settings → Notifications.
-- The notch tells you when a plan limit runs low and when it resets.
-
-**Also new**
-- `crewnotch run npm test` shows any long command in the notch and tells you when it finishes or fails. Install the command in Settings → General.
-- Recently ended sessions stay at the bottom of the list. **Resume** reopens the conversation in a terminal.
-- Hide the notch from screen sharing and recordings (Settings → General → Privacy).
-- A new **Approvals** pane in Settings. Every new feature can be turned off or tuned.
-
-]]></description>
-            <enclosure url="https://github.com/karabogadev/crewnotch/releases/download/v1.2.0/CrewNotch-1.2.0.dmg" length="5950177" type="application/octet-stream" sparkle:edSignature="67LIoYrUr2K5WNAS/UJQIrVTXkSHbUaLMu5xD0OvBn7Z7qWDdLHHApJikS/TNW/wgsjQno+OhdAvCCNpvMO0BQ=="/>
         </item>
     </channel>
 </rss>
