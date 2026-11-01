@@ -125,6 +125,40 @@ def agent_process():
     return pid, tty
 
 
+def git_branch(cwd):
+    """The checked-out branch (or short commit) of the repo holding `cwd`.
+
+    Read here, in the agent's process, so the app itself never touches
+    folders macOS protects (Documents, Desktop, Downloads).
+    """
+    directory = cwd
+    for _ in range(12):
+        dot_git = os.path.join(directory, ".git")
+        try:
+            if os.path.isdir(dot_git):
+                git_dir = dot_git
+            elif os.path.isfile(dot_git):
+                with open(dot_git) as handle:
+                    pointer = handle.read().strip()
+                if not pointer.startswith("gitdir:"):
+                    return None
+                git_dir = os.path.join(directory, pointer[len("gitdir:"):].strip())
+            else:
+                git_dir = None
+            if git_dir:
+                with open(os.path.join(git_dir, "HEAD")) as handle:
+                    head = handle.read().strip()
+                prefix = "ref: refs/heads/"
+                return head[len(prefix):] if head.startswith(prefix) else head[:7]
+        except (OSError, UnicodeDecodeError):
+            return None
+        parent = os.path.dirname(directory)
+        if parent == directory:
+            return None
+        directory = parent
+    return None
+
+
 def detect_replay_source(data):
     """Cursor and Grok also run hooks registered for other agents.
 
@@ -471,7 +505,9 @@ def main():
                 "pid": pid,
                 "tty": tty,
                 "can_respond": agent in APPROVING_AGENTS,
+                "git_branch": git_branch(cwd) if cwd else None,
             })
+            state = {k: v for k, v in state.items() if v is not None}
             if agent == "antigravity":
                 state["source_app"] = antigravity_surface(data)
             if agent == "claude" and isinstance(data.get("transcript_path"), str):

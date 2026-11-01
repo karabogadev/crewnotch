@@ -5,9 +5,9 @@
 // Installed and removed by CrewNotch (Settings -> Agents).
 
 import { createConnection } from "node:net"
-import { lstatSync } from "node:fs"
+import { lstatSync, readFileSync, statSync } from "node:fs"
 import { homedir } from "node:os"
-import { join } from "node:path"
+import { dirname, join } from "node:path"
 
 const SOCKET_PATH = join(homedir(), ".crewnotch", "crewnotch.sock")
 
@@ -19,6 +19,27 @@ const socketIsTrusted = () => {
   } catch {
     return false
   }
+}
+
+// The checked-out branch of the repo holding `dir`, read here so the app
+// itself never touches folders macOS protects.
+const gitBranch = (dir) => {
+  for (let i = 0; i < 12 && dir; i++) {
+    try {
+      let gitDir = join(dir, ".git")
+      if (statSync(gitDir).isFile()) {
+        const pointer = readFileSync(gitDir, "utf8").trim()
+        if (!pointer.startsWith("gitdir:")) return undefined
+        gitDir = join(dir, pointer.slice("gitdir:".length).trim())
+      }
+      const head = readFileSync(join(gitDir, "HEAD"), "utf8").trim()
+      return head.startsWith("ref: refs/heads/") ? head.slice("ref: refs/heads/".length) : head.slice(0, 7)
+    } catch {}
+    const parent = dirname(dir)
+    if (parent === dir) return undefined
+    dir = parent
+  }
+  return undefined
 }
 
 export const CrewNotch = async ({ client, directory, worktree, serverUrl }) => {
@@ -33,6 +54,7 @@ export const CrewNotch = async ({ client, directory, worktree, serverUrl }) => {
     status,
     pid: process.pid,
     can_respond: false,
+    git_branch: gitBranch(cwd),
     ...fields,
   })
 

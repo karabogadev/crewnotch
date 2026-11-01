@@ -58,6 +58,9 @@ struct SessionState: Equatable, Identifiable, Sendable {
     /// The agent's own to-do list, from its latest to-do tool call.
     var taskProgress: TaskProgress? = nil
 
+    /// Branch of the repo the session works in, as last reported by its hook.
+    var gitBranch: String? = nil
+
     /// Context fill reported outside the Claude transcript (Codex rollouts).
     var reportedContext: ContextUsage? = nil
 
