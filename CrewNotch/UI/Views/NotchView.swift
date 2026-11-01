@@ -263,19 +263,19 @@ struct NotchView: View {
     @ViewBuilder
     private var headerRow: some View {
         HStack(spacing: 0) {
-            // Left side - crab + optional permission indicator (visible when processing, pending, or waiting for input)
-            if showClosedActivity {
-                HStack(spacing: 4) {
-                    ClaudeCrabIcon(size: 14, animateLegs: isProcessing)
-                        .matchedGeometryEffect(id: "crab", in: activityNamespace, isSource: showClosedActivity)
+            // Left side - lead agent + optional busy count (visible when processing, pending, or waiting for input)
+            if showClosedActivity, let lead = leadSession {
+                HStack(spacing: 3) {
+                    AgentIcon(agent: lead.agent, size: 14)
+                        .matchedGeometryEffect(id: "lead-agent", in: activityNamespace, isSource: showClosedActivity)
 
-                    // Permission indicator only (amber) - waiting for input shows checkmark on right
-                    if hasPendingPermission {
-                        PermissionIndicatorIcon(size: 14, color: Color(red: 0.85, green: 0.47, blue: 0.34))
-                            .matchedGeometryEffect(id: "status-indicator", in: activityNamespace, isSource: showClosedActivity)
+                    if busyCount > 1 {
+                        Text("+\(busyCount - 1)")
+                            .font(.system(size: 9, weight: .semibold, design: .rounded))
+                            .foregroundColor(.white.opacity(0.6))
                     }
                 }
-                .frame(width: viewModel.status == .opened ? nil : sideWidth + (hasPendingPermission ? 18 : 0))
+                .frame(width: viewModel.status == .opened ? nil : sideWidth + countBadgeWidth)
                 .padding(.leading, viewModel.status == .opened ? 8 : 0)
             }
 
