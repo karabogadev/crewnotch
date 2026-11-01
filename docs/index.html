@@ -260,6 +260,18 @@ nav.top .links a:hover { color: var(--text); }
 :root[data-theme="light"] .logo img.mono, :root[data-theme="light"] .tr img.mono { filter: invert(1); }
 @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .logo img.mono, :root:not([data-theme="dark"]) .tr img.mono { filter: invert(1); } }
 
+/* ---------- film ---------- */
+.film { padding: 24px 0 96px; text-align: center; }
+.film h2 { margin-bottom: 10px; }
+.film .sub { margin: 0 auto 36px; }
+.film-frame {
+  max-width: 640px; margin: 0 auto; aspect-ratio: 1; border-radius: 26px; overflow: hidden;
+  border: 1px solid var(--line); background: #0b0c11;
+  box-shadow: 0 30px 80px rgba(0,0,0,.35);
+}
+.film-frame video { display: block; width: 100%; height: 100%; object-fit: cover; }
+@media (max-width: 600px) { .film-frame { border-radius: 18px; } }
+
 /* ---------- sections ---------- */
 section { padding: 88px 0; }
 section.alt { background: var(--alt-bg); border-top: 1px solid var(--line); }
@@ -467,6 +479,18 @@ footer .legal { flex-basis: 100%; font-size: 12.5px; }
     </div>
   </div>
 </div>
+
+<section class="film" id="film">
+  <div class="wrap">
+    <h2>See it in eight seconds.</h2>
+    <p class="sub">Approve a command, check your plan usage and catch a finished turn, all from the notch.</p>
+    <div class="film-frame">
+      <video id="film-video" src="assets/crewnotch-promo.mp4" poster="assets/crewnotch-promo-poster.jpg"
+        autoplay muted loop playsinline preload="metadata"
+        aria-label="CrewNotch in action: approving a command, plan usage bars, a finished banner and ten supported agents"></video>
+    </div>
+  </div>
+</section>
 
 <section class="alt" id="features">
   <div class="wrap">
@@ -677,6 +701,14 @@ xcodebuild -scheme CrewNotch -configuration Release build</pre>
     root.dataset.theme = next;
     try { localStorage.setItem("theme", next); } catch (e) {}
   });
+
+  // The film plays on its own unless the visitor prefers less motion
+  const film = document.getElementById("film-video");
+  if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    film.removeAttribute("autoplay");
+    film.pause();
+    film.controls = true;
+  }
 
   // Copy buttons
   document.querySelectorAll(".copy").forEach(button => {
