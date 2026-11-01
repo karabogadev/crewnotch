@@ -45,6 +45,23 @@ nonisolated enum AppSettings {
         static let keepAwakeMaxHours = "keepAwakeMaxHours"
         static let keepAwakeMinBattery = "keepAwakeMinBattery"
         static let keepAwakeRequiresAdapter = "keepAwakeRequiresAdapter"
+        static let showPlanUsage = "showPlanUsage"
+        static let claudeUsageAllowed = "claudeUsageAllowed"
+    }
+
+    // MARK: - Plan Usage
+
+    /// Show each provider's plan usage at the bottom of the notch.
+    static var showPlanUsage: Bool {
+        get { defaults.object(forKey: Keys.showPlanUsage) as? Bool ?? true }
+        set { defaults.set(newValue, forKey: Keys.showPlanUsage) }
+    }
+
+    /// The user agreed to let CrewNotch read Claude Code's sign-in from the
+    /// keychain (macOS asks once) to fetch Claude plan usage.
+    static var claudeUsageAllowed: Bool {
+        get { defaults.bool(forKey: Keys.claudeUsageAllowed) }
+        set { defaults.set(newValue, forKey: Keys.claudeUsageAllowed) }
     }
 
     // MARK: - Keep Awake
