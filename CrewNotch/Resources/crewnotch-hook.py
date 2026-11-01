@@ -151,7 +151,12 @@ def map_claude_like(event, data):
     if event in ("PostToolUse", "PostToolUseFailure", "PermissionDenied"):
         return event_state("PostToolUse" if event != "PermissionDenied" else event, "processing", **tool_fields(data))
     if event == "PermissionRequest":
-        return event_state(event, "waiting_for_approval", **tool_fields(data))
+        suggestions = data.get("permission_suggestions")
+        return event_state(
+            event, "waiting_for_approval",
+            permission_suggestions=suggestions if isinstance(suggestions, list) and suggestions else None,
+            **tool_fields(data)
+        )
     if event == "Notification":
         kind = data.get("notification_type")
         if kind == "permission_prompt":
@@ -386,9 +391,14 @@ def send(state, wait_for_reply):
         reply = None
         if wait_for_reply:
             sock.shutdown(socket.SHUT_WR)
-            data = sock.recv(65536)
-            if data:
-                reply = json.loads(data.decode())
+            chunks = []
+            while True:
+                chunk = sock.recv(65536)
+                if not chunk:
+                    break
+                chunks.append(chunk)
+            if chunks:
+                reply = json.loads(b"".join(chunks).decode())
         sock.close()
         return reply
     except (OSError, ValueError):
@@ -403,6 +413,13 @@ def approval_output(agent, reply):
     behavior = {"behavior": decision}
     if decision == "deny":
         behavior["message"] = reply.get("reason") or "Denied from CrewNotch"
+    else:
+        # Answers to AskUserQuestion travel as the tool's updated input
+        if isinstance(reply.get("updated_input"), dict):
+            behavior["updatedInput"] = reply["updated_input"]
+        # "Always allow" saves the rules the agent itself suggested
+        if agent == "claude" and isinstance(reply.get("updated_permissions"), list):
+            behavior["updatedPermissions"] = reply["updated_permissions"]
     return {"hookSpecificOutput": {"hookEventName": "PermissionRequest", "decision": behavior}}
 
 
