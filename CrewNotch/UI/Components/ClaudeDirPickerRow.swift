@@ -150,7 +150,7 @@ struct ClaudeDirPickerRow: View {
         currentValue = path
         AppSettings.claudeDirectoryName = path
         ClaudePaths.invalidateCache()
-        HookInstaller.installIfNeeded()
+        Task { await AgentRegistry.shared.connect(.claude) }
     }
 }
 
