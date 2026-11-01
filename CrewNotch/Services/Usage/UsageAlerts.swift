@@ -54,13 +54,24 @@ final class UsageAlerts {
                     continue
                 }
 
+                // A new window (resetsAt moved on) or usage well under the
+                // threshold lowers the level; a dip by a point or two doesn't,
+                // so a limit hovering at 80% doesn't announce itself again and again.
+                let windowReset = previous.resetsAt != nil && resetsAt != nil && resetsAt! > previous.resetsAt! + 60
+                let previousThreshold = previous.level >= Level.critical.rawValue ? critical : warn
+                let wellBelow = limit.usedPercent < previousThreshold - 5
+                var stored = previous.level
                 if level.rawValue > previous.level {
                     announceLow(provider: provider, limit: limit, critical: level == .critical)
-                } else if previous.level > Level.normal.rawValue && level == .normal && limit.usedPercent < warn - 10 {
-                    announceReset(provider: provider, limit: limit)
+                    stored = level.rawValue
+                } else if level.rawValue < previous.level && (windowReset || wellBelow) {
+                    if level == .normal && (windowReset || limit.usedPercent < warn - 10) {
+                        announceReset(provider: provider, limit: limit)
+                    }
+                    stored = level.rawValue
                 }
-                if previous.level != level.rawValue || previous.resetsAt != resetsAt {
-                    memory[key] = Memory(level: level.rawValue, resetsAt: resetsAt)
+                if previous.level != stored || previous.resetsAt != resetsAt {
+                    memory[key] = Memory(level: stored, resetsAt: resetsAt)
                     changed = true
                 }
             }
