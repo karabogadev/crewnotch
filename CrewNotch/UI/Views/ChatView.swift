@@ -428,6 +428,8 @@ struct ChatView: View {
         ChatApprovalBar(
             tool: tool,
             toolInput: session.pendingToolInput,
+            permission: session.activePermission,
+            cwd: session.cwd,
             onApprove: { approvePermission() },
             onDeny: { denyPermission() }
         )
@@ -1142,21 +1144,60 @@ struct ChatInteractivePromptBar: View {
 struct ChatApprovalBar: View {
     let tool: String
     let toolInput: String?
+    var permission: PermissionContext? = nil
+    var cwd: String = ""
     let onApprove: () -> Void
     let onDeny: () -> Void
 
+    @AppStorage(FeatureKeys.showApprovalDetails) private var showApprovalDetails = true
+    @AppStorage(FeatureKeys.warnRiskyCommands) private var warnRiskyCommands = true
     @State private var showContent = false
     @State private var showAllowButton = false
     @State private var showDenyButton = false
 
+    private var showsDetailBlock: Bool {
+        guard let permission else { return false }
+        return showApprovalDetails && permission.toolInput?.isEmpty == false
+            || warnRiskyCommands && !permission.riskWarnings(cwd: cwd).isEmpty
+    }
+
     var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if showsDetailBlock, let permission {
+                ApprovalDetailView(
+                    context: permission,
+                    cwd: cwd,
+                    showsDetails: showApprovalDetails,
+                    showsWarnings: warnRiskyCommands
+                )
+                .opacity(showContent ? 1 : 0)
+            }
+            buttonRow
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color.recess)
+        .onAppear {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7).delay(0.05)) {
+                showContent = true
+            }
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.7).delay(0.1)) {
+                showDenyButton = true
+            }
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.7).delay(0.15)) {
+                showAllowButton = true
+            }
+        }
+    }
+
+    private var buttonRow: some View {
         HStack(spacing: 12) {
             // Tool info
             VStack(alignment: .leading, spacing: 2) {
                 Text(MCPToolFormatter.formatToolName(tool))
                     .font(.system(size: 12, weight: .medium, design: .monospaced))
                     .foregroundColor(TerminalColors.amber)
-                if let input = toolInput {
+                if let input = toolInput, !(showApprovalDetails && showsDetailBlock) {
                     Text(input)
                         .font(.system(size: 11))
                         .foregroundColor(.ink.opacity(0.5))
@@ -1201,20 +1242,6 @@ struct ChatApprovalBar: View {
             .scaleEffect(showAllowButton ? 1 : 0.8)
         }
         .frame(minHeight: 44)  // Consistent height with other bars
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(Color.recess)
-        .onAppear {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7).delay(0.05)) {
-                showContent = true
-            }
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.7).delay(0.1)) {
-                showDenyButton = true
-            }
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.7).delay(0.15)) {
-                showAllowButton = true
-            }
-        }
     }
 }
 

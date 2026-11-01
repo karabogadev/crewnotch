@@ -172,6 +172,8 @@ struct InstanceRow: View {
     @AppStorage(AppearanceKeys.titleOrder) private var titleOrder: TitleOrder = .conversation
     @AppStorage(AppearanceKeys.idleAfterMinutes) private var idleAfterMinutes = 30
     @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
+    @AppStorage(FeatureKeys.showApprovalDetails) private var showApprovalDetails = true
+    @AppStorage(FeatureKeys.warnRiskyCommands) private var warnRiskyCommands = true
     let session: SessionState
     let onFocus: () -> Void
     let onChat: () -> Void
@@ -238,7 +240,8 @@ struct InstanceRow: View {
     }
 
     private var cardStroke: Color {
-        isWaitingForApproval ? accent.attentionColor.opacity(0.22) : .ink.opacity(0.05)
+        if isWaitingForApproval && !riskWarnings.isEmpty { return TerminalColors.red.opacity(0.45) }
+        return isWaitingForApproval ? accent.attentionColor.opacity(0.22) : .ink.opacity(0.05)
     }
 
     var body: some View {
@@ -339,30 +342,52 @@ struct InstanceRow: View {
 
     /// What the agent wants to run, with the way to answer it.
     private var approvalStrip: some View {
-        HStack(spacing: 8) {
-            if let toolName = session.pendingToolName {
-                Text(MCPToolFormatter.formatToolName(toolName))
-                    .font(.system(size: 11 * textScale.factor, weight: .semibold, design: .monospaced))
-                    .foregroundColor(accent.attentionColor)
-                if let input = session.pendingToolInput, toolName != "AskUserQuestion" {
-                    Text(input)
-                        .font(.system(size: 11 * textScale.factor, design: .monospaced))
-                        .foregroundColor(.ink.opacity(0.55))
-                        .lineLimit(1)
-                        .truncationMode(.middle)
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                if let toolName = session.pendingToolName {
+                    Text(MCPToolFormatter.formatToolName(toolName))
+                        .font(.system(size: 11 * textScale.factor, weight: .semibold, design: .monospaced))
+                        .foregroundColor(accent.attentionColor)
+                    if let input = session.pendingToolInput, toolName != "AskUserQuestion", !showsDetailBlock {
+                        Text(input)
+                            .font(.system(size: 11 * textScale.factor, design: .monospaced))
+                            .foregroundColor(.ink.opacity(0.55))
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
+                }
+                Spacer(minLength: 8)
+                if isInteractiveTool {
+                    if SessionFocuser.canFocus(session) {
+                        SoftPill(title: session.agent.isTerminalAgent ? "Terminal" : "Open", prominent: true, action: onFocus)
+                    }
+                } else {
+                    SoftPill(title: "Deny", prominent: false, action: onReject)
+                    SoftPill(title: "Allow", prominent: true, action: onApprove)
                 }
             }
-            Spacer(minLength: 8)
-            if isInteractiveTool {
-                if SessionFocuser.canFocus(session) {
-                    SoftPill(title: session.agent.isTerminalAgent ? "Terminal" : "Open", prominent: true, action: onFocus)
-                }
-            } else {
-                SoftPill(title: "Deny", prominent: false, action: onReject)
-                SoftPill(title: "Allow", prominent: true, action: onApprove)
+
+            if let permission = session.activePermission, permission.toolName != "AskUserQuestion",
+               showApprovalDetails || (warnRiskyCommands && !riskWarnings.isEmpty) {
+                ApprovalDetailView(
+                    context: permission,
+                    cwd: session.cwd,
+                    showsDetails: showApprovalDetails,
+                    showsWarnings: warnRiskyCommands
+                )
             }
         }
         .padding(.leading, 41)
+    }
+
+    /// The full request replaces the one-line summary
+    private var showsDetailBlock: Bool {
+        showApprovalDetails && session.activePermission?.toolInput?.isEmpty == false
+    }
+
+    private var riskWarnings: [String] {
+        guard warnRiskyCommands, let permission = session.activePermission else { return [] }
+        return permission.riskWarnings(cwd: session.cwd)
     }
 }
 
