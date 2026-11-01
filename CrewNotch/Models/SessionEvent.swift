@@ -135,12 +135,13 @@ extension HookEvent {
         }
 
         // Permission request creates waitingForApproval state
-        if expectsResponse, let tool = tool {
+        if isPermissionRequest {
             return .waitingForApproval(PermissionContext(
                 toolUseId: toolUseId ?? "",
-                toolName: tool,
+                toolName: tool ?? "Permission",
                 toolInput: toolInput,
-                receivedAt: Date()
+                receivedAt: Date(),
+                canRespond: canRespond
             ))
         }
 
@@ -167,8 +168,9 @@ extension HookEvent {
         event == "PreToolUse" || event == "PostToolUse" || event == "PermissionRequest"
     }
 
-    /// Whether this event should trigger a file sync
+    /// Whether this event should trigger a Claude transcript (JSONL) sync
     nonisolated var shouldSyncFile: Bool {
+        guard agent.hasClaudeTranscript else { return false }
         switch event {
         case "UserPromptSubmit", "PreToolUse", "PostToolUse", "Stop":
             return true
