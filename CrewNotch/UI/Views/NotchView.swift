@@ -20,12 +20,13 @@ struct NotchView: View {
     @StateObject private var sessionMonitor = SessionMonitor()
     @StateObject private var activityCoordinator = NotchActivityCoordinator.shared
     @ObservedObject private var keepAwake = KeepAwakeController.shared
+    @ObservedObject private var effects = NotchEffects.shared
+    @State private var bounceScale: CGFloat = 1
     @State private var previousPendingIds: Set<String> = []
     @State private var previousWaitingForInputIds: Set<String> = []
     @State private var waitingForInputTimestamps: [String: Date] = [:]  // sessionId -> when it entered waitingForInput
     @State private var isVisible: Bool = false
     @State private var isHovering: Bool = false
-    @State private var isBouncing: Bool = false
 
     @Namespace private var activityNamespace
 
@@ -180,6 +181,8 @@ struct NotchView: View {
                             .frame(height: 1)
                             .padding(.horizontal, topCornerRadius)
                     }
+                    .overlay { NotchEffectsOverlay(effects: effects) }
+                    .scaleEffect(bounceScale, anchor: .top)
                     .shadow(
                         color: (viewModel.status == .opened || isHovering) ? .black.opacity(0.7) : .clear,
                         radius: 6
@@ -194,7 +197,6 @@ struct NotchView: View {
                     .animation(.smooth, value: activityCoordinator.expandingActivity)
                     .animation(.smooth, value: hasPendingPermission)
                     .animation(.smooth, value: hasWaitingForInput)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.5), value: isBouncing)
                     .contentShape(Rectangle())
                     .onHover { hovering in
                         withAnimation(.spring(response: 0.38, dampingFraction: 0.8)) {
@@ -220,6 +222,17 @@ struct NotchView: View {
         }
         .onChange(of: viewModel.status) { oldStatus, newStatus in
             handleStatusChange(from: oldStatus, to: newStatus)
+        }
+        .onChange(of: effects.current) { _, effect in
+            // Effects must be visible even when the notch would otherwise hide
+            if effect != nil { isVisible = true } else { handleProcessingChange() }
+        }
+        .onChange(of: effects.bounceCount) { _, _ in
+            let speed = NotchEffects.speed.multiplier
+            withAnimation(.spring(response: 0.18 * speed, dampingFraction: 0.45)) { bounceScale = 1.08 }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.16 * speed) {
+                withAnimation(.spring(response: 0.3 * speed, dampingFraction: 0.5)) { bounceScale = 1 }
+            }
         }
         .onChange(of: sessionMonitor.pendingInstances) { _, sessions in
             handlePendingSessionsChange(sessions)
@@ -298,7 +311,7 @@ struct NotchView: View {
                 // Closed with activity: black spacer (with optional bounce)
                 Rectangle()
                     .fill(.black)
-                    .frame(width: closedNotchSize.width - cornerRadiusInsets.closed.top + (isBouncing ? 16 : 0))
+                    .frame(width: closedNotchSize.width - cornerRadiusInsets.closed.top)
             }
 
             // Right side - unified status glyph for crew activity
@@ -412,6 +425,9 @@ struct NotchView: View {
     }
 
     private func handleStatusChange(from oldStatus: NotchStatus, to newStatus: NotchStatus) {
+        if newStatus == .opened && oldStatus != .opened {
+            effects.play(.open)
+        }
         switch newStatus {
         case .opened, .popping:
             isVisible = true
@@ -435,6 +451,7 @@ struct NotchView: View {
         let newPendingIds = currentIds.subtracting(previousPendingIds)
 
         if !newPendingIds.isEmpty {
+            effects.play(.needsYou)
             if let soundName = AppSettings.attentionSound.soundName {
                 NSSound(named: soundName)?.play()
             }
@@ -484,14 +501,7 @@ struct NotchView: View {
                 }
             }
 
-            // Trigger bounce animation to get user's attention
-            DispatchQueue.main.async {
-                isBouncing = true
-                // Bounce back after a short delay
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                    isBouncing = false
-                }
-            }
+            effects.play(.finished)
 
             // Schedule hiding the checkmark after 30 seconds
             DispatchQueue.main.asyncAfter(deadline: .now() + 30) { [self] in
