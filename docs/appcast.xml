@@ -3,6 +3,22 @@
     <channel>
         <title>CrewNotch</title>
         <item>
+            <title>1.2.1</title>
+            <pubDate>Sun, 01 Nov 2026 11:17:30 +0300</pubDate>
+            <link>https://karabogadev.github.io/crewnotch/</link>
+            <sparkle:fullReleaseNotesLink>https://github.com/karabogadev/crewnotch/releases</sparkle:fullReleaseNotesLink>
+            <sparkle:version>9</sparkle:version>
+            <sparkle:shortVersionString>1.2.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.6</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[## What's fixed
+
+- **One sound when an agent finishes.** A finished turn also played the approval sound and the "needs you" animation, so you heard two sounds at once. Now you hear only the finished sound, and the approval sound is saved for real approvals and questions.
+- A second approval in the same session now gets its own sound.
+
+]]></description>
+            <enclosure url="https://github.com/karabogadev/crewnotch/releases/download/v1.2.1/CrewNotch-1.2.1.dmg" length="5949615" type="application/octet-stream" sparkle:edSignature="KaoxlfqUD7QaoCqp0RzxqMu29U8zwuMPxplFRxT8SLJvJ5uHFpVh2wHInbzje1pEzrXLEevbO8hg3QnX+9m6Bw=="/>
+        </item>
+        <item>
             <title>1.2.0</title>
             <pubDate>Sun, 01 Nov 2026 10:30:38 +0300</pubDate>
             <link>https://karabogadev.github.io/crewnotch/</link>
