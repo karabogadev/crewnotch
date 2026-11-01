@@ -22,6 +22,12 @@ struct NotchView: View {
     @ObservedObject private var keepAwake = KeepAwakeController.shared
     @ObservedObject private var effects = NotchEffects.shared
     @State private var bounceScale: CGFloat = 1
+    @ObservedObject private var usageMonitor = UsageMonitor.shared
+    @AppStorage(AppearanceKeys.closedShowsWorking) private var closedShowsWorking = true
+    @AppStorage(AppearanceKeys.closedShowsNotifications) private var closedShowsNotifications = true
+    @AppStorage(AppearanceKeys.closedShowsUsage) private var closedShowsUsage = false
+    @AppStorage(AppearanceKeys.idleNotch) private var idleNotch: IdleNotchBehavior = .hide
+    @AppStorage("usagePercentMode") private var usagePercentMode: UsagePercentMode = .used
     @State private var previousPendingIds: Set<String> = []
     @State private var previousWaitingForInputIds: Set<String> = []
     @State private var waitingForInputTimestamps: [String: Date] = [:]  // sessionId -> when it entered waitingForInput
@@ -56,11 +62,35 @@ struct NotchView: View {
     }
 
     /// Overall crew state for the closed notch: needs you > working > just finished
+    /// (filtered by the "While closed" settings)
     private var crewActivity: CrewActivity? {
-        if hasPendingPermission { return .needsYou }
-        if isAnyProcessing { return .working }
-        if hasWaitingForInput { return .finished }
+        if hasPendingPermission && closedShowsNotifications { return .needsYou }
+        if isAnyProcessing && closedShowsWorking { return .working }
+        if hasWaitingForInput && closedShowsNotifications { return .finished }
         return nil
+    }
+
+    /// The first visible provider's limit closest to running out
+    private var headlineUsage: (agent: AgentKind, limit: UsageLimit)? {
+        guard AppSettings.showPlanUsage else { return nil }
+        return UsagePreferences.apply(to: usageMonitor.providers)
+            .lazy.compactMap { usage in usage.headline.map { (usage.agent, $0) } }.first
+    }
+
+    /// Quiet notch: nothing going on, but the user wants plan usage shown
+    private var showsQuietUsage: Bool {
+        crewActivity == nil && idleNotch == .showUsage && headlineUsage != nil
+    }
+
+    /// Whether the usage percentage appears beside the status in the closed notch
+    private var showsClosedUsage: Bool {
+        headlineUsage != nil && (showsQuietUsage || (closedShowsUsage && crewActivity != nil))
+    }
+
+    private var headlineUsageText: String {
+        guard let limit = headlineUsage?.limit else { return "" }
+        let value = usagePercentMode == .used ? limit.usedPercent : 100 - limit.usedPercent
+        return "\(Int(value.rounded()))%"
     }
 
     /// The session whose agent the closed notch shows: the one that matters most right now
@@ -102,7 +132,12 @@ struct NotchView: View {
     /// Extra width for expanding activities (like Dynamic Island)
     private var expansionWidth: CGFloat {
         guard showClosedActivity else { return 0 }
-        return 2 * max(0, closedNotchSize.height - 12) + 20 + countBadgeWidth + keepAwakeWidth
+        return 2 * max(0, closedNotchSize.height - 12) + 20 + countBadgeWidth + keepAwakeWidth + usageWidth
+    }
+
+    /// Extra room on the right for the usage percentage
+    private var usageWidth: CGFloat {
+        showsClosedUsage ? 28 : 0
     }
 
     /// Extra room on the right for the Keep Awake hourglass
@@ -227,6 +262,7 @@ struct NotchView: View {
             // Effects must be visible even when the notch would otherwise hide
             if effect != nil { isVisible = true } else { handleProcessingChange() }
         }
+        .onChange(of: showsQuietUsage) { _, _ in handleProcessingChange() }
         .onChange(of: effects.bounceCount) { _, _ in
             let speed = NotchEffects.speed.multiplier
             withAnimation(.spring(response: 0.18 * speed, dampingFraction: 0.45)) { bounceScale = 1.08 }
@@ -245,13 +281,9 @@ struct NotchView: View {
 
     // MARK: - Notch Layout
 
-    private var isProcessing: Bool {
-        activityCoordinator.expandingActivity.show && activityCoordinator.expandingActivity.type == .claude
-    }
-
     /// Whether to show the expanded closed state (processing, pending permission, or waiting for input)
     private var showClosedActivity: Bool {
-        isProcessing || hasPendingPermission || hasWaitingForInput
+        crewActivity != nil || showsQuietUsage
     }
 
     @ViewBuilder
@@ -283,12 +315,12 @@ struct NotchView: View {
     private var headerRow: some View {
         HStack(spacing: 0) {
             // Left side - lead agent + optional busy count (visible when processing, pending, or waiting for input)
-            if showClosedActivity, let lead = leadSession {
+            if showClosedActivity, let leadAgent = crewActivity != nil ? leadSession?.agent : headlineUsage?.agent {
                 HStack(spacing: 3) {
-                    AgentIcon(agent: lead.agent, size: 14)
+                    AgentIcon(agent: leadAgent, size: 14)
                         .matchedGeometryEffect(id: "lead-agent", in: activityNamespace, isSource: showClosedActivity)
 
-                    if busyCount > 1 && viewModel.status != .opened {
+                    if busyCount > 1 && crewActivity != nil && viewModel.status != .opened {
                         Text("+\(busyCount - 1)")
                             .font(.system(size: 9, weight: .semibold, design: .rounded))
                             .foregroundColor(.white.opacity(0.6))
@@ -315,18 +347,25 @@ struct NotchView: View {
             }
 
             // Right side - unified status glyph for crew activity
-            if showClosedActivity, let activity = crewActivity {
+            if showClosedActivity {
                 HStack(spacing: 4) {
                     if case .active = keepAwake.state, viewModel.status != .opened {
                         Image(systemName: "hourglass")
                             .font(.system(size: 9, weight: .semibold))
                             .foregroundColor(.white.opacity(0.5))
                     }
-                    NotchStatusGlyph(status: activity)
-                        .id(activity)
+                    if showsClosedUsage && viewModel.status != .opened {
+                        Text(headlineUsageText)
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                            .foregroundColor(.white.opacity(0.7))
+                    }
+                    if let activity = crewActivity {
+                        NotchStatusGlyph(status: activity)
+                            .id(activity)
+                    }
                 }
                     .matchedGeometryEffect(id: "status", in: activityNamespace, isSource: showClosedActivity)
-                    .frame(width: viewModel.status == .opened ? 20 : sideWidth + keepAwakeWidth)
+                    .frame(width: viewModel.status == .opened ? 20 : sideWidth + keepAwakeWidth + usageWidth)
                     .padding(.trailing, viewModel.status == .opened ? 0 : 4)
             }
         }
@@ -409,8 +448,8 @@ struct NotchView: View {
             // Show claude activity when processing or waiting for permission
             activityCoordinator.showActivity(type: .claude)
             isVisible = true
-        } else if hasWaitingForInput {
-            // Keep visible for waiting-for-input but hide the processing spinner
+        } else if hasWaitingForInput || showsQuietUsage {
+            // Keep visible for waiting-for-input (or the quiet usage notch) without the spinner
             activityCoordinator.hideActivity()
             isVisible = true
         } else {
@@ -421,7 +460,7 @@ struct NotchView: View {
             // Don't hide on non-notched devices - users need a visible target
             if viewModel.status == .closed && viewModel.hasPhysicalNotch {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    if !isAnyProcessing && !hasPendingPermission && !hasWaitingForInput && viewModel.status == .closed {
+                    if !isAnyProcessing && !hasPendingPermission && !hasWaitingForInput && !showsQuietUsage && viewModel.status == .closed {
                         isVisible = false
                     }
                 }
@@ -444,7 +483,7 @@ struct NotchView: View {
             // Don't hide on non-notched devices - users need a visible target
             guard viewModel.hasPhysicalNotch else { return }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                if viewModel.status == .closed && !isAnyProcessing && !hasPendingPermission && !hasWaitingForInput && !activityCoordinator.expandingActivity.show {
+                if viewModel.status == .closed && !isAnyProcessing && !hasPendingPermission && !hasWaitingForInput && !showsQuietUsage && !activityCoordinator.expandingActivity.show {
                     isVisible = false
                 }
             }
