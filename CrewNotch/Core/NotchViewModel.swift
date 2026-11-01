@@ -67,9 +67,11 @@ class NotchViewModel: ObservableObject {
                 height: 580
             )
         case .instances:
+            // Room for the chosen number of rows, plus header and usage footer
+            let rows = min(max(AppearanceKeys.rowsAtOnceValue, 3), 10)
             return CGSize(
                 width: min(screenRect.width * 0.4, 480),
-                height: 320
+                height: CGFloat(rows) * 50 + 110
             )
         case .banner:
             return CGSize(
