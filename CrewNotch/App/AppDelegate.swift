@@ -23,6 +23,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
 
         AgentRegistry.shared.start()
+        try? CommandLineTool.install()
         KeepAwakeController.shared.start()
         UsageMonitor.shared.start()
         UsageAlerts.shared.start()
