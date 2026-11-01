@@ -13,6 +13,8 @@ nonisolated struct UsageLimit: Identifiable, Equatable, Sendable {
     /// 0...100
     let usedPercent: Double
     let resetsAt: Date?
+    /// How long the window lasts (5 hours, a week), when the provider says
+    var window: TimeInterval? = nil
 
     var id: String { label }
 
@@ -34,6 +36,28 @@ nonisolated struct UsageLimit: Identifiable, Equatable, Sendable {
         case "Credits": return String(localized: "Credits")
         default: return label  // model names like Sonnet, Fable or Gemini Pro
         }
+    }
+}
+
+/// Where a limit is heading if usage keeps its pace so far.
+nonisolated struct UsagePace: Equatable, Sendable {
+    /// Percent used by the reset, may pass 100
+    let projectedPercent: Double
+    /// When the limit runs out before the reset, if it does
+    let runsOutAt: Date?
+}
+
+extension UsageLimit {
+    nonisolated func pace(now: Date = Date()) -> UsagePace? {
+        guard let window, let resetsAt, resetsAt > now, usedPercent > 0, usedPercent < 100 else { return nil }
+        let remaining = resetsAt.timeIntervalSince(now)
+        let elapsed = window - remaining
+        // Early in a window the pace is mostly noise
+        guard elapsed >= window * 0.1 else { return nil }
+        let rate = usedPercent / elapsed
+        let projected = usedPercent + rate * remaining
+        let runsOutAt = projected > 100 ? now.addingTimeInterval((100 - usedPercent) / rate) : nil
+        return UsagePace(projectedPercent: projected, runsOutAt: runsOutAt)
     }
 }
 

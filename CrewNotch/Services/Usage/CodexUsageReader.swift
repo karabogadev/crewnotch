@@ -34,7 +34,7 @@ nonisolated enum CodexUsageReader {
             let resetsAt = (window["resets_at"] as? NSNumber).map { UsageFormat.date(fromEpoch: $0.doubleValue) }
             // A window that already reset has nothing used in it yet.
             let current = (resetsAt.map { $0 <= now } ?? false) ? 0 : used
-            limits.append(UsageLimit(label: label(forWindowMinutes: minutes, fallback: key), usedPercent: current, resetsAt: resetsAt))
+            limits.append(UsageLimit(label: label(forWindowMinutes: minutes, fallback: key), usedPercent: current, resetsAt: resetsAt, window: minutes.map { TimeInterval($0) * 60 }))
         }
         let plan = (rateLimits["plan_type"] as? String).map(planName)
         return ProviderUsage(agent: .codex, plan: plan, limits: limits, updatedAt: timestamp)

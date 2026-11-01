@@ -72,13 +72,14 @@ nonisolated enum ClaudeUsageClient {
     // MARK: - Response
 
     static func limits(from json: [String: Any]) -> [UsageLimit] {
-        func window(_ key: String, _ label: String) -> UsageLimit? {
+        let hour: TimeInterval = 3600
+        func window(_ key: String, _ label: String, _ length: TimeInterval) -> UsageLimit? {
             guard let value = json[key] as? [String: Any],
                   let used = (value["utilization"] as? NSNumber)?.doubleValue else { return nil }
-            return UsageLimit(label: label, usedPercent: used, resetsAt: resetDate(value["resets_at"]))
+            return UsageLimit(label: label, usedPercent: used, resetsAt: resetDate(value["resets_at"]), window: length)
         }
 
-        var result = [window("five_hour", "Session"), window("seven_day", "Weekly"), window("seven_day_sonnet", "Sonnet")]
+        var result = [window("five_hour", "Session", 5 * hour), window("seven_day", "Weekly", 168 * hour), window("seven_day_sonnet", "Sonnet", 168 * hour)]
             .compactMap { $0 }
 
         // Per-model weekly limits (e.g. Fable) live in `limits[]`.
@@ -86,7 +87,7 @@ nonisolated enum ClaudeUsageClient {
             guard let percent = (entry["percent"] as? NSNumber)?.doubleValue,
                   let model = ((entry["scope"] as? [String: Any])?["model"] as? [String: Any])?["display_name"] as? String,
                   !result.contains(where: { $0.label == model }) else { continue }
-            result.append(UsageLimit(label: model, usedPercent: percent, resetsAt: resetDate(entry["resets_at"])))
+            result.append(UsageLimit(label: model, usedPercent: percent, resetsAt: resetDate(entry["resets_at"]), window: 168 * hour))
         }
 
         if let extra = json["extra_usage"] as? [String: Any], extra["is_enabled"] as? Bool == true,
