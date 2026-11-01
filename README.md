@@ -9,6 +9,8 @@
   </p>
 
   <p><strong>Know which agent is working, which one is done, and which one needs you, without leaving what you're doing.</strong></p>
+
+  <p><a href="https://karabogadev.github.io/crewnotch/">Website</a> · <a href="#install">Install</a> · <a href="https://github.com/karabogadev/crewnotch/issues">Report an issue</a></p>
 </div>
 
 ---
@@ -24,7 +26,7 @@ You run Claude Code in one terminal, Codex in another, Cursor and Antigravity in
 - **Approve from the notch.** Allow or deny Claude Code and Codex tool calls without switching windows.
 - **A finished banner.** When an agent finishes and you're looking elsewhere, the notch drops down for a moment: *Finished · storefront · Open ↗*.
 - **Back in one click.** Double-click a session to bring its terminal (or tmux pane, with yabai) or app window to the front.
-- **Plan usage in the notch.** Session and weekly limits for Claude and Codex, with no separate app.
+- **Plan usage in the notch.** Session, weekly and per-model limits for Claude, Codex, Antigravity, Cursor, Copilot, Grok, OpenCode Go and Kiro, with no separate app.
 - **Token history.** Tokens per day across agents, the estimated API value of your Claude usage, and your busiest day. Share it as an image.
 - **Keep Awake.** Agents keep running when the display sleeps or the screen locks. It works on power adapter only, stops below a battery threshold and turns itself off after a time limit.
 - **Make it yours.** Six working indicators, notch animations, materials and colors, sounds per event, text size and much more.
@@ -38,14 +40,14 @@ You run Claude Code in one terminal, Codex in another, Cursor and Antigravity in
 |---|---|:-:|:-:|:-:|
 | **Claude Code** | Hooks in `~/.claude/settings.json` | ✓ | ✓ | ✓ |
 | **Codex** | Hooks in `~/.codex/hooks.json` | ✓ | ✓ | ✓ |
-| **Cursor** | Hooks in `~/.cursor/hooks.json` | ✓ | | |
+| **Cursor** | Hooks in `~/.cursor/hooks.json` | ✓ | | ✓ |
 | **Gemini CLI** | Hooks in `~/.gemini/settings.json` | ✓ | | |
-| **Antigravity** (app and IDE) | A named hook in `~/.gemini/config/hooks.json` | ✓ | | |
+| **Antigravity** (app and IDE) | A named hook in `~/.gemini/config/hooks.json` | ✓ | | ✓ |
 | **DeepSeek Harness** | Reads its session logs, nothing installed | ✓ | | |
-| **OpenCode** | A small plugin in `~/.config/opencode/plugin/` | ✓ | | |
-| **Copilot CLI** | Its own file in `~/.copilot/hooks/` | ✓ | | |
-| **Grok** | Its own file in `~/.grok/hooks/` | ✓ | | |
-| **Kiro** | Its own file in `~/.kiro/hooks/` (v3 engine) | ✓ | | |
+| **OpenCode** | A small plugin in `~/.config/opencode/plugin/` | ✓ | | ✓ (Go) |
+| **Copilot CLI** | Its own file in `~/.copilot/hooks/` | ✓ | | ✓ |
+| **Grok** | Its own file in `~/.grok/hooks/` | ✓ | | ✓ |
+| **Kiro** | Its own file in `~/.kiro/hooks/` (v3 engine) | ✓ | | ✓ |
 
 Agents without a notch approval still show when they need you, and an **Open** button takes you straight to them.
 
@@ -109,6 +111,7 @@ You can change everything later from the ⚙︎ in the notch.
 - No account, no telemetry, no analytics.
 - Agent activity comes from hooks and log files on your Mac and never leaves it.
 - **Codex usage** is read from Codex's local session files.
+- **Every other usage provider** is off until you turn it on in Settings → Usage, where each one says exactly what it reads.
 - **Claude usage** is opt-in. CrewNotch reads Claude Code's existing sign-in from the keychain (macOS asks once) and calls Anthropic's usage endpoint at most every five minutes. The token is never refreshed or written.
 - **Token history** is computed from local logs and cached in `~/.crewnotch/token-history.json`.
 
@@ -150,7 +153,6 @@ Open **Settings → Agents** and press **Disconnect** for each agent; this remov
 
 ## Roadmap
 
-- Plan usage for Antigravity, Cursor and Copilot
 - Light panel themes
 - An agent detail page with diagnostics
 - A Homebrew cask
