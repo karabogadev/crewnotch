@@ -55,6 +55,18 @@ class NotchViewModel: ObservableObject {
     @Published var listContentHeight: CGFloat = 0
     /// A request is waiting: its card (command, diff, question) gets room beyond the row limit
     @Published var showsRequest = false
+    /// The opened panel's size as last drawn, for hit testing (zero until measured)
+    var renderedPanelSize: CGSize = .zero
+
+    /// Limits for dragging the session panel's size
+    var panelWidthRange: ClosedRange<CGFloat> { 380...max(380, min(screenRect.width * 0.7, 900)) }
+    var panelHeightRange: ClosedRange<CGFloat> { 200...(windowHeight - 10) }
+
+    /// Where the opened panel is on screen: as drawn once measured, else as planned
+    var openedPanelScreenRect: CGRect {
+        let size = renderedPanelSize.height > deviceNotchRect.height ? renderedPanelSize : openedSize
+        return geometry.panelScreenRect(for: size)
+    }
 
     // MARK: - Geometry
 
@@ -76,12 +88,18 @@ class NotchViewModel: ObservableObject {
                 height: 580
             )
         case .instances:
-            // Fit the content, up to the chosen number of rows (the list scrolls past that)
+            // Fit the content, up to the height the user dragged to or the chosen
+            // number of rows (the list scrolls past that)
+            let defaults = UserDefaults.standard
+            let customWidth = CGFloat(defaults.double(forKey: AppearanceKeys.panelWidth))
+            let customHeight = CGFloat(defaults.double(forKey: AppearanceKeys.panelHeight))
             let rows = min(max(AppearanceKeys.rowsAtOnceValue, 3), 10)
-            let maxHeight = CGFloat(rows) * 52 + 110 + (showsRequest ? 260 : 0)
+            let cap = customHeight > 0 ? customHeight : CGFloat(rows) * 52 + 110
+            let maxHeight = min(cap + (showsRequest ? 260 : 0), panelHeightRange.upperBound)
             let fitted = deviceNotchRect.height + listContentHeight + 26
+            let width = customWidth > 0 ? customWidth.clamped(to: panelWidthRange) : min(screenRect.width * 0.4, 480)
             return CGSize(
-                width: min(screenRect.width * 0.4, 480),
+                width: width,
                 height: listContentHeight > 0 ? min(maxHeight, max(150, fitted)) : maxHeight
             )
         case .banner, .notice:
@@ -145,7 +163,7 @@ class NotchViewModel: ObservableObject {
 
     private func handleMouseMove(_ location: CGPoint) {
         let inNotch = geometry.isPointInNotch(location)
-        let inOpened = status == .opened && geometry.isPointInOpenedPanel(location, size: openedSize)
+        let inOpened = status == .opened && openedPanelScreenRect.contains(location)
 
         let newHovering = inNotch || inOpened
 
@@ -174,7 +192,7 @@ class NotchViewModel: ObservableObject {
 
         switch status {
         case .opened:
-            if geometry.isPointOutsidePanel(location, size: openedSize) {
+            if !openedPanelScreenRect.contains(location) {
                 notchClose()
                 // Re-post the click so it reaches the window/app behind us
                 repostClickAt(location)
@@ -310,4 +328,8 @@ class NotchViewModel: ObservableObject {
             self.notchClose()
         }
     }
+}
+
+extension Comparable {
+    func clamped(to range: ClosedRange<Self>) -> Self { min(max(self, range.lowerBound), range.upperBound) }
 }

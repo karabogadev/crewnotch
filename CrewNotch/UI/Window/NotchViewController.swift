@@ -50,16 +50,13 @@ class NotchViewController: NSViewController {
 
             switch vm.status {
             case .opened:
-                let panelSize = vm.openedSize
-                // Panel is centered horizontally, anchored to top
-                let panelWidth = panelSize.width + 52  // Account for corner radius padding
-                let panelHeight = panelSize.height
-                let screenWidth = geometry.screenRect.width
+                // The panel as drawn, in window coordinates (origin bottom-left)
+                let rect = vm.openedPanelScreenRect
                 return CGRect(
-                    x: (screenWidth - panelWidth) / 2,
-                    y: windowHeight - panelHeight,
-                    width: panelWidth,
-                    height: panelHeight
+                    x: rect.minX - geometry.screenRect.minX,
+                    y: windowHeight - rect.height,
+                    width: rect.width,
+                    height: rect.height
                 )
             case .closed, .popping:
                 // When closed, use the notch rect

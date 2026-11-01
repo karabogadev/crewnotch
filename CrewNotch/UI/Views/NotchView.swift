@@ -149,12 +149,15 @@ struct NotchView: View {
         busyCount > 1 ? 16 : 0
     }
 
+    // Observed so a dragged size redraws the panel
+    @AppStorage(AppearanceKeys.panelWidth) private var panelWidth: Double = 0
+    @AppStorage(AppearanceKeys.panelHeight) private var panelHeight: Double = 0
+
     private var notchSize: CGSize {
-        switch viewModel.status {
-        case .closed, .popping:
-            return closedNotchSize
-        case .opened:
-            return viewModel.openedSize
+        _ = (panelWidth, panelHeight)
+        return switch viewModel.status {
+        case .closed, .popping: closedNotchSize
+        case .opened: viewModel.openedSize
         }
     }
 
@@ -213,6 +216,15 @@ struct NotchView: View {
                     .padding([.horizontal, .bottom], viewModel.status == .opened ? 12 : 0)
                     .background(PanelBackground(isOpened: viewModel.status == .opened))
                     .clipShape(currentNotchShape)
+                    .overlay(alignment: .bottom) {
+                        if viewModel.status == .opened, case .instances = viewModel.contentType {
+                            PanelResizeHandle(viewModel: viewModel)
+                        }
+                    }
+                    // Hit testing follows the panel as drawn, not an estimate of it
+                    .onGeometryChange(for: CGSize.self, of: { $0.size }) { size in
+                        viewModel.renderedPanelSize = size
+                    }
                     .overlay(alignment: .top) {
                         Rectangle()
                             .fill(viewModel.status == .opened ? Color.canvas : .black)
@@ -591,5 +603,49 @@ struct NotchView: View {
         }
 
         return false
+    }
+}
+
+/// A grip on the panel's bottom edge: drag down or up for height, sideways
+/// for width. Double-click returns to the automatic size.
+private struct PanelResizeHandle: View {
+    @ObservedObject var viewModel: NotchViewModel
+    @AppStorage(AppearanceKeys.panelWidth) private var panelWidth: Double = 0
+    @AppStorage(AppearanceKeys.panelHeight) private var panelHeight: Double = 0
+    @State private var dragStart: CGSize?
+    @State private var isHovered = false
+
+    var body: some View {
+        Capsule()
+            .fill(Color.ink.opacity(isHovered || dragStart != nil ? 0.4 : 0.14))
+            .frame(width: 36, height: 4)
+            .frame(width: 96, height: 14)
+            .contentShape(Rectangle())
+            .onHover { isHovered = $0 }
+            .pointerStyle(.frameResize(position: .bottom))
+            .gesture(
+                DragGesture(minimumDistance: 1, coordinateSpace: .global)
+                    .onChanged { value in
+                        let start = dragStart ?? startSize
+                        dragStart = start
+                        // The panel is centered, so each side moves by the drag
+                        panelWidth = Double((start.width + value.translation.width * 2).clamped(to: viewModel.panelWidthRange))
+                        panelHeight = Double((start.height + value.translation.height).clamped(to: viewModel.panelHeightRange))
+                    }
+                    .onEnded { _ in dragStart = nil }
+            )
+            .onTapGesture(count: 2) {
+                panelWidth = 0
+                panelHeight = 0
+            }
+            .help("Drag to resize. Double-click to reset.")
+            .animation(.easeOut(duration: 0.15), value: isHovered)
+    }
+
+    /// The size the drag starts from: the panel's current width and height,
+    /// without the extra room a waiting request gets
+    private var startSize: CGSize {
+        let size = viewModel.openedSize
+        return CGSize(width: size.width, height: size.height - (viewModel.showsRequest ? 260 : 0))
     }
 }

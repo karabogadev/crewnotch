@@ -138,6 +138,10 @@ nonisolated enum AppearanceKeys {
     static var rowsAtOnceValue: Int {
         UserDefaults.standard.object(forKey: rowsAtOnce) as? Int ?? 5
     }
+
+    /// Size the user dragged the session panel to; 0 means automatic
+    static let panelWidth = "panelWidth"
+    static let panelHeight = "panelHeight"
 }
 
 extension SessionState {
