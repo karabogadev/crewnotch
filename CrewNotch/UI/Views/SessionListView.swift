@@ -9,6 +9,7 @@ import Combine
 import SwiftUI
 
 struct SessionListView: View {
+    @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
     @ObservedObject var sessionMonitor: SessionMonitor
     @ObservedObject var viewModel: NotchViewModel
 
@@ -33,11 +34,11 @@ struct SessionListView: View {
     private var emptyState: some View {
         VStack(spacing: 8) {
             Text("No sessions")
-                .font(.system(size: 13, weight: .medium))
+                .font(.system(size: 13 * textScale.factor, weight: .medium))
                 .foregroundColor(.white.opacity(0.4))
 
             Text("Start Claude Code, Codex, Cursor or another connected agent")
-                .font(.system(size: 11))
+                .font(.system(size: 11 * textScale.factor))
                 .foregroundColor(.white.opacity(0.25))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -141,6 +142,7 @@ struct SessionListView: View {
 // MARK: - Instance Row
 
 struct InstanceRow: View {
+    @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
     let session: SessionState
     let onFocus: () -> Void
     let onChat: () -> Void
@@ -206,13 +208,13 @@ struct InstanceRow: View {
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
                     Text(session.displayTitle)
-                        .font(.system(size: 13, weight: .medium))
+                        .font(.system(size: 13 * textScale.factor, weight: .medium))
                         .foregroundColor(.white)
                         .lineLimit(1)
 
                     if session.usage.totalTokens > 0 {
                         Text(session.usage.formattedTotal)
-                            .font(.system(size: 10, weight: .medium, design: .monospaced))
+                            .font(.system(size: 10 * textScale.factor, weight: .medium, design: .monospaced))
                             .foregroundColor(.white.opacity(0.3))
                     }
                 }
@@ -225,7 +227,7 @@ struct InstanceRow: View {
                     if let branch = GitBranch.name(for: session.cwd) {
                         Text("·").foregroundColor(.white.opacity(0.25))
                         Image(systemName: "arrow.triangle.branch")
-                            .font(.system(size: 9))
+                            .font(.system(size: 9 * textScale.factor))
                             .foregroundColor(.white.opacity(0.35))
                         Text(branch)
                             .foregroundColor(.white.opacity(0.45))
@@ -237,7 +239,7 @@ struct InstanceRow: View {
                             .lineLimit(1)
                     }
                 }
-                .font(.system(size: 11))
+                .font(.system(size: 11 * textScale.factor))
                 .lineLimit(1)
             }
 
@@ -319,16 +321,17 @@ struct InstanceRow: View {
 // MARK: - Project Header
 
 private struct ProjectHeader: View {
+    @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
     let name: String
     let count: Int
 
     var body: some View {
         HStack(spacing: 6) {
             Text(name)
-                .font(.system(size: 11, weight: .semibold))
+                .font(.system(size: 11 * textScale.factor, weight: .semibold))
                 .foregroundColor(.white.opacity(0.55))
             Text("\(count)")
-                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .font(.system(size: 10 * textScale.factor, weight: .medium, design: .rounded))
                 .foregroundColor(.white.opacity(0.3))
         }
         .padding(.leading, 10)
@@ -341,6 +344,7 @@ private struct ProjectHeader: View {
 
 /// Compact inline approval buttons with staggered animation
 struct InlineApprovalButtons: View {
+    @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
     let onChat: () -> Void
     let onApprove: () -> Void
     let onReject: () -> Void
@@ -362,7 +366,7 @@ struct InlineApprovalButtons: View {
                 onReject()
             } label: {
                 Text("Deny")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(size: 11 * textScale.factor, weight: .medium))
                     .foregroundColor(.white.opacity(0.6))
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
@@ -377,7 +381,7 @@ struct InlineApprovalButtons: View {
                 onApprove()
             } label: {
                 Text("Allow")
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(size: 11 * textScale.factor, weight: .medium))
                     .foregroundColor(.black)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 5)
@@ -405,6 +409,7 @@ struct InlineApprovalButtons: View {
 // MARK: - Icon Button
 
 struct IconButton: View {
+    @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
     let icon: String
     let action: () -> Void
 
@@ -415,7 +420,7 @@ struct IconButton: View {
             action()
         } label: {
             Image(systemName: icon)
-                .font(.system(size: 11, weight: .medium))
+                .font(.system(size: 11 * textScale.factor, weight: .medium))
                 .foregroundColor(isHovered ? .white.opacity(0.8) : .white.opacity(0.4))
                 .frame(width: 24, height: 24)
                 .background(
@@ -431,6 +436,7 @@ struct IconButton: View {
 // MARK: - Compact Terminal Button (inline in description)
 
 struct CompactTerminalButton: View {
+    @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
     let isEnabled: Bool
     let onTap: () -> Void
 
@@ -442,9 +448,9 @@ struct CompactTerminalButton: View {
         } label: {
             HStack(spacing: 2) {
                 Image(systemName: "terminal")
-                    .font(.system(size: 8, weight: .medium))
+                    .font(.system(size: 8 * textScale.factor, weight: .medium))
                 Text("Go to Terminal")
-                    .font(.system(size: 10, weight: .medium))
+                    .font(.system(size: 10 * textScale.factor, weight: .medium))
             }
             .foregroundColor(isEnabled ? .white.opacity(0.9) : .white.opacity(0.3))
             .padding(.horizontal, 6)
@@ -459,6 +465,7 @@ struct CompactTerminalButton: View {
 // MARK: - Terminal Button
 
 struct TerminalButton: View {
+    @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
     var label = "Terminal"
     var icon = "terminal"
     let isEnabled: Bool
@@ -472,9 +479,9 @@ struct TerminalButton: View {
         } label: {
             HStack(spacing: 3) {
                 Image(systemName: icon)
-                    .font(.system(size: 9, weight: .medium))
+                    .font(.system(size: 9 * textScale.factor, weight: .medium))
                 Text(label)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(size: 11 * textScale.factor, weight: .medium))
             }
             .foregroundColor(isEnabled ? .black : .white.opacity(0.4))
             .padding(.horizontal, 10)
