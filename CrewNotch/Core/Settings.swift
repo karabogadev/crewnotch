@@ -31,6 +31,39 @@ enum NotificationSound: String, CaseIterable {
     }
 }
 
+/// How plan usage is laid out at the bottom of the notch.
+nonisolated enum UsageStyle: String, CaseIterable {
+    case line, bars, compact
+
+    var title: String {
+        switch self {
+        case .line: return "Line"
+        case .bars: return "Bars"
+        case .compact: return "Compact"
+        }
+    }
+}
+
+/// Which number a usage percentage shows.
+nonisolated enum UsagePercentMode: String, CaseIterable {
+    case used, left
+
+    var title: String { self == .used ? "Used" : "Left" }
+}
+
+/// Which limit represents a provider when only one is shown.
+nonisolated enum UsageLimitChoice: String, CaseIterable {
+    case mostUsed, session, weekly
+
+    var title: String {
+        switch self {
+        case .mostUsed: return "Closest to the limit"
+        case .session: return "Session"
+        case .weekly: return "Weekly"
+        }
+    }
+}
+
 nonisolated enum AppSettings {
     private static let defaults = UserDefaults.standard
 
