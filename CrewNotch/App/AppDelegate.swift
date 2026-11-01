@@ -4,7 +4,6 @@ import SwiftUI
 class AppDelegate: NSObject, NSApplicationDelegate {
     private var windowManager: WindowManager?
     private var screenObserver: ScreenObserver?
-    private var updateCheckTimer: Timer?
 
     static var shared: AppDelegate?
 
@@ -35,11 +34,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             self?.handleScreenChange()
         }
 
-        UpdateManager.shared.checkForUpdates(userInitiated: false)
-        updateCheckTimer = Timer.scheduledTimer(withTimeInterval: 6 * 3600, repeats: true) { _ in
-            Task { @MainActor in
-                UpdateManager.shared.checkForUpdates(userInitiated: false)
-            }
+        if !AppSettings.hasCompletedOnboarding {
+            AppWindows.showOnboarding()
         }
     }
 
@@ -48,7 +44,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationWillTerminate(_ notification: Notification) {
-        updateCheckTimer?.invalidate()
         screenObserver = nil
     }
 
