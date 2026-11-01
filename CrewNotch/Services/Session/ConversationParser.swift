@@ -103,8 +103,7 @@ actor ConversationParser {
     /// Parse a JSONL file to extract conversation info
     /// Uses caching based on file modification time
     func parse(sessionId: String, cwd: String) -> ConversationInfo {
-        let projectDir = cwd.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ".", with: "-")
-        let sessionFile = ClaudePaths.projectsDir.path + "/" + projectDir + "/" + sessionId + ".jsonl"
+        let sessionFile = ClaudeTranscripts.path(sessionId: sessionId, cwd: cwd)
 
         let fileManager = FileManager.default
         guard fileManager.fileExists(atPath: sessionFile),
@@ -509,8 +508,7 @@ actor ConversationParser {
 
     /// Build session file path
     private static func sessionFilePath(sessionId: String, cwd: String) -> String {
-        let projectDir = cwd.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ".", with: "-")
-        return ClaudePaths.projectsDir.path + "/" + projectDir + "/" + sessionId + ".jsonl"
+        ClaudeTranscripts.path(sessionId: sessionId, cwd: cwd)
     }
 
     /// Build subagent JSONL file path.
@@ -524,9 +522,11 @@ actor ConversationParser {
     /// Prefer the nested path; fall back to the flat path if only it exists
     /// (cross-version compatibility). If neither exists yet (file still being
     /// created) we return the nested path as the modern default.
-    nonisolated static func subagentFilePath(sessionId: String, agentId: String, projectDir: String) -> String {
-        let base = ClaudePaths.projectsDir.path + "/" + projectDir
-        let nested = base + "/" + sessionId + "/subagents/agent-" + agentId + ".jsonl"
+    nonisolated static func subagentFilePath(sessionId: String, agentId: String, cwd: String) -> String {
+        // Subagents sit next to the transcript, in a folder named after it
+        let transcript = URL(fileURLWithPath: ClaudeTranscripts.path(sessionId: sessionId, cwd: cwd))
+        let base = transcript.deletingLastPathComponent().path
+        let nested = base + "/" + transcript.deletingPathExtension().lastPathComponent + "/subagents/agent-" + agentId + ".jsonl"
         let flat = base + "/agent-" + agentId + ".jsonl"
 
         let fm = FileManager.default
@@ -964,8 +964,7 @@ actor ConversationParser {
     func parseSubagentTools(sessionId: String, agentId: String, cwd: String) -> [SubagentToolInfo] {
         guard !agentId.isEmpty else { return [] }
 
-        let projectDir = cwd.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ".", with: "-")
-        let agentFile = Self.subagentFilePath(sessionId: sessionId, agentId: agentId, projectDir: projectDir)
+        let agentFile = Self.subagentFilePath(sessionId: sessionId, agentId: agentId, cwd: cwd)
 
         guard FileManager.default.fileExists(atPath: agentFile),
               let content = try? String(contentsOfFile: agentFile, encoding: .utf8) else {
@@ -1056,8 +1055,7 @@ extension ConversationParser {
     nonisolated static func parseSubagentToolsSync(sessionId: String, agentId: String, cwd: String) -> [SubagentToolInfo] {
         guard !agentId.isEmpty else { return [] }
 
-        let projectDir = cwd.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ".", with: "-")
-        let agentFile = subagentFilePath(sessionId: sessionId, agentId: agentId, projectDir: projectDir)
+        let agentFile = subagentFilePath(sessionId: sessionId, agentId: agentId, cwd: cwd)
 
         guard FileManager.default.fileExists(atPath: agentFile),
               let content = try? String(contentsOfFile: agentFile, encoding: .utf8) else {

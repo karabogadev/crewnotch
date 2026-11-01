@@ -450,6 +450,8 @@ def main():
             })
             if agent == "antigravity":
                 state["source_app"] = antigravity_surface(data)
+            if agent == "claude" and isinstance(data.get("transcript_path"), str):
+                state["transcript_path"] = data["transcript_path"]
 
             wants_decision = state["status"] == "waiting_for_approval" and state["can_respond"]
             reply = send(state, wait_for_reply=wants_decision)

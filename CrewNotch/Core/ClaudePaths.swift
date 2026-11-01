@@ -115,3 +115,22 @@ nonisolated enum ClaudePaths {
         "'" + path.replacingOccurrences(of: "'", with: "'\\''") + "'"
     }
 }
+
+/// Where each Claude Code session keeps its transcript. Claude's hooks report
+/// the real path, which beats guessing <project>/<sessionId>.jsonl: a resumed
+/// session writes to the file it resumed, and the hook's cwd follows the
+/// shell into subfolders.
+nonisolated enum ClaudeTranscripts {
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var paths: [String: String] = [:]
+
+    static func register(sessionId: String, path: String) {
+        lock.withLock { paths[sessionId] = path }
+    }
+
+    static func path(sessionId: String, cwd: String) -> String {
+        if let known = lock.withLock({ paths[sessionId] }) { return known }
+        let projectDir = cwd.replacingOccurrences(of: "/", with: "-").replacingOccurrences(of: ".", with: "-")
+        return ClaudePaths.projectsDir.path + "/" + projectDir + "/" + sessionId + ".jsonl"
+    }
+}

@@ -38,6 +38,8 @@ struct HookEvent: Codable, Sendable {
     let title: String?
     /// Front end of a multi-app agent (e.g. Antigravity "app" vs "ide").
     let sourceApp: String?
+    /// Claude Code's own transcript file for the session
+    let transcriptPath: String?
 
     enum CodingKeys: String, CodingKey {
         case sessionId = "session_id"
@@ -49,6 +51,7 @@ struct HookEvent: Codable, Sendable {
         case canRespond = "can_respond"
         case assistantMessage = "assistant_message"
         case sourceApp = "source_app"
+        case transcriptPath = "transcript_path"
     }
 
     nonisolated init(
@@ -57,7 +60,8 @@ struct HookEvent: Codable, Sendable {
         toolInput: [String: AnyCodable]? = nil, toolUseId: String? = nil,
         notificationType: String? = nil, message: String? = nil,
         agent: AgentKind, canRespond: Bool = false, prompt: String? = nil,
-        assistantMessage: String? = nil, title: String? = nil, sourceApp: String? = nil
+        assistantMessage: String? = nil, title: String? = nil, sourceApp: String? = nil,
+        transcriptPath: String? = nil
     ) {
         self.sessionId = sessionId
         self.cwd = cwd
@@ -76,6 +80,7 @@ struct HookEvent: Codable, Sendable {
         self.assistantMessage = assistantMessage
         self.title = title
         self.sourceApp = sourceApp
+        self.transcriptPath = transcriptPath
     }
 
     init(from decoder: Decoder) throws {
@@ -97,6 +102,7 @@ struct HookEvent: Codable, Sendable {
         assistantMessage = try c.decodeIfPresent(String.self, forKey: .assistantMessage)
         title = try c.decodeIfPresent(String.self, forKey: .title)
         sourceApp = try c.decodeIfPresent(String.self, forKey: .sourceApp)
+        transcriptPath = try c.decodeIfPresent(String.self, forKey: .transcriptPath)
     }
 
     var sessionPhase: SessionPhase {
