@@ -158,6 +158,8 @@ private struct AppearancePane: View {
                 Toggle("Group by project", isOn: $groupByProject)
             }
 
+            WorkingIndicatorSection()
+
             AnimationSettingsSection()
         }
         .formStyle(.grouped)
@@ -238,6 +240,54 @@ private struct AnimationMomentRow: View {
             .foregroundStyle(.secondary)
             .disabled(style == .none)
             .help("Preview")
+        }
+    }
+}
+
+// MARK: - Working indicator
+
+private struct WorkingIndicatorSection: View {
+    @AppStorage("workingIndicatorStyle") private var style: WorkingIndicatorStyle = .crewDots
+    @AppStorage("workingIndicatorColor") private var color: WorkingIndicatorColor = .crew
+
+    private let columns = [GridItem(.adaptive(minimum: 92), spacing: 10)]
+
+    var body: some View {
+        Section {
+            LazyVGrid(columns: columns, spacing: 10) {
+                ForEach(WorkingIndicatorStyle.allCases) { option in
+                    Button {
+                        style = option
+                    } label: {
+                        VStack(spacing: 8) {
+                            WorkingIndicatorView(style: option, color: color, size: 18)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 44)
+                                .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.black))
+                            Text(option.title)
+                                .font(.caption)
+                                .foregroundStyle(style == option ? .primary : .secondary)
+                        }
+                        .padding(6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(style == option ? Color.accentColor : Color.clear, lineWidth: 2)
+                        )
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.vertical, 4)
+
+            Picker("Colors", selection: $color) {
+                ForEach(WorkingIndicatorColor.allCases) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.segmented)
+        } header: {
+            Text("Working indicator")
+        } footer: {
+            Text("Shown in the closed notch and next to sessions while an agent works.").foregroundStyle(.secondary)
         }
     }
 }
