@@ -14,6 +14,19 @@ struct AgentIcon: View {
     var size: CGFloat = 14
 
     var body: some View {
+        if agent == .command {
+            Image(systemName: "terminal")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .fontWeight(.semibold)
+                .foregroundStyle(.primary)
+                .frame(width: size, height: size)
+        } else {
+            logo
+        }
+    }
+
+    private var logo: some View {
         Image("agent-\(agent.rawValue)")
             .resizable()
             .renderingMode(agent.hasMonochromeLogo ? .template : .original)

@@ -252,6 +252,7 @@ extension AgentKind {
         case .copilot: return Color(red: 0.55, green: 0.4, blue: 0.9)
         case .grok: return Color(white: 0.5)
         case .kiro: return Color(red: 0.55, green: 0.35, blue: 0.95)
+        case .command: return Color(white: 0.4)
         }
     }
 }

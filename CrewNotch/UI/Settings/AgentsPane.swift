@@ -13,8 +13,8 @@ struct AgentsPane: View {
     @ObservedObject private var registry = AgentRegistry.shared
     @State private var claudeFolder = ClaudePaths.claudeDir.path
 
-    private var detected: [AgentKind] { AgentKind.allCases.filter { registry.status(for: $0).isDetected } }
-    private var missing: [AgentKind] { AgentKind.allCases.filter { !registry.status(for: $0).isDetected } }
+    private var detected: [AgentKind] { AgentKind.connectable.filter { registry.status(for: $0).isDetected } }
+    private var missing: [AgentKind] { AgentKind.connectable.filter { !registry.status(for: $0).isDetected } }
 
     var body: some View {
         Form {

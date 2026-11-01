@@ -18,8 +18,13 @@ nonisolated enum AgentKind: String, CaseIterable, Codable, Sendable, Identifiabl
     case copilot
     case grok
     case kiro
+    /// A shell command run through `crewnotch run`
+    case command
 
     var id: String { rawValue }
+
+    /// Agents that can be connected in Settings → Agents.
+    static var connectable: [AgentKind] { allCases.filter { $0 != .command } }
 
     var displayName: String {
         switch self {
@@ -33,6 +38,7 @@ nonisolated enum AgentKind: String, CaseIterable, Codable, Sendable, Identifiabl
         case .copilot: return "Copilot CLI"
         case .grok: return "Grok"
         case .kiro: return "Kiro"
+        case .command: return String(localized: "Command")
         }
     }
 

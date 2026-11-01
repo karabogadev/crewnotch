@@ -122,7 +122,7 @@ private struct Feature: View {
 private struct ConnectAgentsStep: View {
     @ObservedObject private var registry = AgentRegistry.shared
 
-    private var detected: [AgentKind] { AgentKind.allCases.filter { registry.status(for: $0).isDetected } }
+    private var detected: [AgentKind] { AgentKind.connectable.filter { registry.status(for: $0).isDetected } }
 
     var body: some View {
         VStack(spacing: 18) {
