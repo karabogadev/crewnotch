@@ -17,12 +17,15 @@ struct UsageFooter: View {
     @AppStorage("showPlanUsage") private var showPlanUsage = true
     @AppStorage("usageStyle") private var style: UsageStyle = .line
     @AppStorage("usageOnlyWhileWorking") private var onlyWhileWorking = false
-    @AppStorage("hiddenUsageProviders") private var hiddenProviders = ""
+    // Observed so the footer refreshes when Settings → Usage changes
+    @AppStorage(UsagePreferences.hiddenProvidersKey) private var hiddenProviders = ""
+    @AppStorage(UsagePreferences.hiddenMetricsKey) private var hiddenMetrics = ""
+    @AppStorage(UsagePreferences.orderKey) private var providerOrder = ""
     @AppStorage("claudeUsageAllowed") private var claudeUsageAllowed = false
 
     private var visibleProviders: [ProviderUsage] {
-        let hidden = Set(hiddenProviders.split(separator: ",").map(String.init))
-        return monitor.providers.filter { !hidden.contains($0.agent.rawValue) }
+        _ = (hiddenProviders, hiddenMetrics, providerOrder)
+        return UsagePreferences.apply(to: monitor.providers)
     }
 
     private var offerClaude: Bool {
