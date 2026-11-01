@@ -40,6 +40,19 @@ nonisolated enum AppSettings {
         static let notificationSound = "notificationSound"
         static let claudeDirectoryName = "claudeDirectoryName"
         static let approveFromNotch = "approveFromNotch"
+        static let connectedAgents = "connectedAgents"
+    }
+
+    // MARK: - Agents
+
+    /// Agents the user connected. Claude Code is connected out of the box,
+    /// matching how hooks were installed automatically before multi-agent support.
+    static var connectedAgents: Set<AgentKind> {
+        get {
+            guard let raw = defaults.array(forKey: Keys.connectedAgents) as? [String] else { return [.claude] }
+            return Set(raw.compactMap(AgentKind.init(rawValue:)))
+        }
+        set { defaults.set(newValue.map(\.rawValue).sorted(), forKey: Keys.connectedAgents) }
     }
 
     // MARK: - Approvals
