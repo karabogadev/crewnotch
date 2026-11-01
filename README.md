@@ -31,6 +31,7 @@ You run Claude Code in one terminal, Codex in another, Cursor and Antigravity in
 - **Keep Awake.** Agents keep running when the display sleeps or the screen locks. It works on power adapter only, stops below a battery threshold and turns itself off after a time limit.
 - **Light or dark.** A light and a dark theme for the panel and windows, or follow the system. The closed notch always stays black.
 - **Make it yours.** Six working indicators, notch animations, materials and colors, sounds per event, text size and much more.
+- **Updates itself.** Checks for new versions daily and installs them in one click, or fully automatically if you prefer. Every update is signed and verified.
 - **Private by design.** No account and no analytics. Everything stays on your Mac.
 - **Speaks your language.** English, 简体中文, हिन्दी, Español, Français, العربية, Português (Brasil), Русский, 日本語 and Türkçe. Switch any time in Settings → General.
 - **Reply from any terminal.** Type a reply in the notch chat and CrewNotch delivers it to the agent's Ghostty, Terminal, iTerm2 or tmux session.
@@ -77,7 +78,7 @@ flowchart LR
 
 ## Install
 
-**Download:** get [CrewNotch.dmg](https://github.com/karabogadev/crewnotch/releases/latest/download/CrewNotch.dmg) (version 1.1.4, universal, signed and notarized by Apple), open it and drag CrewNotch to Applications. Every version is on the [Releases](https://github.com/karabogadev/crewnotch/releases) page.
+**Download:** get [CrewNotch.dmg](https://github.com/karabogadev/crewnotch/releases/latest/download/CrewNotch.dmg) (version 1.1.5, universal, signed and notarized by Apple), open it and drag CrewNotch to Applications. Every version is on the [Releases](https://github.com/karabogadev/crewnotch/releases) page.
 
 **Build from source** (macOS 15.6+, Xcode 26 or later):
 
@@ -101,7 +102,7 @@ You can change everything later from the ⚙︎ in the notch.
 
 | Pane | What's inside |
 |---|---|
-| **General** | Launch at login, which display shows the notch, Keep Awake and its limits |
+| **General** | Launch at login, updates, which display shows the notch, Keep Awake and its limits |
 | **Notifications** | Live notch preview, show requests, reply from the notch, finished banner, a sound per event |
 | **Appearance** | Theme (System, Dark or Light), text size, panel material and color, what the closed notch shows, session list options, working indicator, animations |
 | **Usage** | Line, Bars or Compact layout, used or left, provider order and per-metric visibility |
@@ -114,6 +115,7 @@ You can change everything later from the ⚙︎ in the notch.
 - **Codex usage** is read from Codex's local session files.
 - **Every other usage provider** is off until you turn it on in Settings → Usage, where each one says exactly what it reads.
 - **Claude usage** is opt-in. CrewNotch reads Claude Code's existing sign-in from the keychain (macOS asks once) and calls Anthropic's usage endpoint at most every five minutes. The token is never refreshed or written.
+- **Update checks** fetch a small appcast file from this project's website once a day. Nothing about you or your work is sent.
 - **Token history** is computed from local logs and cached in `~/.crewnotch/token-history.json`.
 
 ## Troubleshooting
