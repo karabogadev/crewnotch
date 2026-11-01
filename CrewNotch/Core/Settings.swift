@@ -41,6 +41,36 @@ nonisolated enum AppSettings {
         static let claudeDirectoryName = "claudeDirectoryName"
         static let approveFromNotch = "approveFromNotch"
         static let connectedAgents = "connectedAgents"
+        static let keepAwakeEnabled = "keepAwakeEnabled"
+        static let keepAwakeMaxHours = "keepAwakeMaxHours"
+        static let keepAwakeMinBattery = "keepAwakeMinBattery"
+        static let keepAwakeRequiresAdapter = "keepAwakeRequiresAdapter"
+    }
+
+    // MARK: - Keep Awake
+
+    /// Keep the Mac from sleeping (display may sleep) so agents keep running.
+    static var keepAwakeEnabled: Bool {
+        get { defaults.bool(forKey: Keys.keepAwakeEnabled) }
+        set { defaults.set(newValue, forKey: Keys.keepAwakeEnabled) }
+    }
+
+    /// Keep Awake switches itself off after this many hours.
+    static var keepAwakeMaxHours: Int {
+        get { defaults.object(forKey: Keys.keepAwakeMaxHours) as? Int ?? 3 }
+        set { defaults.set(newValue, forKey: Keys.keepAwakeMaxHours) }
+    }
+
+    /// On battery, let the Mac sleep below this charge level.
+    static var keepAwakeMinBattery: Int {
+        get { defaults.object(forKey: Keys.keepAwakeMinBattery) as? Int ?? 20 }
+        set { defaults.set(newValue, forKey: Keys.keepAwakeMinBattery) }
+    }
+
+    /// Only keep awake while connected to a power adapter.
+    static var keepAwakeRequiresAdapter: Bool {
+        get { defaults.object(forKey: Keys.keepAwakeRequiresAdapter) as? Bool ?? true }
+        set { defaults.set(newValue, forKey: Keys.keepAwakeRequiresAdapter) }
     }
 
     // MARK: - Agents
