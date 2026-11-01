@@ -23,6 +23,7 @@ struct TerminalAppRegistry: Sendable {
         "Tabby",
         "Rio",
         "Contour",
+        "omux",
         "foot",
         "st",
         "urxvt",
@@ -45,6 +46,8 @@ struct TerminalAppRegistry: Sendable {
         "co.zeit.hyper",
         "dev.warp.Warp-Stable",
         "com.github.wez.wezterm",
+        "net.pf1.omux",
+        "net.pf1.omux.beta",
         "com.microsoft.VSCode",
         "com.microsoft.VSCodeInsiders",
         "com.todesktop.230313mzl4w4u92",  // Cursor
