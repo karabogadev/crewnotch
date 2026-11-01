@@ -317,7 +317,8 @@ struct NotchView: View {
     private var headerRow: some View {
         HStack(spacing: 0) {
             // Left side - lead agent + optional busy count (visible when processing, pending, or waiting for input)
-            if showClosedActivity, let leadAgent = crewActivity != nil ? leadSession?.agent : headlineUsage?.agent {
+            if showClosedActivity, viewModel.status != .opened,
+               let leadAgent = crewActivity != nil ? leadSession?.agent : headlineUsage?.agent {
                 HStack(spacing: 3) {
                     AgentIcon(agent: leadAgent, size: 14)
                         .matchedGeometryEffect(id: "lead-agent", in: activityNamespace, isSource: showClosedActivity)
@@ -349,7 +350,7 @@ struct NotchView: View {
             }
 
             // Right side - unified status glyph for crew activity
-            if showClosedActivity {
+            if showClosedActivity, viewModel.status != .opened {
                 HStack(spacing: 4) {
                     if case .active = keepAwake.state, viewModel.status != .opened {
                         Image(systemName: "hourglass")
@@ -387,7 +388,7 @@ struct NotchView: View {
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(.white.opacity(0.55))
                 .lineLimit(1)
-                .padding(.leading, showClosedActivity ? 0 : 8)
+                .padding(.leading, 8)
 
             Spacer()
 
