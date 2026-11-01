@@ -86,6 +86,7 @@ private struct GeneralPane: View {
     @AppStorage("keepAwakeMaxHours") private var maxHours = 3
     @AppStorage("keepAwakeMinBattery") private var minBattery = 20
     @AppStorage("keepAwakeRequiresAdapter") private var requiresAdapter = true
+    @AppStorage(FeatureKeys.panelShortcuts) private var panelShortcuts = true
 
     private var keepAwakeStatus: String {
         switch keepAwake.state {
@@ -106,6 +107,24 @@ private struct GeneralPane: View {
                             launchAtLogin = SMAppService.mainApp.status == .enabled
                         }
                     }
+            }
+
+            Section {
+                LabeledContent("Open the notch") {
+                    HotkeyRecorder()
+                }
+                Toggle(isOn: $panelShortcuts) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Shortcuts in the panel")
+                        Text("⌘↩ Allow · ⌘⇧↩ Always allow · ⌘⌫ Deny · 1–9 Pick an answer · ⎋ Close")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            } header: {
+                Text("Keyboard")
+            } footer: {
+                Text("Works from any app. The shortcuts act on the oldest request, marked in the panel.")
+                    .foregroundStyle(.secondary)
             }
 
             Section("Updates") {
