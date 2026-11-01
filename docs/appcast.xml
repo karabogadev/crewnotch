@@ -3,6 +3,27 @@
     <channel>
         <title>CrewNotch</title>
         <item>
+            <title>1.3.1</title>
+            <pubDate>Sun, 01 Nov 2026 13:46:41 +0300</pubDate>
+            <link>https://karabogadev.github.io/crewnotch/</link>
+            <sparkle:fullReleaseNotesLink>https://github.com/karabogadev/crewnotch/releases</sparkle:fullReleaseNotesLink>
+            <sparkle:version>12</sparkle:version>
+            <sparkle:shortVersionString>1.3.1</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.6</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[## What's new
+
+- **Keyboard shortcuts in the notch.** A new Shortcuts section at the bottom of the panel lists every key: open or close the notch, Allow, Always allow, Deny, pick an answer and close. It stays folded until you open it, and remembers your choice.
+- **A clearer Keep Awake icon.** The hourglass is now a coffee cup, which steams while Keep Awake is on.
+
+## What's fixed
+
+- **Claude usage works again for some setups.** If Claude Code was ever run with `sudo`, the keychain kept a second, outdated sign-in that CrewNotch could pick up, showing "Open Claude Code to renew sign-in" even though you were signed in. CrewNotch now reads the sign-in that belongs to your user. macOS may ask once to allow this: choose **Always Allow**.
+- The header showed "^[2 agent](inflect: true)" instead of "2 agents". Fixed.
+
+]]></description>
+            <enclosure url="https://github.com/karabogadev/crewnotch/releases/download/v1.3.1/CrewNotch-1.3.1.dmg" length="6003432" type="application/octet-stream" sparkle:edSignature="ZhMockl1tRprdbesiSwfANj102GEFFaYpPw3O7ImTfzSoFytce8BcazEdG3tptabZptX4CU8gViU/wAUcOpJDA=="/>
+        </item>
+        <item>
             <title>1.3.0</title>
             <pubDate>Sun, 01 Nov 2026 13:29:48 +0300</pubDate>
             <link>https://karabogadev.github.io/crewnotch/</link>
@@ -40,22 +61,6 @@ The opened notch has a new, quieter look that puts the important things first.
 
 ]]></description>
             <enclosure url="https://github.com/karabogadev/crewnotch/releases/download/v1.2.2/CrewNotch-1.2.2.dmg" length="5944322" type="application/octet-stream" sparkle:edSignature="ylGTZXM4eO3NkCGmw5vlQoGJ6T5TIcXIqf26H9/fFvigTO0+GwHy8l9FkTyKHa2jibMiU6GSeQ/7iUvQwZtFCg=="/>
-        </item>
-        <item>
-            <title>1.2.1</title>
-            <pubDate>Sun, 01 Nov 2026 11:17:30 +0300</pubDate>
-            <link>https://karabogadev.github.io/crewnotch/</link>
-            <sparkle:fullReleaseNotesLink>https://github.com/karabogadev/crewnotch/releases</sparkle:fullReleaseNotesLink>
-            <sparkle:version>9</sparkle:version>
-            <sparkle:shortVersionString>1.2.1</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>15.6</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[## What's fixed
-
-- **One sound when an agent finishes.** A finished turn also played the approval sound and the "needs you" animation, so you heard two sounds at once. Now you hear only the finished sound, and the approval sound is saved for real approvals and questions.
-- A second approval in the same session now gets its own sound.
-
-]]></description>
-            <enclosure url="https://github.com/karabogadev/crewnotch/releases/download/v1.2.1/CrewNotch-1.2.1.dmg" length="5949615" type="application/octet-stream" sparkle:edSignature="KaoxlfqUD7QaoCqp0RzxqMu29U8zwuMPxplFRxT8SLJvJ5uHFpVh2wHInbzje1pEzrXLEevbO8hg3QnX+9m6Bw=="/>
         </item>
     </channel>
 </rss>
