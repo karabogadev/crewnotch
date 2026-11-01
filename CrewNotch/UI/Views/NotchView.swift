@@ -19,7 +19,6 @@ struct NotchView: View {
     @ObservedObject var viewModel: NotchViewModel
     @StateObject private var sessionMonitor = SessionMonitor()
     @StateObject private var activityCoordinator = NotchActivityCoordinator.shared
-    @ObservedObject private var updateManager = UpdateManager.shared
     @ObservedObject private var keepAwake = KeepAwakeController.shared
     @State private var previousPendingIds: Set<String> = []
     @State private var previousWaitingForInputIds: Set<String> = []
@@ -340,31 +339,18 @@ struct NotchView: View {
 
             KeepAwakeButton(controller: keepAwake)
 
-            // Menu toggle
+            // Settings
             Button {
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                    viewModel.toggleMenu()
-                    if viewModel.contentType == .menu {
-                        updateManager.markUpdateSeen()
-                    }
-                }
+                viewModel.notchClose()
+                AppWindows.showSettings()
             } label: {
-                ZStack(alignment: .topTrailing) {
-                    Image(systemName: viewModel.contentType == .menu ? "xmark" : "line.3.horizontal")
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.white.opacity(0.4))
-                        .frame(width: 22, height: 22)
-                        .contentShape(Rectangle())
-
-                    // Green dot for unseen update
-                    if updateManager.hasUnseenUpdate && viewModel.contentType != .menu {
-                        Circle()
-                            .fill(TerminalColors.green)
-                            .frame(width: 6, height: 6)
-                            .offset(x: -2, y: 2)
-                    }
-                }
+                Image(systemName: "gearshape")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.white.opacity(0.4))
+                    .frame(width: 22, height: 22)
+                    .contentShape(Rectangle())
             }
+            .help("Settings")
             .buttonStyle(.plain)
         }
     }
@@ -380,8 +366,6 @@ struct NotchView: View {
                     sessionMonitor: sessionMonitor,
                     viewModel: viewModel
                 )
-            case .menu:
-                NotchMenuView(viewModel: viewModel)
             case .chat(let session):
                 ChatView(
                     sessionId: session.sessionId,
@@ -450,10 +434,15 @@ struct NotchView: View {
         let currentIds = Set(sessions.map { $0.stableId })
         let newPendingIds = currentIds.subtracting(previousPendingIds)
 
-        if !newPendingIds.isEmpty &&
-           viewModel.status == .closed &&
-           !TerminalVisibilityDetector.isTerminalVisibleOnCurrentSpace() {
-            viewModel.notchOpen(reason: .notification)
+        if !newPendingIds.isEmpty {
+            if let soundName = AppSettings.attentionSound.soundName {
+                NSSound(named: soundName)?.play()
+            }
+            if AppSettings.openNotchOnRequest &&
+               viewModel.status == .closed &&
+               !TerminalVisibilityDetector.isTerminalVisibleOnCurrentSpace() {
+                viewModel.notchOpen(reason: .notification)
+            }
         }
 
         previousPendingIds = currentIds
