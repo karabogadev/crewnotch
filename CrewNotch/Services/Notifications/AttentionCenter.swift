@@ -24,6 +24,17 @@ nonisolated struct AttentionAlert: Sendable {
     /// Project, request or message: shown on the Mac, sent to the phone only when allowed.
     let detail: String?
     var sessionId: String? = nil
+    /// The approval or question this is about, so its notification can be withdrawn once answered.
+    var requestId: String? = nil
+
+    init(kind: Kind, title: String, detail: String?, sessionId: String? = nil, requestId: String? = nil) {
+        self.kind = kind
+        self.title = title
+        // Pushes have a size limit, and a notification is no place for a whole reply
+        self.detail = detail.map { $0.count > 200 ? String($0.prefix(199)) + "…" : $0 }
+        self.sessionId = sessionId
+        self.requestId = requestId
+    }
 }
 
 @MainActor
@@ -55,6 +66,10 @@ final class AttentionCenter {
 
         for session in sessions {
             let old = previousPhases[session.sessionId]
+            // Answered (anywhere): its notification is no longer news
+            if let answered = old?.activePermissionId, answered != session.activePermission?.toolUseId {
+                SystemNotifier.shared.withdraw(requestId: answered)
+            }
             if let permission = session.activePermission, old?.activePermissionId != permission.toolUseId {
                 let isQuestion = permission.toolName == "AskUserQuestion"
                 post(AttentionAlert(
@@ -64,7 +79,8 @@ final class AttentionCenter {
                         : String(localized: "\(session.agent.displayName) needs your approval"),
                     detail: [session.projectName, isQuestion ? nil : session.pendingToolInput]
                         .compactMap { $0 }.joined(separator: " · "),
-                    sessionId: session.sessionId
+                    sessionId: session.sessionId,
+                    requestId: permission.toolUseId
                 ), session: session)
             } else if session.phase == .waitingForInput, old?.isActive == true {
                 let title = session.agent == .command

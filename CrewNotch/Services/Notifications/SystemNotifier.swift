@@ -46,9 +46,19 @@ final class SystemNotifier: NSObject {
                 content.userInfo = ["sessionId": sessionId]
             }
             content.interruptionLevel = alert.kind.isNeedsYou ? .timeSensitive : .active
-            let request = UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)
+            let identifier = alert.requestId.map { "request-\($0)" } ?? UUID().uuidString
+            let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
             try? await center.add(request)
         }
+    }
+}
+
+extension SystemNotifier {
+    /// Removes the notification about a request that has been answered.
+    func withdraw(requestId: String) {
+        let identifier = "request-\(requestId)"
+        center.removeDeliveredNotifications(withIdentifiers: [identifier])
+        center.removePendingNotificationRequests(withIdentifiers: [identifier])
     }
 }
 
