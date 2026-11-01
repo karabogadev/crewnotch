@@ -66,4 +66,28 @@ cp "$DMG_PATH" "$BUILD_DIR/CrewNotch.dmg"
 gh release create "v$VERSION" "$DMG_PATH" "$BUILD_DIR/CrewNotch.dmg" --repo "$GITHUB_REPO" \
     --title "CrewNotch v$VERSION" "${NOTES_ARGS[@]}"
 
+# Sparkle: sign the DMG and point the website's appcast at the new release.
+# The EdDSA private key never leaves this Mac (SPARKLE_KEY, outside the repo).
+SPARKLE_BIN=$(find "$HOME/Library/Developer/Xcode/DerivedData" -path "*/SourcePackages/artifacts/sparkle/Sparkle/bin" -type d 2>/dev/null | head -1)
+SPARKLE_KEY="${SPARKLE_KEY:-$HOME/.config/crewnotch/sparkle_ed25519}"
+if [ -n "$SPARKLE_BIN" ] && [ -f "$SPARKLE_KEY" ]; then
+    echo "--- Updating appcast"
+    APPCAST_DIR="$BUILD_DIR/appcast"
+    rm -rf "$APPCAST_DIR" && mkdir -p "$APPCAST_DIR"
+    cp "$DMG_PATH" "$APPCAST_DIR/"
+    if [ -f "$PROJECT_DIR/releases/notes-$VERSION.md" ]; then
+        # The update window shows what's new; install steps stay on GitHub
+        awk '/^## Install/{exit} {print}' "$PROJECT_DIR/releases/notes-$VERSION.md" > "$APPCAST_DIR/CrewNotch-$VERSION.md"
+    fi
+    "$SPARKLE_BIN/generate_appcast" --ed-key-file "$SPARKLE_KEY" \
+        --download-url-prefix "https://github.com/$GITHUB_REPO/releases/download/v$VERSION/" \
+        --full-release-notes-url "https://github.com/$GITHUB_REPO/releases" \
+        --link "https://karabogadev.github.io/crewnotch/" \
+        --embed-release-notes \
+        -o "$PROJECT_DIR/docs/appcast.xml" "$APPCAST_DIR"
+    (cd "$PROJECT_DIR" && git add docs/appcast.xml && git commit -q -m "Publish the $VERSION update to the appcast" && git push -q origin main)
+else
+    echo "Warning: Sparkle tools or signing key not found; the appcast was not updated."
+fi
+
 echo "Done: https://github.com/$GITHUB_REPO/releases/tag/v$VERSION"
