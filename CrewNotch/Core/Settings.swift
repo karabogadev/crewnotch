@@ -113,10 +113,17 @@ nonisolated enum AppSettings {
     }
 
     /// Plays a sound if sounds are on and the user picked one.
+    /// Plays a sound if sounds are on, skipping repeats of the same sound
+    /// within a moment (several sessions finishing together sound once).
     @MainActor static func play(_ sound: NotificationSound) {
         guard playSounds, let name = sound.soundName else { return }
+        let now = Date()
+        if let last = lastPlayed[name], now.timeIntervalSince(last) < 1.5 { return }
+        lastPlayed[name] = now
         NSSound(named: name)?.play()
     }
+
+    @MainActor private static var lastPlayed: [String: Date] = [:]
 
     // MARK: - Notifications
 

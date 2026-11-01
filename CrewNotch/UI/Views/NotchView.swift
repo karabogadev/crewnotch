@@ -30,6 +30,8 @@ struct NotchView: View {
     @AppStorage("usagePercentMode") private var usagePercentMode: UsagePercentMode = .used
     @State private var previousPendingIds: Set<String> = []
     @State private var previousWaitingForInputIds: Set<String> = []
+    // Keyed by sessionId, not stableId: the pid in stableId can change between
+    // events of one session, which made a finished turn sound twice.
     @State private var waitingForInputTimestamps: [String: Date] = [:]  // sessionId -> when it entered waitingForInput
     @State private var isVisible: Bool = false
     @State private var isHovering: Bool = false
@@ -54,7 +56,7 @@ struct NotchView: View {
         return sessionMonitor.instances.contains { session in
             guard session.phase == .waitingForInput else { return false }
             // Only show if within the 30-second display window
-            if let enteredAt = waitingForInputTimestamps[session.stableId] {
+            if let enteredAt = waitingForInputTimestamps[session.sessionId] {
                 return now.timeIntervalSince(enteredAt) < displayDuration
             }
             return false
@@ -504,12 +506,12 @@ struct NotchView: View {
     }
 
     private func handlePendingSessionsChange(_ sessions: [SessionState]) {
-        let currentIds = Set(sessions.map { $0.stableId })
+        let currentIds = Set(sessions.map { $0.sessionId })
         let newPendingIds = currentIds.subtracting(previousPendingIds)
 
         if !newPendingIds.isEmpty {
             effects.play(.needsYou)
-            let isQuestion = sessions.contains { newPendingIds.contains($0.stableId) && $0.pendingToolName == "AskUserQuestion" }
+            let isQuestion = sessions.contains { newPendingIds.contains($0.sessionId) && $0.pendingToolName == "AskUserQuestion" }
             AppSettings.play(isQuestion ? AppSettings.questionSound : AppSettings.attentionSound)
             if AppSettings.openNotchOnRequest &&
                viewModel.status == .closed &&
@@ -524,13 +526,13 @@ struct NotchView: View {
     private func handleWaitingForInputChange(_ instances: [SessionState]) {
         // Get sessions that are now waiting for input
         let waitingForInputSessions = instances.filter { $0.phase == .waitingForInput }
-        let currentIds = Set(waitingForInputSessions.map { $0.stableId })
+        let currentIds = Set(waitingForInputSessions.map { $0.sessionId })
         let newWaitingIds = currentIds.subtracting(previousWaitingForInputIds)
 
         // Track timestamps for newly waiting sessions
         let now = Date()
-        for session in waitingForInputSessions where newWaitingIds.contains(session.stableId) {
-            waitingForInputTimestamps[session.stableId] = now
+        for session in waitingForInputSessions where newWaitingIds.contains(session.sessionId) {
+            waitingForInputTimestamps[session.sessionId] = now
         }
 
         // Clean up timestamps for sessions no longer waiting
@@ -542,7 +544,7 @@ struct NotchView: View {
         // Bounce the notch when a session newly enters waitingForInput state
         if !newWaitingIds.isEmpty {
             // Get the sessions that just entered waitingForInput
-            let newlyWaitingSessions = waitingForInputSessions.filter { newWaitingIds.contains($0.stableId) }
+            let newlyWaitingSessions = waitingForInputSessions.filter { newWaitingIds.contains($0.sessionId) }
 
             // Sound and banner only for sessions the user isn't already looking at
             Task {
