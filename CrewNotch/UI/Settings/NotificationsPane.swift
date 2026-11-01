@@ -206,6 +206,7 @@ struct NotchPreview: View {
         .padding(.bottom, state == .working ? 0 : 8)
         .frame(width: width)
         .background(Color.black)
+        .environment(\.colorScheme, .dark)
         .clipShape(UnevenRoundedRectangle(
             topLeadingRadius: device == .macBook ? 0 : 11,
             bottomLeadingRadius: state == .working ? 10 : 18,

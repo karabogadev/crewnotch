@@ -23,7 +23,7 @@ enum AppWindows {
     }
 
     static func showTokenHistory() {
-        present(&tokenHistory, title: "Token history", size: NSSize(width: 720, height: 640)) {
+        present(&tokenHistory, title: "Token history", size: NSSize(width: 720, height: 640), alwaysDark: true) {
             TokenHistoryView()
         }
     }
@@ -44,6 +44,7 @@ enum AppWindows {
         title: String,
         size: NSSize,
         resizable: Bool = true,
+        alwaysDark: Bool = false,
         @ViewBuilder content: () -> Content
     ) {
         if slot == nil {
@@ -58,7 +59,10 @@ enum AppWindows {
             window.title = title
             window.titlebarAppearsTransparent = true
             window.isReleasedWhenClosed = false
-            window.contentViewController = NSHostingController(rootView: content().preferredColorScheme(.dark))
+            let root = alwaysDark
+                ? AnyView(content().preferredColorScheme(.dark))
+                : AnyView(ThemedWindowContent(content: content()))
+            window.contentViewController = NSHostingController(rootView: root)
             window.setContentSize(size)
             window.center()
             slot = window

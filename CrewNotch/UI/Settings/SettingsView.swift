@@ -184,6 +184,7 @@ private struct AppearancePane: View {
     @AppStorage(AppearanceKeys.titleOrder) private var titleOrder: TitleOrder = .conversation
     @AppStorage(AppearanceKeys.material) private var material: PanelMaterial = .solid
     @AppStorage(AppearanceKeys.tint) private var tint: PanelTint = .black
+    @AppStorage(AppearanceKeys.theme) private var theme: PanelTheme = .system
     @AppStorage(AppearanceKeys.closedShowsWorking) private var closedShowsWorking = true
     @AppStorage(AppearanceKeys.closedShowsNotifications) private var closedShowsNotifications = true
     @AppStorage(AppearanceKeys.closedShowsUsage) private var closedShowsUsage = false
@@ -197,6 +198,10 @@ private struct AppearancePane: View {
     var body: some View {
         Form {
             Section {
+                Picker("Theme", selection: $theme) {
+                    ForEach(PanelTheme.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
                 Picker("Text size", selection: $textScale) {
                     ForEach(TextScale.allCases) { Text($0.title).tag($0) }
                 }
@@ -224,7 +229,7 @@ private struct AppearancePane: View {
                                             .opacity(tint == option ? 1 : 0)
                                     )
                                     .padding(2)
-                                    .overlay(Circle().stroke(tint == option ? Color.white : .clear, lineWidth: 1.5))
+                                    .overlay(Circle().stroke(tint == option ? Color.primary : .clear, lineWidth: 1.5))
                             }
                             .buttonStyle(.plain)
                             .help(option.title)
@@ -234,7 +239,7 @@ private struct AppearancePane: View {
             } header: {
                 Text("Panel")
             } footer: {
-                Text("The closed notch always stays black so it blends with the camera housing.")
+                Text("The theme applies to the opened panel and these windows. The closed notch always stays black so it blends with the camera housing.")
                     .foregroundStyle(.secondary)
             }
 
@@ -380,6 +385,7 @@ private struct WorkingIndicatorSection: View {
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 44)
                                 .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.black))
+                                .environment(\.colorScheme, .dark)
                             Text(option.title)
                                 .font(.caption)
                                 .foregroundStyle(style == option ? .primary : .secondary)
