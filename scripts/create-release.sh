@@ -1,5 +1,6 @@
 #!/bin/bash
-# Notarize the exported app, package it as a DMG and publish a GitHub release.
+# Package the exported app as a DMG (notarized when Developer ID signed)
+# and publish a GitHub release. SKIP_PUBLISH=1 stops after the DMG.
 # Run ./scripts/build.sh first.
 set -e
 
@@ -22,10 +23,18 @@ DMG_PATH="$RELEASE_DIR/CrewNotch-$VERSION.dmg"
 mkdir -p "$RELEASE_DIR"
 echo "=== CrewNotch v$VERSION ==="
 
-if ! xcrun notarytool history --keychain-profile "$KEYCHAIN_PROFILE" &>/dev/null; then
-    echo "No notarization credentials. Store them once with:"
-    echo "  xcrun notarytool store-credentials \"$KEYCHAIN_PROFILE\" --apple-id <you@example.com> --team-id $TEAM_ID --password <app-specific-password>"
-    exit 1
+# Notarize only when the app is Developer ID signed and credentials exist
+NOTARIZE=no
+if codesign -dv "$APP_PATH" 2>&1 | grep -q "Authority=Developer ID Application"; then
+    if xcrun notarytool history --keychain-profile "$KEYCHAIN_PROFILE" &>/dev/null; then
+        NOTARIZE=yes
+    else
+        echo "No notarization credentials. Store them once with:"
+        echo "  xcrun notarytool store-credentials \"$KEYCHAIN_PROFILE\" --apple-id <you@example.com> --team-id $TEAM_ID --password <app-specific-password>"
+        exit 1
+    fi
+else
+    echo "Ad-hoc signed build: skipping notarization."
 fi
 
 notarize() {
@@ -33,27 +42,40 @@ notarize() {
     xcrun stapler staple "$2"
 }
 
-echo "--- Notarizing app"
-ZIP_PATH="$BUILD_DIR/CrewNotch-$VERSION.zip"
-ditto -c -k --keepParent "$APP_PATH" "$ZIP_PATH"
-notarize "$ZIP_PATH" "$APP_PATH"
-rm "$ZIP_PATH"
+if [ "$NOTARIZE" = yes ]; then
+    echo "--- Notarizing app"
+    ZIP_PATH="$BUILD_DIR/CrewNotch-$VERSION.zip"
+    ditto -c -k --keepParent "$APP_PATH" "$ZIP_PATH"
+    notarize "$ZIP_PATH" "$APP_PATH"
+    rm "$ZIP_PATH"
+fi
 
 echo "--- Creating DMG"
 rm -f "$DMG_PATH"
-if command -v create-dmg &>/dev/null; then
-    create-dmg --volname "CrewNotch" --window-size 600 400 --icon-size 100 \
-        --icon "CrewNotch.app" 150 200 --app-drop-link 450 200 \
-        --hide-extension "CrewNotch.app" "$DMG_PATH" "$APP_PATH"
-else
-    hdiutil create -volname "CrewNotch" -srcfolder "$APP_PATH" -ov -format UDZO "$DMG_PATH"
+STAGING="$BUILD_DIR/dmg"
+rm -rf "$STAGING" && mkdir -p "$STAGING"
+ditto "$APP_PATH" "$STAGING/CrewNotch.app"
+ln -s /Applications "$STAGING/Applications"
+hdiutil create -volname "CrewNotch" -srcfolder "$STAGING" -ov -format UDZO "$DMG_PATH"
+rm -rf "$STAGING"
+
+if [ "$NOTARIZE" = yes ]; then
+    echo "--- Notarizing DMG"
+    notarize "$DMG_PATH" "$DMG_PATH"
 fi
 
-echo "--- Notarizing DMG"
-notarize "$DMG_PATH" "$DMG_PATH"
+if [ "${SKIP_PUBLISH:-0}" = 1 ]; then
+    echo "DMG ready: $DMG_PATH (not published)"
+    exit 0
+fi
+
+NOTES_ARGS=(--generate-notes)
+if [ -f "$PROJECT_DIR/releases/notes-$VERSION.md" ]; then
+    NOTES_ARGS=(--notes-file "$PROJECT_DIR/releases/notes-$VERSION.md")
+fi
 
 echo "--- Publishing GitHub release"
 gh release create "v$VERSION" "$DMG_PATH" --repo "$GITHUB_REPO" \
-    --title "CrewNotch v$VERSION" --generate-notes
+    --title "CrewNotch v$VERSION" "${NOTES_ARGS[@]}"
 
 echo "Done: https://github.com/$GITHUB_REPO/releases/tag/v$VERSION"
