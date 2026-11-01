@@ -9241,6 +9241,64 @@
         }
       }
     },
+    "Drag to resize. Double-click to reset.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拖动以调整大小，双击恢复默认。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ドラッグでサイズ変更、ダブルクリックで元に戻します。"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "आकार बदलने के लिए खींचें। रीसेट करने के लिए डबल-क्लिक करें।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrastra para cambiar el tamaño. Doble clic para restablecerlo."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faites glisser pour redimensionner. Double-cliquez pour réinitialiser."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arraste para redimensionar. Clique duas vezes para redefinir."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Boyutlandırmak için sürükle. Sıfırlamak için çift tıkla."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перетащите, чтобы изменить размер. Двойной щелчок — сброс."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسحب لتغيير الحجم. انقر مرتين لإعادة التعيين."
+          }
+        }
+      }
+    },
     "EST. API VALUE": {
       "localizations": {
         "ar": {
