@@ -194,6 +194,11 @@ struct NotchView: View {
 
     // MARK: - Body
 
+    @AppStorage(AppearanceKeys.theme) private var theme: PanelTheme = .system
+    @Environment(\.colorScheme) private var systemScheme
+
+    private var panelScheme: ColorScheme { theme.colorScheme ?? systemScheme }
+
     var body: some View {
         ZStack(alignment: .top) {
             // Outer container does NOT receive hits - only the notch content does
@@ -214,14 +219,14 @@ struct NotchView: View {
                     .clipShape(currentNotchShape)
                     .overlay(alignment: .top) {
                         Rectangle()
-                            .fill(.black)
+                            .fill(viewModel.status == .opened ? Color.canvas : .black)
                             .frame(height: 1)
                             .padding(.horizontal, topCornerRadius)
                     }
                     .overlay { NotchEffectsOverlay(effects: effects) }
                     .scaleEffect(bounceScale, anchor: .top)
                     .shadow(
-                        color: (viewModel.status == .opened || isHovering) ? .black.opacity(0.7) : .clear,
+                        color: (viewModel.status == .opened || isHovering) ? .black.opacity(panelScheme == .light && viewModel.status == .opened ? 0.25 : 0.7) : .clear,
                         radius: 6
                     )
                     .frame(
@@ -249,7 +254,8 @@ struct NotchView: View {
         }
         .opacity(isVisible ? 1 : 0)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .preferredColorScheme(.dark)
+        // The closed notch sits on the camera housing, so only the opened panel takes the theme
+        .environment(\.colorScheme, viewModel.status == .opened ? panelScheme : .dark)
         // The notch is anchored to the hardware cutout, so it never mirrors
         .environment(\.layoutDirection, .leftToRight)
         .onAppear {
@@ -328,7 +334,7 @@ struct NotchView: View {
                     if busyCount > 1 && crewActivity != nil && viewModel.status != .opened {
                         Text("+\(busyCount - 1)")
                             .font(.system(size: 9, weight: .semibold, design: .rounded))
-                            .foregroundColor(.white.opacity(0.6))
+                            .foregroundColor(.ink.opacity(0.6))
                     }
                 }
                 .frame(width: viewModel.status == .opened ? nil : sideWidth + countBadgeWidth)
@@ -357,12 +363,12 @@ struct NotchView: View {
                     if case .active = keepAwake.state, viewModel.status != .opened {
                         Image(systemName: "hourglass")
                             .font(.system(size: 9, weight: .semibold))
-                            .foregroundColor(.white.opacity(0.5))
+                            .foregroundColor(.ink.opacity(0.5))
                     }
                     if showsClosedUsage && viewModel.status != .opened {
                         Text(headlineUsageText)
                             .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                            .foregroundColor(.white.opacity(0.7))
+                            .foregroundColor(.ink.opacity(0.7))
                     }
                     if let activity = crewActivity {
                         NotchStatusGlyph(status: activity)
@@ -388,7 +394,7 @@ struct NotchView: View {
         HStack(spacing: 12) {
             Text(crewSummary)
                 .font(.system(size: 12, weight: .medium))
-                .foregroundColor(.white.opacity(0.55))
+                .foregroundColor(.ink.opacity(0.55))
                 .lineLimit(1)
                 .padding(.leading, 8)
 
@@ -400,7 +406,7 @@ struct NotchView: View {
             } label: {
                 Image(systemName: "chart.bar.xaxis")
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.white.opacity(0.4))
+                    .foregroundColor(.ink.opacity(0.4))
                     .frame(width: 22, height: 22)
                     .contentShape(Rectangle())
             }
@@ -416,7 +422,7 @@ struct NotchView: View {
             } label: {
                 Image(systemName: "gearshape")
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.white.opacity(0.4))
+                    .foregroundColor(.ink.opacity(0.4))
                     .frame(width: 22, height: 22)
                     .contentShape(Rectangle())
             }
