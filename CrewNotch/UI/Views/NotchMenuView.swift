@@ -70,12 +70,14 @@ struct NotchMenuView: View {
                     label: "Hooks",
                     isOn: hooksInstalled
                 ) {
-                    if hooksInstalled {
-                        HookInstaller.uninstall()
-                        hooksInstalled = false
-                    } else {
-                        HookInstaller.installIfNeeded()
-                        hooksInstalled = true
+                    let connect = !hooksInstalled
+                    hooksInstalled = connect
+                    Task {
+                        if connect {
+                            await AgentRegistry.shared.connect(.claude)
+                        } else {
+                            await AgentRegistry.shared.disconnect(.claude)
+                        }
                     }
                 }
 
@@ -124,7 +126,7 @@ struct NotchMenuView: View {
     }
 
     private func refreshStates() {
-        hooksInstalled = HookInstaller.isInstalled()
+        hooksInstalled = ClaudeCodeIntegration().isConnected()
         launchAtLogin = SMAppService.mainApp.status == .enabled
         screenSelector.refreshScreens()
     }
