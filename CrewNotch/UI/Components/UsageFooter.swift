@@ -10,6 +10,7 @@
 import SwiftUI
 
 struct UsageFooter: View {
+    @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
     @ObservedObject var monitor: UsageMonitor
     /// Whether any agent is working or waiting on you right now
     var isAnyAgentBusy: Bool
@@ -63,7 +64,7 @@ struct UsageFooter: View {
                             .foregroundColor(.white.opacity(0.8))
                             .help("Reads Claude Code's sign-in from the keychain. macOS asks once: choose Always Allow.")
                     }
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(size: 11 * textScale.factor, weight: .medium))
                     .padding(.horizontal, 10)
                 }
             }
@@ -106,6 +107,7 @@ private func usageTooltip(_ usage: ProviderUsage, mode: UsagePercentMode) -> Str
 // MARK: - Line
 
 private struct UsageLineRow: View {
+    @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
     let usage: ProviderUsage
     @AppStorage("usagePercentMode") private var mode: UsagePercentMode = .used
     @AppStorage("usageLimit") private var choice: UsageLimitChoice = .mostUsed
@@ -127,7 +129,7 @@ private struct UsageLineRow: View {
                 UsageBar(fraction: numbers.barFraction(limit), usedPercent: limit.usedPercent)
                     .frame(width: 56, height: 4)
                 Text(numbers.label(limit))
-                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .font(.system(size: 11 * textScale.factor, weight: .semibold, design: .monospaced))
                     .foregroundColor(.white.opacity(0.75))
                     .frame(minWidth: 32, alignment: .trailing)
                 if let reset = limit.resetsAt {
@@ -139,7 +141,7 @@ private struct UsageLineRow: View {
                 Text(error).foregroundColor(.white.opacity(0.35)).lineLimit(1)
             }
         }
-        .font(.system(size: 11, weight: .medium))
+        .font(.system(size: 11 * textScale.factor, weight: .medium))
         .padding(.horizontal, 10)
         .contentShape(Rectangle())
         .help(usageTooltip(usage, mode: mode))
@@ -149,6 +151,7 @@ private struct UsageLineRow: View {
 // MARK: - Bars
 
 private struct UsageBarsBlock: View {
+    @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
     let usage: ProviderUsage
     @AppStorage("usagePercentMode") private var mode: UsagePercentMode = .used
 
@@ -174,17 +177,17 @@ private struct UsageBarsBlock: View {
                     UsageBar(fraction: numbers.barFraction(limit), usedPercent: limit.usedPercent)
                         .frame(height: 4)
                     Text(numbers.label(limit))
-                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        .font(.system(size: 10 * textScale.factor, weight: .semibold, design: .monospaced))
                         .foregroundColor(.white.opacity(0.7))
                         .frame(minWidth: 56, alignment: .trailing)
                     Text(limit.resetsAt.map { UsageFormat.timeUntil($0) } ?? "")
                         .foregroundColor(.white.opacity(0.3))
                         .frame(width: 44, alignment: .trailing)
                 }
-                .font(.system(size: 10, weight: .medium))
+                .font(.system(size: 10 * textScale.factor, weight: .medium))
             }
         }
-        .font(.system(size: 11, weight: .medium))
+        .font(.system(size: 11 * textScale.factor, weight: .medium))
         .padding(.horizontal, 10)
         .padding(.vertical, 2)
         .help(usageTooltip(usage, mode: mode))
@@ -194,6 +197,7 @@ private struct UsageBarsBlock: View {
 // MARK: - Compact
 
 private struct UsageCompactRow: View {
+    @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
     let providers: [ProviderUsage]
     @AppStorage("usagePercentMode") private var mode: UsagePercentMode = .used
     @AppStorage("usageLimit") private var choice: UsageLimitChoice = .mostUsed
@@ -208,7 +212,7 @@ private struct UsageCompactRow: View {
                         UsageRing(fraction: numbers.barFraction(limit), usedPercent: limit.usedPercent)
                             .frame(width: 11, height: 11)
                         Text(numbers.label(limit))
-                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .font(.system(size: 11 * textScale.factor, weight: .semibold, design: .monospaced))
                             .foregroundColor(.white.opacity(0.75))
                     } else {
                         Text("–").foregroundColor(.white.opacity(0.35))
@@ -218,7 +222,7 @@ private struct UsageCompactRow: View {
             }
             Spacer(minLength: 0)
         }
-        .font(.system(size: 11, weight: .medium))
+        .font(.system(size: 11 * textScale.factor, weight: .medium))
         .padding(.horizontal, 10)
     }
 }
