@@ -13,11 +13,61 @@ struct AgentIcon: View {
     let agent: AgentKind
     var size: CGFloat = 14
 
+    /// Vector marks for agents without a desktop app to borrow an icon from.
+    private var drawnMark: AnyView? {
+        switch agent {
+        case .claude:
+            return AnyView(ClaudeSpark().fill(agent.badgeColor))
+        case .gemini:
+            return AnyView(
+                FourPointStar().fill(LinearGradient(
+                    colors: [Color(red: 0.27, green: 0.52, blue: 0.98), Color(red: 0.62, green: 0.45, blue: 0.95)],
+                    startPoint: .bottomLeading, endPoint: .topTrailing
+                ))
+            )
+        case .codex:
+            return AnyView(
+                ZStack {
+                    RoundedRectangle(cornerRadius: size * 0.26, style: .continuous).fill(Color.white)
+                    ForEach(0..<3) { index in
+                        Capsule()
+                            .stroke(Color.black, lineWidth: size * 0.075)
+                            .frame(width: size * 0.62, height: size * 0.3)
+                            .rotationEffect(.degrees(Double(index) * 60))
+                    }
+                }
+            )
+        case .opencode:
+            return AnyView(
+                ZStack {
+                    RoundedRectangle(cornerRadius: size * 0.22, style: .continuous).fill(Color(white: 0.12))
+                    Rectangle().stroke(Color.white, lineWidth: size * 0.1)
+                        .frame(width: size * 0.42, height: size * 0.56)
+                    Rectangle().fill(Color.white.opacity(0.55))
+                        .frame(width: size * 0.22, height: size * 0.22)
+                        .offset(y: size * 0.08)
+                }
+            )
+        case .grok:
+            return AnyView(
+                ZStack {
+                    RoundedRectangle(cornerRadius: size * 0.26, style: .continuous).fill(Color.black)
+                    Capsule().fill(Color.white)
+                        .frame(width: size * 0.12, height: size * 0.72)
+                        .rotationEffect(.degrees(35))
+                    Circle().stroke(Color.white, lineWidth: size * 0.09)
+                        .frame(width: size * 0.42, height: size * 0.42)
+                        .offset(x: -size * 0.06, y: size * 0.04)
+                }
+            )
+        default:
+            return nil
+        }
+    }
+
     var body: some View {
-        if agent == .claude {
-            ClaudeSpark()
-                .fill(agent.badgeColor)
-                .frame(width: size, height: size)
+        if let mark = drawnMark {
+            mark.frame(width: size, height: size)
         } else if let image = AgentIconCache.appIcon(for: agent) {
             Image(nsImage: image)
                 .resizable()
@@ -116,6 +166,23 @@ struct ClaudeSpark: Shape {
             path.closeSubpath()
         }
         path.addEllipse(in: CGRect(x: center.x - radius * 0.2, y: center.y - radius * 0.2, width: radius * 0.4, height: radius * 0.4))
+        return path
+    }
+}
+
+/// Four-pointed star with concave sides (Gemini-style sparkle).
+struct FourPointStar: Shape {
+    func path(in rect: CGRect) -> Path {
+        let c = CGPoint(x: rect.midX, y: rect.midY)
+        let r = min(rect.width, rect.height) / 2
+        var path = Path()
+        let k = r * 0.14  // how far the sides bow out from the center
+        path.move(to: CGPoint(x: c.x, y: c.y - r))
+        path.addQuadCurve(to: CGPoint(x: c.x + r, y: c.y), control: CGPoint(x: c.x + k, y: c.y - k))
+        path.addQuadCurve(to: CGPoint(x: c.x, y: c.y + r), control: CGPoint(x: c.x + k, y: c.y + k))
+        path.addQuadCurve(to: CGPoint(x: c.x - r, y: c.y), control: CGPoint(x: c.x - k, y: c.y + k))
+        path.addQuadCurve(to: CGPoint(x: c.x, y: c.y - r), control: CGPoint(x: c.x - k, y: c.y - k))
+        path.closeSubpath()
         return path
     }
 }

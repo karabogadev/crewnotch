@@ -88,6 +88,7 @@ struct SessionListView: View {
     // MARK: - Actions
 
     private func focusSession(_ session: SessionState) {
+        viewModel.notchClose()
         Task { await SessionFocuser.focus(session) }
     }
 
@@ -187,7 +188,7 @@ struct InstanceRow: View {
                         Text(MCPToolFormatter.formatToolName(toolName))
                             .font(.system(size: 11, weight: .medium, design: .monospaced))
                             .foregroundColor(TerminalColors.amber.opacity(0.9))
-                        if isInteractiveTool {
+                        if toolName == "AskUserQuestion" {
                             Text("Needs your input")
                                 .font(.system(size: 11))
                                 .foregroundColor(.white.opacity(0.5))
@@ -307,7 +308,12 @@ struct InstanceRow: View {
         .padding(.vertical, 10)
         .contentShape(Rectangle())
         .onTapGesture(count: 2) {
-            onChat()
+            // Double-click jumps to the agent's window; chat is one click on the bubble
+            if SessionFocuser.canFocus(session) {
+                onFocus()
+            } else {
+                onChat()
+            }
         }
         .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isWaitingForApproval)
         .background(
