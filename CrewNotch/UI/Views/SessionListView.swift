@@ -14,11 +14,20 @@ struct SessionListView: View {
     @ObservedObject var viewModel: NotchViewModel
 
     @ObservedObject private var usageMonitor = UsageMonitor.shared
+    @ObservedObject private var recents = RecentSessions.shared
+    @AppStorage(FeatureKeys.showRecentSessions) private var showRecentSessions = true
+
+    private var showsRecents: Bool { showRecentSessions && !recents.items.isEmpty }
 
     var body: some View {
         VStack(spacing: 0) {
             if sessionMonitor.instances.isEmpty {
                 emptyState
+                if showsRecents {
+                    RecentSessionsSection(recents: recents, onResumed: { viewModel.notchClose() })
+                        .padding(.bottom, 6)
+                        .reportHeight()
+                }
             } else {
                 instancesList
             }
@@ -130,6 +139,10 @@ struct SessionListView: View {
                         )
                         .id(session.stableId)
                     }
+                }
+
+                if showsRecents {
+                    RecentSessionsSection(recents: recents, onResumed: { viewModel.notchClose() })
                 }
             }
             .padding(.top, 2)

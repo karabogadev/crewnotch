@@ -310,6 +310,8 @@ private struct AppearancePane: View {
     @AppStorage(FeatureKeys.showTaskProgress) private var showTaskProgress = true
     @AppStorage(FeatureKeys.contextFill) private var contextFill: ContextFillDisplay = .aboveHalf
     @AppStorage(FeatureKeys.stalledAfterMinutes) private var stalledAfterMinutes = 10
+    @AppStorage(FeatureKeys.showRecentSessions) private var showRecentSessions = true
+    @AppStorage(FeatureKeys.resumeTerminal) private var resumeTerminal: ResumeTerminal = .automatic
 
     var body: some View {
         Form {
@@ -407,6 +409,11 @@ private struct AppearancePane: View {
                 Picker("Context fill", selection: $contextFill) {
                     ForEach(ContextFillDisplay.allCases) { Text($0.title).tag($0) }
                 }
+                Toggle("Recently ended sessions", isOn: $showRecentSessions)
+                Picker("Resume in", selection: $resumeTerminal) {
+                    ForEach(ResumeTerminal.allCases) { Text($0.title).tag($0) }
+                }
+                .disabled(!showRecentSessions)
                 Picker("Flag a quiet session after", selection: $stalledAfterMinutes) {
                     Text("5 minutes").tag(5)
                     Text("10 minutes").tag(10)
@@ -418,7 +425,7 @@ private struct AppearancePane: View {
             } header: {
                 Text("Session details")
             } footer: {
-                Text("Context fill shows how much of the model's context window the conversation uses (Claude Code, Codex). A quiet session is working but hasn't reported anything for a while; if it's stuck, clear it from its row.")
+                Text("Context fill shows how much of the model's context window the conversation uses (Claude Code, Codex). Recently ended sessions can be resumed in a terminal (Claude Code, Codex, Gemini CLI, OpenCode, Copilot CLI). A quiet session is working but hasn't reported anything for a while; if it's stuck, clear it from its row.")
                     .foregroundStyle(.secondary)
             }
 
