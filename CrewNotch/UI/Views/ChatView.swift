@@ -69,8 +69,8 @@ struct ChatView: View {
 
                 // Approval bar, interactive prompt, or Input bar
                 if let tool = approvalTool {
-                    if tool == "AskUserQuestion" {
-                        // Interactive tools - show prompt to answer in terminal
+                    if tool == "AskUserQuestion" || session.activePermission?.canRespond == false {
+                        // Questions, or approvals only the agent can answer: jump to it
                         interactivePromptBar
                             .transition(.asymmetric(
                                 insertion: .opacity.combined(with: .move(edge: .bottom)),
@@ -358,9 +358,15 @@ struct ChatView: View {
         session.isInTmux && session.tty != nil
     }
 
+    private var inputPlaceholder: String {
+        let name = session.agent.displayName
+        if canSendMessages { return "Message \(name)..." }
+        return session.agent.isTerminalAgent ? "Run \(name) in tmux to reply from here" : "Reply in \(name)"
+    }
+
     private var inputBar: some View {
         HStack(spacing: 10) {
-            TextField(canSendMessages ? "Message Claude..." : "Open Claude Code in tmux to enable messaging", text: $inputText)
+            TextField(inputPlaceholder, text: $inputText)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13))
                 .foregroundColor(canSendMessages ? .white : .white.opacity(0.4))
@@ -422,8 +428,14 @@ struct ChatView: View {
     /// Bar for interactive tools like AskUserQuestion that need terminal input
     private var interactivePromptBar: some View {
         ChatInteractivePromptBar(
-            isInTmux: session.isInTmux,
-            onGoToTerminal: { focusTerminal() }
+            toolName: approvalTool ?? "AskUserQuestion",
+            message: approvalTool == "AskUserQuestion"
+                ? "\(session.agent.displayName) needs your input"
+                : session.pendingToolInput ?? "\(session.agent.displayName) is waiting for approval",
+            buttonLabel: session.agent.isTerminalAgent ? "Terminal" : "Open",
+            buttonIcon: session.agent.isTerminalAgent ? "terminal" : "arrow.up.forward.app",
+            isEnabled: SessionFocuser.canFocus(session),
+            onOpen: { focusTerminal() }
         )
     }
 
@@ -445,13 +457,7 @@ struct ChatView: View {
     // MARK: - Actions
 
     private func focusTerminal() {
-        Task {
-            if let pid = session.pid {
-                _ = await YabaiController.shared.focusWindow(forClaudePid: pid)
-            } else {
-                _ = await YabaiController.shared.focusWindow(forWorkingDirectory: session.cwd)
-            }
-        }
+        Task { await SessionFocuser.focus(session) }
     }
 
     private func approvePermission() {
@@ -1048,10 +1054,15 @@ struct InterruptedMessageView: View {
 
 // MARK: - Chat Interactive Prompt Bar
 
-/// Bar for interactive tools like AskUserQuestion that need terminal input
+/// Bar for requests that must be answered in the agent itself (questions,
+/// or approvals CrewNotch can't respond to)
 struct ChatInteractivePromptBar: View {
-    let isInTmux: Bool
-    let onGoToTerminal: () -> Void
+    let toolName: String
+    let message: String
+    var buttonLabel = "Terminal"
+    var buttonIcon = "terminal"
+    let isEnabled: Bool
+    let onOpen: () -> Void
 
     @State private var showContent = false
     @State private var showButton = false
@@ -1060,10 +1071,10 @@ struct ChatInteractivePromptBar: View {
         HStack(spacing: 12) {
             // Tool info - same style as approval bar
             VStack(alignment: .leading, spacing: 2) {
-                Text(MCPToolFormatter.formatToolName("AskUserQuestion"))
+                Text(MCPToolFormatter.formatToolName(toolName))
                     .font(.system(size: 12, weight: .medium, design: .monospaced))
                     .foregroundColor(TerminalColors.amber)
-                Text("Claude Code needs your input")
+                Text(message)
                     .font(.system(size: 11))
                     .foregroundColor(.white.opacity(0.5))
                     .lineLimit(1)
@@ -1075,20 +1086,20 @@ struct ChatInteractivePromptBar: View {
 
             // Terminal button on right (similar to Allow button)
             Button {
-                if isInTmux {
-                    onGoToTerminal()
+                if isEnabled {
+                    onOpen()
                 }
             } label: {
                 HStack(spacing: 4) {
-                    Image(systemName: "terminal")
+                    Image(systemName: buttonIcon)
                         .font(.system(size: 11, weight: .medium))
-                    Text("Terminal")
+                    Text(buttonLabel)
                         .font(.system(size: 13, weight: .medium))
                 }
-                .foregroundColor(isInTmux ? .black : .white.opacity(0.4))
+                .foregroundColor(isEnabled ? .black : .white.opacity(0.4))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 8)
-                .background(isInTmux ? Color.white.opacity(0.95) : Color.white.opacity(0.1))
+                .background(isEnabled ? Color.white.opacity(0.95) : Color.white.opacity(0.1))
                 .clipShape(Capsule())
             }
             .buttonStyle(.plain)
