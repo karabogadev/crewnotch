@@ -84,7 +84,7 @@ flowchart LR
 
 ## Install
 
-**Download:** get [CrewNotch.dmg](https://github.com/karabogadev/crewnotch/releases/latest/download/CrewNotch.dmg) (version 1.3.2, universal, signed and notarized by Apple), open it and drag CrewNotch to Applications. Every version is on the [Releases](https://github.com/karabogadev/crewnotch/releases) page.
+**Download:** get [CrewNotch.dmg](https://github.com/karabogadev/crewnotch/releases/latest/download/CrewNotch.dmg) (version 1.4.0, universal, signed and notarized by Apple), open it and drag CrewNotch to Applications. Every version is on the [Releases](https://github.com/karabogadev/crewnotch/releases) page.
 
 **Build from source** (macOS 15.6+, Xcode 26 or later):
 
