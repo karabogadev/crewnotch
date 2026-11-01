@@ -2,13 +2,13 @@
 //  SessionState.swift
 //  CrewNotch
 //
-//  Unified state model for a Claude session.
+//  Unified state model for an agent session.
 //  Consolidates all state that was previously spread across multiple components.
 //
 
 import Foundation
 
-/// Complete state for a single Claude session
+/// Complete state for a single agent session
 /// This is the single source of truth - all state reads and writes go through SessionStore
 struct SessionState: Equatable, Identifiable, Sendable {
     // MARK: - Identity
@@ -16,6 +16,12 @@ struct SessionState: Equatable, Identifiable, Sendable {
     let sessionId: String
     let cwd: String
     let projectName: String
+
+    /// Which coding agent this session belongs to
+    let agent: AgentKind
+
+    /// Front end of a multi-app agent (e.g. Antigravity "app" vs "ide")
+    var sourceApp: String?
 
     // MARK: - Instance Metadata
 
@@ -68,6 +74,8 @@ struct SessionState: Equatable, Identifiable, Sendable {
         sessionId: String,
         cwd: String,
         projectName: String? = nil,
+        agent: AgentKind = .claude,
+        sourceApp: String? = nil,
         pid: Int? = nil,
         tty: String? = nil,
         isInTmux: Bool = false,
@@ -86,6 +94,8 @@ struct SessionState: Equatable, Identifiable, Sendable {
         self.sessionId = sessionId
         self.cwd = cwd
         self.projectName = projectName ?? URL(fileURLWithPath: cwd).lastPathComponent
+        self.agent = agent
+        self.sourceApp = sourceApp
         self.pid = pid
         self.tty = tty
         self.isInTmux = isInTmux
