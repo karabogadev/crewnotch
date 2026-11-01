@@ -120,9 +120,18 @@ actor SessionStore {
 
     // MARK: - Hook Event Processing
 
+    /// Events that happen around a turn but never start one: Claude Code runs a
+    /// background agent for its recap and compacts long chats while idle.
+    private static let backgroundEvents: Set<String> = ["SubagentStart", "SubagentStop", "PreCompact", "PostCompact"]
+
     private func processHookEvent(_ event: HookEvent) async {
         let sessionId = event.sessionId
+        if let transcriptPath = event.transcriptPath {
+            ClaudeTranscripts.register(sessionId: sessionId, path: transcriptPath)
+        }
         var session = sessions[sessionId] ?? createSession(from: event)
+        let isBackground = Self.backgroundEvents.contains(event.event)
+            && (session.phase == .waitingForInput || session.phase == .idle)
 
         session.pid = event.pid
         if let pid = event.pid {
@@ -146,8 +155,8 @@ actor SessionStore {
 
         let newPhase = event.determinePhase()
 
-        if event.status == "metadata" {
-            // Title or other details only; the phase stays as it is.
+        if event.status == "metadata" || isBackground {
+            // Details only, or background work after the turn ended: the phase stays.
         } else if session.phase.canTransition(to: newPhase) {
             session.phase = newPhase
         } else {
@@ -160,7 +169,9 @@ actor SessionStore {
         }
 
         processToolTracking(event: event, session: &session)
-        processSubagentTracking(event: event, session: &session)
+        if !isBackground {
+            processSubagentTracking(event: event, session: &session)
+        }
 
         if event.event == "Stop" {
             session.subagentState = SubagentState()
