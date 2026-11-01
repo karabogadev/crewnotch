@@ -193,6 +193,25 @@ private struct AppearancePane: View {
     @AppStorage("groupByProject") private var groupByProject = true
     @AppStorage("showPlanUsage") private var showPlanUsage = true
     @AppStorage("claudeUsageAllowed") private var claudeUsageAllowed = false
+    @AppStorage("usageStyle") private var usageStyle: UsageStyle = .line
+    @AppStorage("usagePercentMode") private var percentMode: UsagePercentMode = .used
+    @AppStorage("usageLimit") private var usageLimit: UsageLimitChoice = .mostUsed
+    @AppStorage("usageOnlyWhileWorking") private var onlyWhileWorking = false
+    @AppStorage("hiddenUsageProviders") private var hiddenProviders = ""
+
+    /// Providers with a usage source today
+    private let usageProviders: [AgentKind] = [.claude, .codex]
+
+    private func isShown(_ agent: AgentKind) -> Binding<Bool> {
+        Binding(
+            get: { !hiddenProviders.split(separator: ",").contains(Substring(agent.rawValue)) },
+            set: { shown in
+                var hidden = Set(hiddenProviders.split(separator: ",").map(String.init))
+                if shown { hidden.remove(agent.rawValue) } else { hidden.insert(agent.rawValue) }
+                hiddenProviders = hidden.sorted().joined(separator: ",")
+            }
+        )
+    }
 
     var body: some View {
         Form {
@@ -202,6 +221,31 @@ private struct AppearancePane: View {
 
             Section {
                 Toggle("Show plan usage", isOn: $showPlanUsage)
+                Group {
+                    Picker("Style", selection: $usageStyle) {
+                        ForEach(UsageStyle.allCases, id: \.self) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    Picker("Percent shows", selection: $percentMode) {
+                        ForEach(UsagePercentMode.allCases, id: \.self) { Text($0.title).tag($0) }
+                    }
+                    .pickerStyle(.segmented)
+                    Picker("Limit to show", selection: $usageLimit) {
+                        ForEach(UsageLimitChoice.allCases, id: \.self) { Text($0.title).tag($0) }
+                    }
+                    .disabled(usageStyle == .bars)
+                    Toggle("Only while an agent is working", isOn: $onlyWhileWorking)
+                    ForEach(usageProviders) { agent in
+                        Toggle(isOn: isShown(agent)) {
+                            Label {
+                                Text(agent.displayName)
+                            } icon: {
+                                AgentIcon(agent: agent, size: 16)
+                            }
+                        }
+                    }
+                }
+                .disabled(!showPlanUsage)
                 Toggle(isOn: Binding(
                     get: { claudeUsageAllowed },
                     set: { UsageMonitor.shared.setClaudeAllowed($0); claudeUsageAllowed = $0 }
