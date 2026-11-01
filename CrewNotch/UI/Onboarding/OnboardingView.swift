@@ -198,7 +198,7 @@ private struct PreferencesStep: View {
                 }
                 Toggle("Show plan usage", isOn: $showPlanUsage)
                 Toggle(isOn: Binding(
-                    get: { claudeUsageAllowed },
+                    get: { claudeUsageAllowed && UsageMonitor.shared.isEnabled(.claude) },
                     set: { UsageMonitor.shared.setClaudeAllowed($0); claudeUsageAllowed = $0 }
                 )) {
                     VStack(alignment: .leading, spacing: 2) {
