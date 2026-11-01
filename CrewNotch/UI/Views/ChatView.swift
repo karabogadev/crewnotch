@@ -17,6 +17,8 @@ struct ChatView: View {
     @State private var inputText: String = ""
     @State private var history: [ChatHistoryItem] = []
     @State private var session: SessionState
+    @State private var replyHost: ReplyHost?
+    @State private var replyFailed = false
     @State private var isLoading: Bool = true
     @State private var hasLoadedOnce: Bool = false
     @State private var shouldScrollToBottom: Bool = false
@@ -158,6 +160,9 @@ struct ChatView: View {
                     }
                 }
             }
+        }
+        .task(id: session.pid) {
+            replyHost = await TerminalMessenger.host(for: session)
         }
         .onChange(of: canSendMessages) { _, canSend in
             // Auto-focus input when tmux messaging becomes available
@@ -353,16 +358,19 @@ struct ChatView: View {
 
     // MARK: - Input Bar
 
-    /// Can send messages only if session is in tmux
+    /// Replies go to the agent's terminal: tmux, Ghostty, Terminal or iTerm2
     private var canSendMessages: Bool {
-        session.isInTmux && session.tty != nil
+        replyHost != nil
     }
 
     private var inputPlaceholder: String {
         let name = session.agent.displayName
+        if replyFailed, let host = replyHost {
+            return String(localized: "Couldn't reach \(host.appName). Allow CrewNotch in Privacy & Security → Automation.")
+        }
         if canSendMessages { return String(localized: "Message \(name)...") }
         return session.agent.isTerminalAgent
-            ? String(localized: "Run \(name) in tmux to reply from here")
+            ? String(localized: "Replying works in Ghostty, Terminal, iTerm2 and tmux")
             : String(localized: "Reply in \(name)")
     }
 
@@ -487,11 +495,16 @@ struct ChatView: View {
     }
 
     private func sendToSession(_ text: String) async {
-        guard session.isInTmux else { return }
-        guard let tty = session.tty else { return }
-
-        if let target = await findTmuxTarget(tty: tty) {
-            _ = await ToolApprovalHandler.shared.sendMessage(text, to: target)
+        guard let host = replyHost else { return }
+        let delivered: Bool
+        if host == .tmux, let tty = session.tty, let target = await findTmuxTarget(tty: tty) {
+            delivered = await ToolApprovalHandler.shared.sendMessage(text, to: target)
+        } else {
+            delivered = await TerminalMessenger.send(text, to: session, via: host)
+        }
+        replyFailed = !delivered
+        if !delivered {
+            inputText = text  // keep what the user typed
         }
     }
 
