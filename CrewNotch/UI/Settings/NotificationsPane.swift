@@ -10,7 +10,6 @@ import SwiftUI
 
 struct NotificationsPane: View {
     @AppStorage("openNotchOnRequest") private var showRequests = true
-    @AppStorage("approveFromNotch") private var approveFromNotch = true
     @AppStorage("showFinishedBanner") private var showFinishedBanner = true
     @AppStorage("playSounds") private var playSounds = true
 
@@ -46,9 +45,6 @@ struct NotificationsPane: View {
             Section("In the notch") {
                 Toggle(isOn: $showRequests) {
                     SettingLabel("Show requests", "Open the notch for questions and approvals from connected agents.")
-                }
-                Toggle(isOn: $approveFromNotch) {
-                    SettingLabel("Reply from the notch", "Allow or deny tool calls for agents that support it (Claude Code, Codex, OpenCode).")
                 }
                 Toggle(isOn: $showFinishedBanner) {
                     SettingLabel("Finished banner", "Drop the notch down for a moment when an agent finishes.")

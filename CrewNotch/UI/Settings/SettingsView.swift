@@ -11,7 +11,7 @@ import ServiceManagement
 import SwiftUI
 
 enum SettingsPane: String, CaseIterable, Identifiable {
-    case general, notifications, appearance, usage, agents, about
+    case general, notifications, approvals, appearance, usage, agents, about
 
     var id: String { rawValue }
 
@@ -19,6 +19,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         switch self {
         case .general: return String(localized: "General")
         case .notifications: return String(localized: "Notifications")
+        case .approvals: return String(localized: "Approvals")
         case .appearance: return String(localized: "Appearance")
         case .usage: return String(localized: "Usage")
         case .agents: return String(localized: "Agents")
@@ -30,6 +31,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         switch self {
         case .general: return "gearshape.fill"
         case .notifications: return "bell.badge.fill"
+        case .approvals: return "checkmark.shield.fill"
         case .appearance: return "paintbrush.fill"
         case .usage: return "gauge.with.dots.needle.67percent"
         case .agents: return "terminal.fill"
@@ -62,6 +64,7 @@ struct SettingsView: View {
                 switch navigation.pane {
                 case .general: GeneralPane()
                 case .notifications: NotificationsPane()
+                case .approvals: ApprovalsPane()
                 case .appearance: AppearancePane()
                 case .usage: UsagePane()
                 case .agents: AgentsPane()
@@ -87,6 +90,7 @@ private struct GeneralPane: View {
     @AppStorage("keepAwakeMinBattery") private var minBattery = 20
     @AppStorage("keepAwakeRequiresAdapter") private var requiresAdapter = true
     @AppStorage(FeatureKeys.panelShortcuts) private var panelShortcuts = true
+    @AppStorage(FeatureKeys.hideFromScreenSharing) private var hideFromSharing = false
 
     private var keepAwakeStatus: String {
         switch keepAwake.state {
@@ -125,6 +129,18 @@ private struct GeneralPane: View {
             } footer: {
                 Text("Works from any app. The shortcuts act on the oldest request, marked in the panel.")
                     .foregroundStyle(.secondary)
+            }
+
+            Section {
+                Toggle(isOn: $hideFromSharing) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Hide from screen sharing")
+                        Text("Screen shares, recordings and screenshots won't show the notch, so prompts and project names stay private. You still see it.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            } header: {
+                Text("Privacy")
             }
 
             Section("Updates") {
@@ -230,6 +246,10 @@ private struct AppearancePane: View {
     @AppStorage(AppearanceKeys.rowsAtOnce) private var rowsAtOnce = 5
     @AppStorage(AppearanceKeys.accentMode) private var accent: AccentMode = .full
     @AppStorage(AppearanceKeys.showSubagents) private var showSubagents = true
+    @AppStorage(FeatureKeys.showGitBranch) private var showGitBranch = true
+    @AppStorage(FeatureKeys.showTaskProgress) private var showTaskProgress = true
+    @AppStorage(FeatureKeys.contextFill) private var contextFill: ContextFillDisplay = .aboveHalf
+    @AppStorage(FeatureKeys.stalledAfterMinutes) private var stalledAfterMinutes = 10
 
     var body: some View {
         Form {
@@ -313,6 +333,33 @@ private struct AppearancePane: View {
                     Text("Hide").tag(true)
                 }
                 .pickerStyle(.segmented)
+            }
+
+            Section {
+                Toggle("Git branch", isOn: $showGitBranch)
+                Toggle(isOn: $showTaskProgress) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Task progress")
+                        Text("The agent's own to-do list, like “3/7 · Writing tests”.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+                Picker("Context fill", selection: $contextFill) {
+                    ForEach(ContextFillDisplay.allCases) { Text($0.title).tag($0) }
+                }
+                Picker("Flag a quiet session after", selection: $stalledAfterMinutes) {
+                    Text("5 minutes").tag(5)
+                    Text("10 minutes").tag(10)
+                    Text("15 minutes").tag(15)
+                    Text("30 minutes").tag(30)
+                    Text("1 hour").tag(60)
+                    Text("Never").tag(0)
+                }
+            } header: {
+                Text("Session details")
+            } footer: {
+                Text("Context fill shows how much of the model's context window the conversation uses (Claude Code, Codex). A quiet session is working but hasn't reported anything for a while; if it's stuck, clear it from its row.")
+                    .foregroundStyle(.secondary)
             }
 
             WorkingIndicatorSection()
