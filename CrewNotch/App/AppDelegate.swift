@@ -25,6 +25,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         AgentRegistry.shared.start()
         KeepAwakeController.shared.start()
+        UsageMonitor.shared.start()
         NSApplication.shared.setActivationPolicy(.accessory)
 
         windowManager = WindowManager()
