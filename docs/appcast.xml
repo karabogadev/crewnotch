@@ -3,6 +3,23 @@
     <channel>
         <title>CrewNotch</title>
         <item>
+            <title>1.2.2</title>
+            <pubDate>Sun, 01 Nov 2026 12:25:26 +0300</pubDate>
+            <link>https://karabogadev.github.io/crewnotch/</link>
+            <sparkle:fullReleaseNotesLink>https://github.com/karabogadev/crewnotch/releases</sparkle:fullReleaseNotesLink>
+            <sparkle:version>10</sparkle:version>
+            <sparkle:shortVersionString>1.2.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.6</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[## What's fixed
+
+- **Finished sessions no longer stay on "Working".** When a turn ended while CrewNotch was still reading the conversation, the session could fall back to "Working" and stay there until the next prompt. It now always shows "Done".
+- **Much lighter on long sessions.** CrewNotch reread a session's whole conversation file after every tool call. Long chats grow to tens of megabytes, which kept the app busy and used a lot of CPU. It now reads only what was added since the last read.
+- Settings panes keep a proper title bar while you scroll, so the title no longer overlaps the content.
+
+]]></description>
+            <enclosure url="https://github.com/karabogadev/crewnotch/releases/download/v1.2.2/CrewNotch-1.2.2.dmg" length="5944322" type="application/octet-stream" sparkle:edSignature="ylGTZXM4eO3NkCGmw5vlQoGJ6T5TIcXIqf26H9/fFvigTO0+GwHy8l9FkTyKHa2jibMiU6GSeQ/7iUvQwZtFCg=="/>
+        </item>
+        <item>
             <title>1.2.1</title>
             <pubDate>Sun, 01 Nov 2026 11:17:30 +0300</pubDate>
             <link>https://karabogadev.github.io/crewnotch/</link>
@@ -57,22 +74,6 @@
 
 ]]></description>
             <enclosure url="https://github.com/karabogadev/crewnotch/releases/download/v1.2.0/CrewNotch-1.2.0.dmg" length="5950177" type="application/octet-stream" sparkle:edSignature="67LIoYrUr2K5WNAS/UJQIrVTXkSHbUaLMu5xD0OvBn7Z7qWDdLHHApJikS/TNW/wgsjQno+OhdAvCCNpvMO0BQ=="/>
-        </item>
-        <item>
-            <title>1.1.5</title>
-            <pubDate>Sun, 01 Nov 2026 07:54:47 +0300</pubDate>
-            <link>https://karabogadev.github.io/crewnotch/</link>
-            <sparkle:fullReleaseNotesLink>https://github.com/karabogadev/crewnotch/releases</sparkle:fullReleaseNotesLink>
-            <sparkle:version>7</sparkle:version>
-            <sparkle:shortVersionString>1.1.5</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>15.6</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[## What's new
-
-- **CrewNotch now updates itself.** It checks for new versions once a day and offers to install them in one click. Turn on "Download and install updates automatically" in Settings → General to skip even that, or check any time with **Check for Updates…**.
-- Every update is signed and verified before it's installed, and only comes from this project's releases.
-
-]]></description>
-            <enclosure url="https://github.com/karabogadev/crewnotch/releases/download/v1.1.5/CrewNotch-1.1.5.dmg" length="5404637" type="application/octet-stream" sparkle:edSignature="0vj7WKISDTJ1GpKjVl3H5rk1umgksxJcEz32WVQf8TGlNM4iJHwLlJiKMX949DvSM21HWA8ozWlcizFNLNmoCw=="/>
         </item>
     </channel>
 </rss>
