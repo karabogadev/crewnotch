@@ -85,7 +85,7 @@ if [ -n "$SPARKLE_BIN" ] && [ -f "$SPARKLE_KEY" ]; then
         --link "https://karabogadev.github.io/crewnotch/" \
         --embed-release-notes \
         -o "$PROJECT_DIR/docs/appcast.xml" "$APPCAST_DIR"
-    (cd "$PROJECT_DIR" && git add docs/appcast.xml && git commit -q -m "Publish the $VERSION update to the appcast" && git push -q origin main)
+    (cd "$PROJECT_DIR" && git add docs/appcast.xml && git commit -q -m "Publish the $VERSION update to the appcast" -- docs/appcast.xml && git push -q origin main)
 
     # Pages deploys one commit at a time; pushing again while it deploys can
     # wedge it and leave the old appcast live. Wait until the new one is served.
