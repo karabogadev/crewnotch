@@ -219,12 +219,72 @@ private struct GeneralPane: View {
             .onChange(of: requiresAdapter) { keepAwake.setEnabled(keepAwake.isEnabled) }
             .onChange(of: minBattery) { keepAwake.setEnabled(keepAwake.isEnabled) }
 
+            CommandLineSection()
+
             Section {
                 Button("Quit CrewNotch", role: .destructive) { NSApp.terminate(nil) }
             }
         }
         .formStyle(.grouped)
         .onAppear { screens.refreshScreens() }
+    }
+}
+
+// MARK: - Command line
+
+private struct CommandLineSection: View {
+    @AppStorage(FeatureKeys.showCommandSessions) private var showCommands = true
+    @State private var linkedPath = CommandLineTool.linkedPath
+    @State private var failed = false
+
+    var body: some View {
+        Section {
+            Toggle("Show commands in the notch", isOn: $showCommands)
+            LabeledContent {
+                if linkedPath != nil {
+                    Button("Remove") {
+                        CommandLineTool.unlink()
+                        linkedPath = CommandLineTool.linkedPath
+                    }
+                } else {
+                    Button("Install") {
+                        do {
+                            linkedPath = try CommandLineTool.link()
+                            failed = false
+                        } catch {
+                            failed = true
+                        }
+                    }
+                }
+            } label: {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("crewnotch command")
+                    Text(linkedPath.map { String(localized: "Installed at \($0)") } ?? String(localized: "Not installed"))
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+            }
+            if failed {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("No folder on your PATH is writable. Add this line to your shell profile instead:")
+                        .font(.caption).foregroundStyle(.secondary)
+                    HStack {
+                        Text(CommandLineTool.aliasLine)
+                            .font(.caption.monospaced())
+                            .textSelection(.enabled)
+                        Spacer()
+                        Button("Copy") {
+                            NSPasteboard.general.clearContents()
+                            NSPasteboard.general.setString(CommandLineTool.aliasLine, forType: .string)
+                        }
+                    }
+                }
+            }
+        } header: {
+            Text("Command line")
+        } footer: {
+            Text("Run any long command through crewnotch to see it in the notch and hear when it's done: crewnotch run npm test")
+                .foregroundStyle(.secondary)
+        }
     }
 }
 
