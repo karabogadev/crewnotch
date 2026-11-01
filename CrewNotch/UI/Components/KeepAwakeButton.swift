@@ -1,0 +1,47 @@
+//
+//  KeepAwakeButton.swift
+//  CrewNotch
+//
+//  Hourglass toggle for Keep Awake in the opened notch header.
+//
+
+import SwiftUI
+
+struct KeepAwakeButton: View {
+    @ObservedObject var controller: KeepAwakeController
+    @State private var isHovered = false
+
+    private var color: Color {
+        switch controller.state {
+        case .active: return TerminalColors.green
+        case .paused: return TerminalColors.amber
+        case .off: return .white.opacity(isHovered ? 0.7 : 0.4)
+        }
+    }
+
+    private var helpText: String {
+        switch controller.state {
+        case .active(let until):
+            return "Keep Awake is on until \(until.formatted(date: .omitted, time: .shortened)). Agents keep running while the display sleeps. Click to turn off."
+        case .paused(let reason):
+            return "Keep Awake is paused: \(reason). Click to turn off."
+        case .off:
+            return "Keep Awake: keep agents running while the display sleeps"
+        }
+    }
+
+    var body: some View {
+        Button {
+            controller.toggle()
+        } label: {
+            Image(systemName: controller.isEnabled ? "hourglass.circle.fill" : "hourglass")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(color)
+                .frame(width: 22, height: 22)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { isHovered = $0 }
+        .help(helpText)
+    }
+}
