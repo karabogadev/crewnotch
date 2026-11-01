@@ -79,6 +79,7 @@ struct SettingsView: View {
 private struct GeneralPane: View {
     @ObservedObject private var screens = ScreenSelector.shared
     @ObservedObject private var keepAwake = KeepAwakeController.shared
+    @ObservedObject private var updates = UpdateController.shared
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var language = AppLanguage.current
     @State private var languageChanged = false
@@ -105,6 +106,22 @@ private struct GeneralPane: View {
                             launchAtLogin = SMAppService.mainApp.status == .enabled
                         }
                     }
+            }
+
+            Section("Updates") {
+                Toggle("Check for updates automatically", isOn: Binding(
+                    get: { updates.automaticallyChecksForUpdates },
+                    set: { updates.automaticallyChecksForUpdates = $0 }
+                ))
+                Toggle("Download and install updates automatically", isOn: Binding(
+                    get: { updates.automaticallyDownloadsUpdates },
+                    set: { updates.automaticallyDownloadsUpdates = $0 }
+                ))
+                .disabled(!updates.automaticallyChecksForUpdates)
+                LabeledContent(AboutPane.versionText) {
+                    Button("Check for Updates…") { updates.checkForUpdates() }
+                        .disabled(!updates.canCheckForUpdates)
+                }
             }
 
             Section {
@@ -290,7 +307,9 @@ private struct AppearancePane: View {
 // MARK: - About
 
 private struct AboutPane: View {
-    private var version: String {
+    @ObservedObject private var updates = UpdateController.shared
+
+    static var versionText: String {
         let info = Bundle.main.infoDictionary
         let short = info?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = info?["CFBundleVersion"] as? String ?? "1"
@@ -306,9 +325,11 @@ private struct AboutPane: View {
                 .font(.system(size: 26, weight: .bold))
             Text("Every AI coding agent, live in your MacBook notch.")
                 .foregroundStyle(.secondary)
-            Text(version)
+            Text(Self.versionText)
                 .font(.callout)
                 .foregroundStyle(.tertiary)
+            Button("Check for Updates…") { updates.checkForUpdates() }
+                .disabled(!updates.canCheckForUpdates)
             Link("github.com/karabogadev/crewnotch", destination: URL(string: "https://github.com/karabogadev/crewnotch")!)
                 .padding(.top, 4)
         }
