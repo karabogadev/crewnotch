@@ -11,7 +11,7 @@ import ServiceManagement
 import SwiftUI
 
 enum SettingsPane: String, CaseIterable, Identifiable {
-    case general, notifications, appearance, agents, about
+    case general, notifications, appearance, usage, agents, about
 
     var id: String { rawValue }
 
@@ -22,6 +22,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         case .general: return "gearshape.fill"
         case .notifications: return "bell.badge.fill"
         case .appearance: return "paintbrush.fill"
+        case .usage: return "gauge.with.dots.needle.67percent"
         case .agents: return "terminal.fill"
         case .about: return "info.circle.fill"
         }
@@ -53,6 +54,7 @@ struct SettingsView: View {
                 case .general: GeneralPane()
                 case .notifications: NotificationsPane()
                 case .appearance: AppearancePane()
+                case .usage: UsagePane()
                 case .agents: AgentsPane()
                 case .about: AboutPane()
                 }
@@ -191,27 +193,6 @@ private struct NotificationsPane: View {
 
 private struct AppearancePane: View {
     @AppStorage("groupByProject") private var groupByProject = true
-    @AppStorage("showPlanUsage") private var showPlanUsage = true
-    @AppStorage("claudeUsageAllowed") private var claudeUsageAllowed = false
-    @AppStorage("usageStyle") private var usageStyle: UsageStyle = .line
-    @AppStorage("usagePercentMode") private var percentMode: UsagePercentMode = .used
-    @AppStorage("usageLimit") private var usageLimit: UsageLimitChoice = .mostUsed
-    @AppStorage("usageOnlyWhileWorking") private var onlyWhileWorking = false
-    @AppStorage("hiddenUsageProviders") private var hiddenProviders = ""
-
-    /// Providers with a usage source today
-    private let usageProviders: [AgentKind] = [.claude, .codex]
-
-    private func isShown(_ agent: AgentKind) -> Binding<Bool> {
-        Binding(
-            get: { !hiddenProviders.split(separator: ",").contains(Substring(agent.rawValue)) },
-            set: { shown in
-                var hidden = Set(hiddenProviders.split(separator: ",").map(String.init))
-                if shown { hidden.remove(agent.rawValue) } else { hidden.insert(agent.rawValue) }
-                hiddenProviders = hidden.sorted().joined(separator: ",")
-            }
-        )
-    }
 
     var body: some View {
         Form {
@@ -220,51 +201,6 @@ private struct AppearancePane: View {
             }
 
             AnimationSettingsSection()
-
-            Section {
-                Toggle("Show plan usage", isOn: $showPlanUsage)
-                Group {
-                    Picker("Style", selection: $usageStyle) {
-                        ForEach(UsageStyle.allCases, id: \.self) { Text($0.title).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    Picker("Percent shows", selection: $percentMode) {
-                        ForEach(UsagePercentMode.allCases, id: \.self) { Text($0.title).tag($0) }
-                    }
-                    .pickerStyle(.segmented)
-                    Picker("Limit to show", selection: $usageLimit) {
-                        ForEach(UsageLimitChoice.allCases, id: \.self) { Text($0.title).tag($0) }
-                    }
-                    .disabled(usageStyle == .bars)
-                    Toggle("Only while an agent is working", isOn: $onlyWhileWorking)
-                    ForEach(usageProviders) { agent in
-                        Toggle(isOn: isShown(agent)) {
-                            Label {
-                                Text(agent.displayName)
-                            } icon: {
-                                AgentIcon(agent: agent, size: 16)
-                            }
-                        }
-                    }
-                }
-                .disabled(!showPlanUsage)
-                Toggle(isOn: Binding(
-                    get: { claudeUsageAllowed },
-                    set: { UsageMonitor.shared.setClaudeAllowed($0); claudeUsageAllowed = $0 }
-                )) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Include Claude usage")
-                        Text("Reads Claude Code's sign-in from the keychain. macOS asks once: choose Always Allow.")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                }
-                .disabled(!showPlanUsage)
-            } header: {
-                Text("Plan usage")
-            } footer: {
-                Text("Codex usage is read from its local session files. Nothing leaves your Mac except Claude's own usage request to Anthropic.")
-                    .foregroundStyle(.secondary)
-            }
         }
         .formStyle(.grouped)
     }
