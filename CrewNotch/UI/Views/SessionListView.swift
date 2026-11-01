@@ -211,7 +211,7 @@ struct InstanceRow: View {
         guard let message = session.lastMessage else { return nil }
         switch session.lastMessageRole {
         case "user": return "You: \(message)"
-        case "tool": return [session.lastToolName.map(MCPToolFormatter.formatToolName), message].compactMap { $0 }.joined(separator: " ")
+        case "tool": return [session.lastToolName.map { MCPToolFormatter.formatToolName($0) }, message].compactMap { $0 }.joined(separator: " ")
         default: return message
         }
     }
