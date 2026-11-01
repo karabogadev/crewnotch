@@ -2,7 +2,7 @@
 //  SessionStore.swift
 //  CrewNotch
 //
-//  Central state manager for all Claude sessions.
+//  Central state manager for all agent sessions.
 //  Single source of truth - all state mutations flow through process().
 //
 
@@ -10,7 +10,7 @@ import Combine
 import Foundation
 import os.log
 
-/// Central state manager for all Claude sessions
+/// Central state manager for all agent sessions
 /// Uses Swift actor for thread-safe state mutations
 actor SessionStore {
     static let shared = SessionStore()
@@ -140,6 +140,10 @@ actor SessionStore {
             return
         }
 
+        if let sourceApp = event.sourceApp {
+            session.sourceApp = sourceApp
+        }
+
         let newPhase = event.determinePhase()
 
         if session.phase.canTransition(to: newPhase) {
@@ -160,6 +164,10 @@ actor SessionStore {
             session.subagentState = SubagentState()
         }
 
+        if !session.agent.hasClaudeTranscript {
+            recordHookTranscript(event: event, session: &session)
+        }
+
         sessions[sessionId] = session
         publishState()
 
@@ -173,10 +181,52 @@ actor SessionStore {
             sessionId: event.sessionId,
             cwd: event.cwd,
             projectName: URL(fileURLWithPath: event.cwd).lastPathComponent,
+            agent: event.agent,
+            sourceApp: event.sourceApp,
             pid: event.pid,
             tty: event.tty?.replacingOccurrences(of: "/dev/", with: ""),
             isInTmux: false,  // Will be updated
             phase: .idle
+        )
+    }
+
+    /// Agents without a parsed transcript build their chat history and
+    /// summary (title, last message) from the prompts and replies in hook events.
+    private func recordHookTranscript(event: HookEvent, session: inout SessionState) {
+        let info = session.conversationInfo
+        let summary = event.title ?? info.summary
+        var lastMessage = info.lastMessage
+        var lastRole = info.lastMessageRole
+        var lastTool = info.lastToolName
+        var firstUserMessage = info.firstUserMessage
+        var lastUserDate = info.lastUserMessageDate
+        let now = Date()
+
+        if let prompt = event.prompt, event.event == "UserPromptSubmit" {
+            session.chatItems.append(ChatHistoryItem(id: UUID().uuidString, type: .user(prompt), timestamp: now))
+            firstUserMessage = firstUserMessage ?? prompt
+            lastMessage = prompt
+            lastRole = "user"
+            lastUserDate = now
+        }
+        if let reply = event.assistantMessage {
+            session.chatItems.append(ChatHistoryItem(id: UUID().uuidString, type: .assistant(reply), timestamp: now))
+            lastMessage = reply
+            lastRole = "assistant"
+        }
+        if event.event == "PreToolUse", let tool = event.tool {
+            lastMessage = PermissionContext(toolUseId: "", toolName: tool, toolInput: event.toolInput, receivedAt: now).formattedInput
+            lastRole = "tool"
+            lastTool = tool
+        }
+        session.conversationInfo = ConversationInfo(
+            summary: summary,
+            lastMessage: lastMessage,
+            lastMessageRole: lastRole,
+            lastToolName: lastTool,
+            firstUserMessage: firstUserMessage,
+            lastUserMessageDate: lastUserDate,
+            usage: info.usage
         )
     }
 
@@ -926,6 +976,10 @@ actor SessionStore {
     // MARK: - History Loading
 
     private func loadHistoryFromFile(sessionId: String, cwd: String) async {
+        // Only Claude Code has a transcript to parse; other agents' history
+        // comes from hook events and must not be replaced by an empty parse.
+        guard sessions[sessionId]?.agent.hasClaudeTranscript ?? false else { return }
+
         // Parse file asynchronously
         let messages = await ConversationParser.shared.parseFullConversation(
             sessionId: sessionId,
@@ -1087,7 +1141,7 @@ actor SessionStore {
             let needsSync: Bool
             switch session.phase {
             case .processing, .waitingForApproval:
-                needsSync = true
+                needsSync = session.agent.hasClaudeTranscript
             default:
                 needsSync = false
             }
