@@ -414,12 +414,14 @@ def approval_output(agent, reply):
     if decision == "deny":
         behavior["message"] = reply.get("reason") or "Denied from CrewNotch"
     else:
-        # Answers to AskUserQuestion travel as the tool's updated input
-        if isinstance(reply.get("updated_input"), dict):
-            behavior["updatedInput"] = reply["updated_input"]
-        # "Always allow" saves the rules the agent itself suggested
-        if agent == "claude" and isinstance(reply.get("updated_permissions"), list):
-            behavior["updatedPermissions"] = reply["updated_permissions"]
+        # Only Claude Code takes these; Codex rejects a decision that carries them.
+        if agent == "claude":
+            # Answers to AskUserQuestion travel as the tool's updated input
+            if isinstance(reply.get("updated_input"), dict):
+                behavior["updatedInput"] = reply["updated_input"]
+            # "Always allow" saves the rules the agent itself suggested
+            if isinstance(reply.get("updated_permissions"), list):
+                behavior["updatedPermissions"] = reply["updated_permissions"]
     return {"hookSpecificOutput": {"hookEventName": "PermissionRequest", "decision": behavior}}
 
 
