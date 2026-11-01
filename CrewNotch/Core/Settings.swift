@@ -47,6 +47,39 @@ nonisolated enum AppSettings {
         static let keepAwakeRequiresAdapter = "keepAwakeRequiresAdapter"
         static let showPlanUsage = "showPlanUsage"
         static let claudeUsageAllowed = "claudeUsageAllowed"
+        static let attentionSound = "attentionSound"
+        static let groupByProject = "groupByProject"
+        static let openNotchOnRequest = "openNotchOnRequest"
+        static let hasCompletedOnboarding = "hasCompletedOnboarding"
+    }
+
+    // MARK: - Notifications
+
+    /// Sound when an agent needs you (approval or question).
+    static var attentionSound: NotificationSound {
+        get { defaults.string(forKey: Keys.attentionSound).flatMap(NotificationSound.init(rawValue:)) ?? .glass }
+        set { defaults.set(newValue.rawValue, forKey: Keys.attentionSound) }
+    }
+
+    /// Open the notch automatically when an agent asks for approval.
+    static var openNotchOnRequest: Bool {
+        get { defaults.object(forKey: Keys.openNotchOnRequest) as? Bool ?? true }
+        set { defaults.set(newValue, forKey: Keys.openNotchOnRequest) }
+    }
+
+    // MARK: - Appearance
+
+    /// List sessions under their project.
+    static var groupByProject: Bool {
+        get { defaults.object(forKey: Keys.groupByProject) as? Bool ?? true }
+        set { defaults.set(newValue, forKey: Keys.groupByProject) }
+    }
+
+    // MARK: - Onboarding
+
+    static var hasCompletedOnboarding: Bool {
+        get { defaults.bool(forKey: Keys.hasCompletedOnboarding) }
+        set { defaults.set(newValue, forKey: Keys.hasCompletedOnboarding) }
     }
 
     // MARK: - Plan Usage
