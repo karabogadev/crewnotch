@@ -18,10 +18,11 @@ it exits 0 without output, so the agent carries on as if no hook existed.
 import json
 import os
 import socket
+import stat
 import subprocess
 import sys
 
-SOCKET_PATH = "/tmp/crewnotch.sock"
+SOCKET_PATH = os.environ.get("CREWNOTCH_SOCKET") or os.path.expanduser("~/.crewnotch/crewnotch.sock")
 APPROVAL_TIMEOUT_SECONDS = 3600
 
 # Agents whose approval prompt can be answered from the notch.
@@ -355,7 +356,28 @@ def session_and_cwd(agent, data):
 # Transport
 # ---------------------------------------------------------------------------
 
+def socket_is_trusted(path):
+    """Only talk to a socket that we own, in a directory nobody else can write to.
+
+    Otherwise another local user could pose as CrewNotch and approve tool calls.
+    """
+    try:
+        sock_stat = os.lstat(path)
+        dir_stat = os.stat(os.path.dirname(path))
+    except OSError:
+        return False
+    uid = os.getuid()
+    return (
+        stat.S_ISSOCK(sock_stat.st_mode)
+        and sock_stat.st_uid == uid
+        and dir_stat.st_uid == uid
+        and dir_stat.st_mode & 0o022 == 0
+    )
+
+
 def send(state, wait_for_reply):
+    if not socket_is_trusted(SOCKET_PATH):
+        return None
     try:
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
         sock.settimeout(APPROVAL_TIMEOUT_SECONDS if wait_for_reply else 2)
