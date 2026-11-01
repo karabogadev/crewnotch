@@ -87,6 +87,13 @@ class NotchWindowController: NSWindowController {
         // Start with ignoring mouse events (closed state)
         notchWindow.ignoresMouseEvents = true
 
+        // Keep prompts and project names out of screen shares and recordings when asked to
+        applySharingPreference()
+        NotificationCenter.default.publisher(for: UserDefaults.didChangeNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.applySharingPreference() }
+            .store(in: &cancellables)
+
         // Perform boot animation after a brief delay (only on initial launch)
         if animateOnLaunch {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
@@ -97,6 +104,14 @@ class NotchWindowController: NSWindowController {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - Screen sharing
+
+    /// `.none` leaves the panel out of screen sharing, recordings and screenshots.
+    private func applySharingPreference() {
+        let type: NSWindow.SharingType = AppSettings.hideFromScreenSharing ? .none : .readOnly
+        if window?.sharingType != type { window?.sharingType = type }
     }
 
     // MARK: - Focus
