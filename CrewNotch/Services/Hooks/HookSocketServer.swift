@@ -139,7 +139,10 @@ typealias PermissionFailureHandler = @Sendable (_ sessionId: String, _ toolUseId
 /// Uses GCD DispatchSource for non-blocking I/O
 class HookSocketServer {
     static let shared = HookSocketServer()
-    static let socketPath = "/tmp/crewnotch.sock"
+    /// Lives in ~/.crewnotch (mode 0700) rather than /tmp so other local users
+    /// can't impersonate the app and answer approval requests.
+    static let socketDirectory = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".crewnotch")
+    static let socketPath = socketDirectory.appendingPathComponent("crewnotch.sock").path
 
     private var serverSocket: Int32 = -1
     private var acceptSource: DispatchSourceRead?
@@ -171,6 +174,18 @@ class HookSocketServer {
 
         eventHandler = onEvent
         permissionFailureHandler = onPermissionFailure
+
+        do {
+            try FileManager.default.createDirectory(at: Self.socketDirectory, withIntermediateDirectories: true)
+            try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: Self.socketDirectory.path)
+        } catch {
+            logger.error("Failed to prepare socket directory: \(error.localizedDescription, privacy: .public)")
+            return
+        }
+        guard Self.socketPath.utf8.count < MemoryLayout.size(ofValue: sockaddr_un().sun_path) else {
+            logger.error("Socket path too long: \(Self.socketPath, privacy: .public)")
+            return
+        }
 
         unlink(Self.socketPath)
 
