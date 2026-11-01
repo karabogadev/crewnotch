@@ -17,6 +17,8 @@ struct PermissionContext: Sendable {
     /// False when CrewNotch can only show the request (the agent has no
     /// approval hook, or approving from the notch is turned off).
     var canRespond: Bool = true
+    /// Rules the agent offers to save as "always allow" (Claude Code).
+    var suggestions: [AnyCodable]? = nil
 
     /// Format tool input for display
     var formattedInput: String? {

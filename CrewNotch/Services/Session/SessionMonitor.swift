@@ -84,41 +84,16 @@ class SessionMonitor: ObservableObject {
 
     // MARK: - Permission Handling
 
-    func approvePermission(sessionId: String) {
-        Task {
-            guard let session = await SessionStore.shared.session(for: sessionId),
-                  let permission = session.activePermission else {
-                return
-            }
-
-            HookSocketServer.shared.respondToPermission(
-                toolUseId: permission.toolUseId,
-                decision: "allow"
-            )
-
-            await SessionStore.shared.process(
-                .permissionApproved(sessionId: sessionId, toolUseId: permission.toolUseId)
-            )
-        }
+    func approvePermission(sessionId: String, always: Bool = false) {
+        ApprovalActions.approve(sessionId: sessionId, always: always)
     }
 
     func denyPermission(sessionId: String, reason: String?) {
-        Task {
-            guard let session = await SessionStore.shared.session(for: sessionId),
-                  let permission = session.activePermission else {
-                return
-            }
+        ApprovalActions.deny(sessionId: sessionId, reason: reason)
+    }
 
-            HookSocketServer.shared.respondToPermission(
-                toolUseId: permission.toolUseId,
-                decision: "deny",
-                reason: reason
-            )
-
-            await SessionStore.shared.process(
-                .permissionDenied(sessionId: sessionId, toolUseId: permission.toolUseId, reason: reason)
-            )
-        }
+    func answerQuestion(sessionId: String, answers: [String: String]) {
+        ApprovalActions.answer(sessionId: sessionId, answers: answers)
     }
 
     /// Archive (remove) a session from the instances list

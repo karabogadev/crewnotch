@@ -40,6 +40,8 @@ struct HookEvent: Codable, Sendable {
     let sourceApp: String?
     /// Claude Code's own transcript file for the session
     let transcriptPath: String?
+    /// Permission rules Claude Code offers as "always allow" for this request
+    let permissionSuggestions: [AnyCodable]?
 
     enum CodingKeys: String, CodingKey {
         case sessionId = "session_id"
@@ -52,6 +54,7 @@ struct HookEvent: Codable, Sendable {
         case assistantMessage = "assistant_message"
         case sourceApp = "source_app"
         case transcriptPath = "transcript_path"
+        case permissionSuggestions = "permission_suggestions"
     }
 
     nonisolated init(
@@ -61,7 +64,7 @@ struct HookEvent: Codable, Sendable {
         notificationType: String? = nil, message: String? = nil,
         agent: AgentKind, canRespond: Bool = false, prompt: String? = nil,
         assistantMessage: String? = nil, title: String? = nil, sourceApp: String? = nil,
-        transcriptPath: String? = nil
+        transcriptPath: String? = nil, permissionSuggestions: [AnyCodable]? = nil
     ) {
         self.sessionId = sessionId
         self.cwd = cwd
@@ -81,6 +84,7 @@ struct HookEvent: Codable, Sendable {
         self.title = title
         self.sourceApp = sourceApp
         self.transcriptPath = transcriptPath
+        self.permissionSuggestions = permissionSuggestions
     }
 
     init(from decoder: Decoder) throws {
@@ -103,6 +107,7 @@ struct HookEvent: Codable, Sendable {
         title = try c.decodeIfPresent(String.self, forKey: .title)
         sourceApp = try c.decodeIfPresent(String.self, forKey: .sourceApp)
         transcriptPath = try c.decodeIfPresent(String.self, forKey: .transcriptPath)
+        permissionSuggestions = try? c.decodeIfPresent([AnyCodable].self, forKey: .permissionSuggestions)
     }
 
     var sessionPhase: SessionPhase {
@@ -124,6 +129,16 @@ struct HookEvent: Codable, Sendable {
 struct HookResponse: Codable {
     let decision: String // "allow", "deny", or "ask"
     let reason: String?
+    /// Replacement tool input (answers to AskUserQuestion)
+    var updatedInput: [String: AnyCodable]? = nil
+    /// Permission rules to save ("always allow")
+    var updatedPermissions: [AnyCodable]? = nil
+
+    enum CodingKeys: String, CodingKey {
+        case decision, reason
+        case updatedInput = "updated_input"
+        case updatedPermissions = "updated_permissions"
+    }
 }
 
 /// Pending permission request waiting for user decision
@@ -267,8 +282,12 @@ class HookSocketServer {
 
     /// Respond to a pending permission request by toolUseId
     func respondToPermission(toolUseId: String, decision: String, reason: String? = nil) {
+        respondToPermission(toolUseId: toolUseId, response: HookResponse(decision: decision, reason: reason))
+    }
+
+    func respondToPermission(toolUseId: String, response: HookResponse) {
         queue.async { [weak self] in
-            self?.sendPermissionResponse(toolUseId: toolUseId, decision: decision, reason: reason)
+            self?.sendPermissionResponse(toolUseId: toolUseId, response: response)
         }
     }
 
@@ -523,7 +542,8 @@ class HookSocketServer {
         eventHandler?(event)
     }
 
-    private func sendPermissionResponse(toolUseId: String, decision: String, reason: String?) {
+    private func sendPermissionResponse(toolUseId: String, response: HookResponse) {
+        let decision = response.decision
         permissionsLock.lock()
         guard let pending = pendingPermissions.removeValue(forKey: toolUseId) else {
             permissionsLock.unlock()
@@ -532,7 +552,6 @@ class HookSocketServer {
         }
         permissionsLock.unlock()
 
-        let response = HookResponse(decision: decision, reason: reason)
         guard let data = try? JSONEncoder().encode(response) else {
             close(pending.clientSocket)
             return

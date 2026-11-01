@@ -144,7 +144,8 @@ extension HookEvent {
                 toolName: tool ?? "Permission",
                 toolInput: toolInput,
                 receivedAt: Date(),
-                canRespond: canRespond
+                canRespond: canRespond,
+                suggestions: permissionSuggestions?.isEmpty == false ? permissionSuggestions : nil
             ))
         }
 
