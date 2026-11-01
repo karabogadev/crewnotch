@@ -157,6 +157,7 @@ struct SessionListView: View {
 // MARK: - Instance Row
 
 struct InstanceRow: View {
+    @ObservedObject private var replyHosts = ReplyHostCache.shared
     @AppStorage("groupByProject") private var groupByProject = false
     @AppStorage(AppearanceKeys.accentMode) private var accent: AccentMode = .full
     @AppStorage(AppearanceKeys.showSubagents) private var showSubagents = true
@@ -211,6 +212,13 @@ struct InstanceRow: View {
         !groupByProject && titleOrder == .conversation && session.displayTitle != session.projectName
     }
 
+    /// Chat is offered only where a reply can reach the agent's terminal
+    private var canReply: Bool {
+        guard session.agent.isTerminalAgent else { return false }
+        if case .some(let host) = replyHosts.host(for: session) { return host != nil }
+        return false
+    }
+
     /// Subagents the session is currently delegating to (Claude Code)
     private var activeSubagents: [TaskContext] {
         guard showSubagents else { return [] }
@@ -259,6 +267,7 @@ struct InstanceRow: View {
         )
         .onHover { isHovered = $0 }
         .opacity(session.isIdle(afterMinutes: idleAfterMinutes) && !isHovered ? 0.55 : 1)
+        .task(id: session.pid) { await replyHosts.resolve(session) }
     }
 
     private var rowContent: some View {
@@ -350,7 +359,9 @@ struct InstanceRow: View {
             .transition(.opacity.combined(with: .scale(scale: 0.9)))
         } else if isHovered {
             HStack(spacing: 4) {
-                IconButton(icon: "bubble.left") { onChat() }
+                if canReply {
+                    IconButton(icon: "bubble.left") { onChat() }
+                }
                 if SessionFocuser.canFocus(session) {
                     IconButton(icon: "arrow.up.forward.app") { onFocus() }
                 }
