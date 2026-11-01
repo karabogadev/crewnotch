@@ -316,13 +316,11 @@ struct NotchView: View {
     @ViewBuilder
     private var openedHeaderContent: some View {
         HStack(spacing: 12) {
-            // Show static crab only if not showing activity in headerRow
-            // (headerRow handles crab + indicator when showClosedActivity is true)
-            if !showClosedActivity {
-                ClaudeCrabIcon(size: 14)
-                    .matchedGeometryEffect(id: "crab", in: activityNamespace, isSource: !showClosedActivity)
-                    .padding(.leading, 8)
-            }
+            Text(crewSummary)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.white.opacity(0.55))
+                .lineLimit(1)
+                .padding(.leading, showClosedActivity ? 0 : 8)
 
             Spacer()
 
