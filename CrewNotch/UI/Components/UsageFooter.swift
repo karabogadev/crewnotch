@@ -48,8 +48,8 @@ struct UsageFooter: View {
 
             }
             .padding(.vertical, 10)
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.white.opacity(0.03)))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.white.opacity(0.05), lineWidth: 0.5))
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.ink.opacity(0.03)))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.ink.opacity(0.05), lineWidth: 0.5))
             .padding(.top, 2)
             .padding(.bottom, 4)
         }
@@ -104,29 +104,29 @@ private struct UsageLineRow: View {
         let numbers = UsageNumbers(mode: mode)
         HStack(spacing: 6) {
             AgentIcon(agent: usage.agent, size: 12)
-            Text(usage.agent.displayName).foregroundColor(.white.opacity(0.6))
+            Text(usage.agent.displayName).foregroundColor(.ink.opacity(0.6))
             if let plan = usage.plan {
-                Text(plan).foregroundColor(.white.opacity(0.3))
+                Text(plan).foregroundColor(.ink.opacity(0.3))
             }
             Spacer(minLength: 8)
 
             if let limit = usage.limit(for: choice) {
                 if choice == .mostUsed {
-                    Text(limit.displayLabel).foregroundColor(.white.opacity(0.3))
+                    Text(limit.displayLabel).foregroundColor(.ink.opacity(0.3))
                 }
                 UsageBar(fraction: numbers.barFraction(limit), usedPercent: limit.usedPercent)
                     .frame(width: 56, height: 4)
                 Text(numbers.label(limit))
                     .font(.system(size: 11 * textScale.factor, weight: .semibold, design: .monospaced))
-                    .foregroundColor(.white.opacity(0.75))
+                    .foregroundColor(.ink.opacity(0.75))
                     .frame(minWidth: 32, alignment: .trailing)
                 if let reset = limit.resetsAt, reset > Date() {
                     Text(UsageFormat.timeUntil(reset))
-                        .foregroundColor(.white.opacity(0.3))
+                        .foregroundColor(.ink.opacity(0.3))
                         .frame(minWidth: 44, alignment: .trailing)
                 }
             } else if let error = usage.error {
-                Text(error).foregroundColor(.white.opacity(0.35)).lineLimit(1)
+                Text(error).foregroundColor(.ink.opacity(0.35)).lineLimit(1)
             }
         }
         .font(.system(size: 11 * textScale.factor, weight: .medium))
@@ -148,28 +148,28 @@ private struct UsageBarsBlock: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
                 AgentIcon(agent: usage.agent, size: 12)
-                Text(usage.agent.displayName).foregroundColor(.white.opacity(0.7))
+                Text(usage.agent.displayName).foregroundColor(.ink.opacity(0.7))
                 if let plan = usage.plan {
-                    Text(plan).foregroundColor(.white.opacity(0.3))
+                    Text(plan).foregroundColor(.ink.opacity(0.3))
                 }
                 Spacer()
                 if let error = usage.error, usage.limits.isEmpty {
-                    Text(error).foregroundColor(.white.opacity(0.35)).lineLimit(1)
+                    Text(error).foregroundColor(.ink.opacity(0.35)).lineLimit(1)
                 }
             }
             ForEach(usage.limits) { limit in
                 HStack(spacing: 8) {
                     Text(limit.displayLabel)
-                        .foregroundColor(.white.opacity(0.45))
+                        .foregroundColor(.ink.opacity(0.45))
                         .frame(width: 74, alignment: .leading)
                     UsageBar(fraction: numbers.barFraction(limit), usedPercent: limit.usedPercent)
                         .frame(height: 4)
                     Text(numbers.label(limit))
                         .font(.system(size: 10 * textScale.factor, weight: .semibold, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.7))
+                        .foregroundColor(.ink.opacity(0.7))
                         .frame(minWidth: 56, alignment: .trailing)
                     Text(limit.resetsAt.flatMap { $0 > Date() ? UsageFormat.timeUntil($0) : nil } ?? "")
-                        .foregroundColor(.white.opacity(0.3))
+                        .foregroundColor(.ink.opacity(0.3))
                         .frame(width: 44, alignment: .trailing)
                 }
                 .font(.system(size: 10 * textScale.factor, weight: .medium))
@@ -201,9 +201,9 @@ private struct UsageCompactRow: View {
                             .frame(width: 11, height: 11)
                         Text(numbers.label(limit))
                             .font(.system(size: 11 * textScale.factor, weight: .semibold, design: .monospaced))
-                            .foregroundColor(.white.opacity(0.75))
+                            .foregroundColor(.ink.opacity(0.75))
                     } else {
-                        Text("–").foregroundColor(.white.opacity(0.35))
+                        Text("–").foregroundColor(.ink.opacity(0.35))
                     }
                 }
                 .help(usageTooltip(usage, mode: mode))
@@ -219,7 +219,7 @@ private struct UsageCompactRow: View {
 
 private func usageColor(_ usedPercent: Double) -> Color {
     switch usedPercent {
-    case ..<70: return .white.opacity(0.55)
+    case ..<70: return .ink.opacity(0.55)
     case ..<90: return TerminalColors.amber.opacity(0.85)
     default: return Color(red: 0.95, green: 0.45, blue: 0.4)
     }
@@ -232,7 +232,7 @@ private struct UsageBar: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
-                Capsule().fill(Color.white.opacity(0.08))
+                Capsule().fill(Color.ink.opacity(0.08))
                 Capsule().fill(usageColor(usedPercent))
                     .frame(width: geometry.size.width * min(max(fraction, 0), 1))
             }
@@ -246,7 +246,7 @@ private struct UsageRing: View {
 
     var body: some View {
         ZStack {
-            Circle().stroke(Color.white.opacity(0.15), lineWidth: 2)
+            Circle().stroke(Color.ink.opacity(0.15), lineWidth: 2)
             Circle()
                 .trim(from: 0, to: min(max(fraction, 0), 1))
                 .stroke(usageColor(usedPercent), style: StrokeStyle(lineWidth: 2, lineCap: .round))

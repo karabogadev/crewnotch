@@ -15,7 +15,7 @@ struct KeepAwakeButton: View {
         switch controller.state {
         case .active: return TerminalColors.green
         case .paused: return TerminalColors.amber
-        case .off: return .white.opacity(isHovered ? 0.7 : 0.4)
+        case .off: return .ink.opacity(isHovered ? 0.7 : 0.4)
         }
     }
 

@@ -23,11 +23,11 @@ struct FinishedBanner: View {
                         Circle().fill(TerminalColors.green).frame(width: 6, height: 6)
                         Text("Finished")
                             .font(.system(size: 13, weight: .semibold))
-                            .foregroundColor(.white)
+                            .foregroundColor(.ink)
                     }
                     Text(session.displayTitle == session.projectName ? session.projectName : "\(session.projectName) · \(session.displayTitle)")
                         .font(.system(size: 11))
-                        .foregroundColor(.white.opacity(0.55))
+                        .foregroundColor(.ink.opacity(0.55))
                         .lineLimit(1)
                 }
                 Spacer(minLength: 8)
@@ -36,7 +36,7 @@ struct FinishedBanner: View {
                     Image(systemName: "arrow.up.right")
                 }
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.white.opacity(isHovered ? 1 : 0.8))
+                .foregroundColor(.ink.opacity(isHovered ? 1 : 0.8))
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 6)

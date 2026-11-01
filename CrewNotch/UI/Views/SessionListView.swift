@@ -47,10 +47,10 @@ struct SessionListView: View {
             }
             Text("No agents running")
                 .font(.system(size: 13 * textScale.factor, weight: .medium))
-                .foregroundColor(.white.opacity(0.55))
+                .foregroundColor(.ink.opacity(0.55))
             Text("Start Claude Code, Codex, Cursor or another connected agent")
                 .font(.system(size: 11 * textScale.factor))
-                .foregroundColor(.white.opacity(0.3))
+                .foregroundColor(.ink.opacity(0.3))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
@@ -210,8 +210,8 @@ struct InstanceRow: View {
     private var statusColor: Color {
         switch session.phase {
         case .waitingForApproval: return accent.attentionColor
-        case .waitingForInput: return accent == .full ? TerminalColors.green.opacity(0.9) : .white.opacity(0.6)
-        default: return .white.opacity(0.5)
+        case .waitingForInput: return accent == .full ? TerminalColors.green.opacity(0.9) : .ink.opacity(0.6)
+        default: return .ink.opacity(0.5)
         }
     }
 
@@ -234,11 +234,11 @@ struct InstanceRow: View {
 
     private var cardFill: Color {
         if isWaitingForApproval { return accent.attentionColor.opacity(0.10) }
-        return .white.opacity(isHovered ? 0.075 : 0.04)
+        return .ink.opacity(isHovered ? 0.075 : 0.04)
     }
 
     private var cardStroke: Color {
-        isWaitingForApproval ? accent.attentionColor.opacity(0.22) : .white.opacity(0.05)
+        isWaitingForApproval ? accent.attentionColor.opacity(0.22) : .ink.opacity(0.05)
     }
 
     var body: some View {
@@ -249,7 +249,7 @@ struct InstanceRow: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(title)
                         .font(.system(size: 13 * textScale.factor, weight: .medium))
-                        .foregroundColor(.white.opacity(0.92))
+                        .foregroundColor(.ink.opacity(0.92))
                         .lineLimit(1)
                     metaLine
                 }
@@ -290,11 +290,11 @@ struct InstanceRow: View {
         HStack(spacing: 5) {
             Text(statusWord).foregroundColor(statusColor)
             if showsProject {
-                Text("·").foregroundColor(.white.opacity(0.25))
-                Text(session.projectName).foregroundColor(.white.opacity(0.45))
+                Text("·").foregroundColor(.ink.opacity(0.25))
+                Text(session.projectName).foregroundColor(.ink.opacity(0.45))
             }
             if !activeSubagents.isEmpty {
-                Text("·").foregroundColor(.white.opacity(0.25))
+                Text("·").foregroundColor(.ink.opacity(0.25))
                 Button {
                     subagentsExpanded.toggle()
                 } label: {
@@ -303,7 +303,7 @@ struct InstanceRow: View {
                         Image(systemName: subagentsExpanded ? "chevron.up" : "chevron.down")
                             .font(.system(size: 7 * textScale.factor, weight: .bold))
                     }
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundColor(.ink.opacity(0.6))
                 }
                 .buttonStyle(.plain)
             }
@@ -331,7 +331,7 @@ struct InstanceRow: View {
         } else {
             Text(RelativeTime.short(since: session.lastActivity))
                 .font(.system(size: 11 * textScale.factor, weight: .regular, design: .rounded))
-                .foregroundColor(.white.opacity(0.3))
+                .foregroundColor(.ink.opacity(0.3))
                 .monospacedDigit()
                 .transition(.opacity)
         }
@@ -347,7 +347,7 @@ struct InstanceRow: View {
                 if let input = session.pendingToolInput, toolName != "AskUserQuestion" {
                     Text(input)
                         .font(.system(size: 11 * textScale.factor, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.55))
+                        .foregroundColor(.ink.opacity(0.55))
                         .lineLimit(1)
                         .truncationMode(.middle)
                 }
@@ -375,7 +375,7 @@ private struct AgentAvatar: View {
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
             RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .fill(Color.white.opacity(0.07))
+                .fill(Color.ink.opacity(0.07))
                 .frame(width: 30, height: 30)
                 .overlay(AgentIcon(agent: agent, size: 17))
             StatusDot(phase: phase, accent: accent)
@@ -395,7 +395,7 @@ private struct StatusDot: View {
         case .processing, .compacting: return Color(red: 1.0, green: 0.62, blue: 0.25)
         case .waitingForApproval: return accent.attentionColor
         case .waitingForInput: return accent.finishedColor
-        case .idle, .ended: return .white.opacity(0.3)
+        case .idle, .ended: return .ink.opacity(0.3)
         }
     }
 
@@ -410,7 +410,7 @@ private struct StatusDot: View {
                 .fill(color)
                 .frame(width: 9, height: 9)
                 .opacity(isAnimated ? 0.55 + 0.45 * wave : 1)
-                .background(Circle().stroke(Color.black, lineWidth: 2.5))
+                .background(Circle().stroke(Color.canvas, lineWidth: 2.5))
         }
     }
 }
@@ -428,10 +428,10 @@ struct SoftPill: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 11 * textScale.factor, weight: .semibold))
-                .foregroundColor(prominent ? .black : .white.opacity(0.75))
+                .foregroundColor(prominent ? .canvas : .ink.opacity(0.75))
                 .padding(.horizontal, 12)
                 .padding(.vertical, 5)
-                .background(Capsule().fill(prominent ? Color.white.opacity(isHovered ? 1 : 0.88) : Color.white.opacity(isHovered ? 0.16 : 0.1)))
+                .background(Capsule().fill(prominent ? Color.ink.opacity(isHovered ? 1 : 0.88) : Color.ink.opacity(isHovered ? 0.16 : 0.1)))
         }
         .buttonStyle(.plain)
         .onHover { isHovered = $0 }
@@ -466,10 +466,10 @@ private struct ProjectHeader: View {
         HStack(spacing: 6) {
             Text(name)
                 .font(.system(size: 11 * textScale.factor, weight: .semibold))
-                .foregroundColor(.white.opacity(0.55))
+                .foregroundColor(.ink.opacity(0.55))
             Text("\(count)")
                 .font(.system(size: 10 * textScale.factor, weight: .medium, design: .rounded))
-                .foregroundColor(.white.opacity(0.3))
+                .foregroundColor(.ink.opacity(0.3))
         }
         .padding(.leading, 10)
         .padding(.top, 8)
@@ -489,9 +489,9 @@ struct IconButton: View {
         Button(action: action) {
             Image(systemName: icon)
                 .font(.system(size: 10.5, weight: .semibold))
-                .foregroundColor(.white.opacity(isHovered ? 0.85 : 0.45))
+                .foregroundColor(.ink.opacity(isHovered ? 0.85 : 0.45))
                 .frame(width: 24, height: 24)
-                .background(Circle().fill(Color.white.opacity(isHovered ? 0.12 : 0.06)))
+                .background(Circle().fill(Color.ink.opacity(isHovered ? 0.12 : 0.06)))
         }
         .buttonStyle(.plain)
         .onHover { isHovered = $0 }
@@ -511,16 +511,16 @@ private struct SubagentList: View {
                 HStack(spacing: 6) {
                     WorkingIndicator(size: 9)
                     Text(task.description ?? "Subagent")
-                        .foregroundColor(.white.opacity(0.75))
+                        .foregroundColor(.ink.opacity(0.75))
                         .lineLimit(1)
                     if let last = task.subagentTools.last {
                         Text("· \(MCPToolFormatter.formatToolName(last.name))")
-                            .foregroundColor(.white.opacity(0.4))
+                            .foregroundColor(.ink.opacity(0.4))
                             .lineLimit(1)
                     }
                     Spacer(minLength: 0)
                     Text("^[\(task.subagentTools.count) tool](inflect: true)")
-                        .foregroundColor(.white.opacity(0.3))
+                        .foregroundColor(.ink.opacity(0.3))
                 }
                 .font(.system(size: 10.5 * textScale.factor))
             }
