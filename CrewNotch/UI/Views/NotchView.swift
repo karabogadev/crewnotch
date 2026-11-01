@@ -20,6 +20,7 @@ struct NotchView: View {
     @StateObject private var sessionMonitor = SessionMonitor()
     @StateObject private var activityCoordinator = NotchActivityCoordinator.shared
     @ObservedObject private var updateManager = UpdateManager.shared
+    @ObservedObject private var keepAwake = KeepAwakeController.shared
     @State private var previousPendingIds: Set<String> = []
     @State private var previousWaitingForInputIds: Set<String> = []
     @State private var waitingForInputTimestamps: [String: Date] = [:]  // sessionId -> when it entered waitingForInput
@@ -101,7 +102,13 @@ struct NotchView: View {
     /// Extra width for expanding activities (like Dynamic Island)
     private var expansionWidth: CGFloat {
         guard showClosedActivity else { return 0 }
-        return 2 * max(0, closedNotchSize.height - 12) + 20 + countBadgeWidth
+        return 2 * max(0, closedNotchSize.height - 12) + 20 + countBadgeWidth + keepAwakeWidth
+    }
+
+    /// Extra room on the right for the Keep Awake hourglass
+    private var keepAwakeWidth: CGFloat {
+        if case .active = keepAwake.state { return 13 }
+        return 0
     }
 
     /// Extra room on the left for the "+N" badge when several agents are busy
@@ -297,10 +304,17 @@ struct NotchView: View {
 
             // Right side - unified status glyph for crew activity
             if showClosedActivity, let activity = crewActivity {
-                NotchStatusGlyph(status: activity)
-                    .id(activity)
+                HStack(spacing: 4) {
+                    if case .active = keepAwake.state, viewModel.status != .opened {
+                        Image(systemName: "hourglass")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.5))
+                    }
+                    NotchStatusGlyph(status: activity)
+                        .id(activity)
+                }
                     .matchedGeometryEffect(id: "status", in: activityNamespace, isSource: showClosedActivity)
-                    .frame(width: viewModel.status == .opened ? 20 : sideWidth)
+                    .frame(width: viewModel.status == .opened ? 20 : sideWidth + keepAwakeWidth)
                     .padding(.trailing, viewModel.status == .opened ? 0 : 4)
             }
         }
@@ -323,6 +337,8 @@ struct NotchView: View {
                 .padding(.leading, showClosedActivity ? 0 : 8)
 
             Spacer()
+
+            KeepAwakeButton(controller: keepAwake)
 
             // Menu toggle
             Button {
