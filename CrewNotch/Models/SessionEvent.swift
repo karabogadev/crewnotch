@@ -70,6 +70,9 @@ enum SessionEvent: Sendable {
     /// Session has ended
     case sessionEnded(sessionId: String)
 
+    /// Context fill read from an agent's own log (Codex rollouts).
+    case contextUpdated(sessionId: String, usage: ContextUsage)
+
     /// Request to load initial history from file
     case loadHistory(sessionId: String, cwd: String)
 
@@ -217,6 +220,8 @@ extension SessionEvent: CustomStringConvertible {
             return "subagentStopped(session: \(sessionId.prefix(8)), task: \(taskToolId.prefix(12)))"
         case .agentFileUpdated(let sessionId, let taskToolId, let tools):
             return "agentFileUpdated(session: \(sessionId.prefix(8)), task: \(taskToolId.prefix(12)), tools: \(tools.count))"
+        case .contextUpdated(let sessionId, let usage):
+            return "contextUpdated(session: \(sessionId.prefix(8)), \(usage.usedTokens)/\(usage.windowTokens))"
         }
     }
 }

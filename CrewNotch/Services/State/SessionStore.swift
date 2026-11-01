@@ -35,6 +35,9 @@ actor SessionStore {
     /// Status check interval (3 seconds)
     private let statusCheckIntervalSeconds: UInt64 = 3
 
+    /// When each Codex session's context fill was last read
+    private var lastContextRead: [String: Date] = [:]
+
     // MARK: - Published State (for UI)
 
     /// Publisher for session state changes (nonisolated for Combine subscription from any context)
@@ -113,6 +116,9 @@ actor SessionStore {
         case .agentFileUpdated:
             // No longer used - subagent tools are populated from JSONL completion
             break
+
+        case .contextUpdated(let sessionId, let usage):
+            sessions[sessionId]?.reportedContext = usage
         }
 
         publishState()
@@ -169,6 +175,7 @@ actor SessionStore {
         }
 
         processToolTracking(event: event, session: &session)
+        trackTaskProgress(event: event, session: &session)
         if !isBackground {
             processSubagentTracking(event: event, session: &session)
         }
@@ -187,6 +194,33 @@ actor SessionStore {
         if event.shouldSyncFile {
             scheduleFileSync(sessionId: sessionId, cwd: event.cwd)
         }
+
+        if session.agent == .codex, event.event == "Stop" || event.event == "PostToolUse" {
+            refreshCodexContext(sessionId: sessionId, force: event.event == "Stop")
+        }
+    }
+
+    /// Reads a Codex session's context fill from its rollout, at most every few seconds.
+    private func refreshCodexContext(sessionId: String, force: Bool) {
+        let now = Date()
+        if !force, let last = lastContextRead[sessionId], now.timeIntervalSince(last) < 5 { return }
+        lastContextRead[sessionId] = now
+        let codexId = sessionId.hasPrefix("codex:") ? String(sessionId.dropFirst("codex:".count)) : sessionId
+        Task.detached(priority: .utility) {
+            guard let usage = CodexContextReader.context(sessionId: codexId) else { return }
+            await SessionStore.shared.process(.contextUpdated(sessionId: sessionId, usage: usage))
+        }
+    }
+
+    /// Keeps the agent's to-do list current. A finished list is cleared when
+    /// the next prompt starts a new task.
+    private func trackTaskProgress(event: HookEvent, session: inout SessionState) {
+        if event.event == "UserPromptSubmit", session.taskProgress?.isFinished == true {
+            session.taskProgress = nil
+        }
+        guard event.event == "PreToolUse" || event.event == "PostToolUse",
+              let progress = TaskProgress(toolName: event.tool, input: event.toolInput?.mapValues(\.value)) else { return }
+        session.taskProgress = progress
     }
 
     private func createSession(from event: HookEvent) -> SessionState {
@@ -616,6 +650,9 @@ actor SessionStore {
             cwd: session.cwd
         )
         session.conversationInfo = conversationInfo
+        if !payload.messages.isEmpty {
+            session.lastActivity = Date()
+        }
 
         // Handle /clear reconciliation - remove items that no longer exist in parser state
         if session.needsClearReconciliation {

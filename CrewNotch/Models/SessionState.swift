@@ -53,6 +53,19 @@ struct SessionState: Equatable, Identifiable, Sendable {
 
     var conversationInfo: ConversationInfo
 
+    // MARK: - Progress
+
+    /// The agent's own to-do list, from its latest to-do tool call.
+    var taskProgress: TaskProgress? = nil
+
+    /// Context fill reported outside the Claude transcript (Codex rollouts).
+    var reportedContext: ContextUsage? = nil
+
+    /// How full the model's context window is, when known.
+    var contextUsage: ContextUsage? {
+        agent.hasClaudeTranscript ? ContextUsage.claude(usage: conversationInfo.usage) : reportedContext
+    }
+
     // MARK: - Clear Reconciliation
 
     /// When true, the next file update should reconcile chatItems with parser state

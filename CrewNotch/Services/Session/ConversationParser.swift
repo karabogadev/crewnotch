@@ -15,6 +15,10 @@ struct UsageInfo: Equatable {
     var outputTokens: Int = 0
     var cacheReadTokens: Int = 0
     var cacheCreationTokens: Int = 0
+    /// Prompt size of the latest main-thread request: how full the context is.
+    var contextTokens: Int = 0
+    /// Model of the latest main-thread request.
+    var model: String?
 
     var totalTokens: Int {
         inputTokens + outputTokens
@@ -151,10 +155,18 @@ actor ConversationParser {
             if json["type"] as? String == "assistant",
                let message = json["message"] as? [String: Any],
                let usageDict = message["usage"] as? [String: Any] {
-                usage.inputTokens += usageDict["input_tokens"] as? Int ?? 0
+                let input = usageDict["input_tokens"] as? Int ?? 0
+                let cacheRead = usageDict["cache_read_input_tokens"] as? Int ?? 0
+                let cacheCreation = usageDict["cache_creation_input_tokens"] as? Int ?? 0
+                usage.inputTokens += input
                 usage.outputTokens += usageDict["output_tokens"] as? Int ?? 0
-                usage.cacheReadTokens += usageDict["cache_read_input_tokens"] as? Int ?? 0
-                usage.cacheCreationTokens += usageDict["cache_creation_input_tokens"] as? Int ?? 0
+                usage.cacheReadTokens += cacheRead
+                usage.cacheCreationTokens += cacheCreation
+                // Subagents run in their own context; only the main thread fills this one
+                if json["isSidechain"] as? Bool != true, input + cacheRead + cacheCreation > 0 {
+                    usage.contextTokens = input + cacheRead + cacheCreation
+                    usage.model = message["model"] as? String ?? usage.model
+                }
             }
         }
 
