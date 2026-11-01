@@ -85,11 +85,13 @@ struct AgentRow: View {
     @State private var isWorking = false
 
     private var subtitle: String {
-        if !status.isDetected { return "Not found on this Mac" }
+        if !status.isDetected { return String(localized: "Not found on this Mac") }
         if status.isConnected {
-            return agent.supportsApproval ? "Connected · live status and approvals" : "Connected · live status"
+            return agent.supportsApproval
+                ? String(localized: "Connected · live status and approvals")
+                : String(localized: "Connected · live status")
         }
-        return "Detected · not connected"
+        return String(localized: "Detected · not connected")
     }
 
     var body: some View {

@@ -98,9 +98,9 @@ struct UsagePane: View {
 
     private var styleDescription: String {
         switch usageStyle {
-        case .line: return "One line per provider with the limit you pick. Hover for every limit."
-        case .bars: return "Every metric of every provider as its own bar."
-        case .compact: return "All providers on a single line, each with a ring and a percentage."
+        case .line: return String(localized: "One line per provider with the limit you pick. Hover for every limit.")
+        case .bars: return String(localized: "Every metric of every provider as its own bar.")
+        case .compact: return String(localized: "All providers on a single line, each with a ring and a percentage.")
         }
     }
 }
@@ -122,8 +122,11 @@ private struct ProviderRow: View {
             } label: {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(agent.displayName)
-                    Text("\(metricCount) metrics" + (usage?.plan.map { " · \($0)" } ?? ""))
-                        .font(.caption).foregroundStyle(.secondary)
+                    HStack(spacing: 4) {
+                        Text("^[\(metricCount) metric](inflect: true)")
+                        if let plan = usage?.plan { Text("· \(plan)") }
+                    }
+                    .font(.caption).foregroundStyle(.secondary)
                 }
             }
             Toggle("", isOn: Binding(
@@ -169,7 +172,7 @@ private struct ProviderMetricsView: View {
                         }
                     )) {
                         HStack {
-                            Text(metric)
+                            Text(UsageLimit.displayName(metric))
                             Spacer()
                             Text(currentValue(of: metric)).foregroundStyle(.secondary).monospacedDigit()
                         }
@@ -190,7 +193,9 @@ private struct ProviderMetricsView: View {
     private func currentValue(of metric: String) -> String {
         guard let limit = usage?.limits.first(where: { $0.label == metric }) else { return "–" }
         let value = percentMode == .used ? limit.usedPercent : 100 - limit.usedPercent
-        var text = "\(Int(value.rounded()))% \(percentMode.rawValue)"
+        var text = percentMode == .used
+            ? String(localized: "\(Int(value.rounded()))% used")
+            : String(localized: "\(Int(value.rounded()))% left")
         if let reset = limit.resetsAt { text += " · \(UsageFormat.timeUntil(reset))" }
         return text
     }

@@ -153,19 +153,19 @@ struct NotchPreview: View {
 
         var title: String {
             switch self {
-            case .working: return "Working"
-            case .finished: return "Finished"
-            case .needsYou: return "Needs you"
-            case .openPanel: return "Open panel"
+            case .working: return String(localized: "Working")
+            case .finished: return String(localized: "Finished")
+            case .needsYou: return String(localized: "Needs you")
+            case .openPanel: return String(localized: "Open panel")
             }
         }
 
         var explanation: String {
             switch self {
-            case .working: return "While agents work, the notch shows the busiest agent's logo and the crew dots."
-            case .finished: return "When a turn finishes, the notch drops down for a moment. Click it to go back to the session."
-            case .needsYou: return "Questions and approvals open the notch. Agents that support it can be answered right there."
-            case .openPanel: return "Hover or click the notch to see every session, grouped by project."
+            case .working: return String(localized: "While agents work, the notch shows the busiest agent's logo and the crew dots.")
+            case .finished: return String(localized: "When a turn finishes, the notch drops down for a moment. Click it to go back to the session.")
+            case .needsYou: return String(localized: "Questions and approvals open the notch. Agents that support it can be answered right there.")
+            case .openPanel: return String(localized: "Hover or click the notch to see every session, grouped by project.")
             }
         }
     }
@@ -173,7 +173,7 @@ struct NotchPreview: View {
     enum Device: String, CaseIterable, Identifiable {
         case macBook, monitor
         var id: String { rawValue }
-        var title: String { self == .macBook ? "MacBook" : "Monitor" }
+        var title: String { self == .macBook ? "MacBook" : String(localized: "Monitor") }
     }
 
     let state: State

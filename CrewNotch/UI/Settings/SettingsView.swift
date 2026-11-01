@@ -15,7 +15,16 @@ enum SettingsPane: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
-    var title: String { rawValue.capitalized }
+    var title: String {
+        switch self {
+        case .general: return String(localized: "General")
+        case .notifications: return String(localized: "Notifications")
+        case .appearance: return String(localized: "Appearance")
+        case .usage: return String(localized: "Usage")
+        case .agents: return String(localized: "Agents")
+        case .about: return String(localized: "About")
+        }
+    }
 
     var icon: String {
         switch self {
@@ -77,9 +86,9 @@ private struct GeneralPane: View {
 
     private var keepAwakeStatus: String {
         switch keepAwake.state {
-        case .active(let until): return "On until \(until.formatted(date: .omitted, time: .shortened))"
-        case .paused(let reason): return "Paused: \(reason)"
-        case .off: return "Off"
+        case .active(let until): return String(localized: "On until \(until.formatted(date: .omitted, time: .shortened))")
+        case .paused(let reason): return String(localized: "Paused: \(reason)")
+        case .off: return String(localized: "Off")
         }
     }
 
@@ -122,7 +131,7 @@ private struct GeneralPane: View {
                         Text(keepAwakeStatus).font(.caption).foregroundStyle(.secondary)
                     }
                 }
-                Stepper("Turn off after \(maxHours) hour\(maxHours == 1 ? "" : "s")", value: $maxHours, in: 1...12)
+                Stepper("Turn off after \(maxHours) h", value: $maxHours, in: 1...12)
                 Toggle("Only on power adapter", isOn: $requiresAdapter)
                 Picker("On battery, stop below", selection: $minBattery) {
                     ForEach([10, 20, 30, 50], id: \.self) { Text("\($0)%").tag($0) }
@@ -260,7 +269,7 @@ private struct AboutPane: View {
         let info = Bundle.main.infoDictionary
         let short = info?["CFBundleShortVersionString"] as? String ?? "1.0"
         let build = info?["CFBundleVersion"] as? String ?? "1"
-        return "Version \(short) (\(build))"
+        return String(localized: "Version \(short) (\(build))")
     }
 
     var body: some View {
