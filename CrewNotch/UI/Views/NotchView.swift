@@ -28,6 +28,7 @@ struct NotchView: View {
     @AppStorage(AppearanceKeys.closedShowsUsage) private var closedShowsUsage = false
     @AppStorage(AppearanceKeys.idleNotch) private var idleNotch: IdleNotchBehavior = .hide
     @AppStorage("usagePercentMode") private var usagePercentMode: UsagePercentMode = .used
+    @AppStorage(AppearanceKeys.accentMode) private var accent: AccentMode = .full
     @State private var previousPendingIds: Set<String> = []
     @State private var previousWaitingForInputIds: Set<String> = []
     // Keyed by sessionId, not stableId: the pid in stableId can change between
@@ -108,18 +109,18 @@ struct NotchView: View {
         sessionMonitor.instances.filter { $0.phase.isActive || $0.phase.isWaitingForApproval }.count
     }
 
-    /// One-line summary for the opened header, e.g. "2 working · 1 needs you"
-    private var crewSummary: String {
+    /// The opened header: how many agents, then what most deserves a look
+    private var crewSummary: (total: String, detail: String?, isRequest: Bool) {
         let sessions = sessionMonitor.instances
+        guard !sessions.isEmpty else { return (String(localized: "No agents running"), nil, false) }
+        let total = String(localized: "^[\(sessions.count) agent](inflect: true)")
         let needsYou = sessions.filter { $0.phase.isWaitingForApproval }.count
+        if needsYou > 0 { return (total, String(localized: "\(needsYou) needs you"), true) }
         let working = sessions.filter { $0.phase.isActive }.count
+        if working > 0 { return (total, String(localized: "\(working) working"), false) }
         let done = sessions.filter { $0.phase == .waitingForInput }.count
-        var parts: [String] = []
-        if needsYou > 0 { parts.append(String(localized: "\(needsYou) needs you")) }
-        if working > 0 { parts.append(String(localized: "\(working) working")) }
-        if done > 0 { parts.append(String(localized: "\(done) done")) }
-        if parts.isEmpty { return sessions.isEmpty ? String(localized: "No agents running") : String(localized: "All quiet") }
-        return parts.joined(separator: " · ")
+        if done > 0 { return (total, String(localized: "\(done) done"), false) }
+        return (total, String(localized: "All quiet"), false)
     }
 
     // MARK: - Sizing
@@ -381,11 +382,21 @@ struct NotchView: View {
     @ViewBuilder
     private var openedHeaderContent: some View {
         HStack(spacing: 12) {
-            Text(crewSummary)
-                .font(.system(size: 12, weight: .medium))
-                .foregroundColor(.ink.opacity(0.55))
-                .lineLimit(1)
-                .padding(.leading, 8)
+            let summary = crewSummary
+            HStack(spacing: 8) {
+                Text(summary.total)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.ink.opacity(0.9))
+                if let detail = summary.detail {
+                    Text(detail)
+                        .fontWeight(.medium)
+                        .foregroundColor(summary.isRequest ? accent.attentionColor : .ink.opacity(0.5))
+                }
+            }
+            .font(.system(size: 12))
+            .monospacedDigit()
+            .lineLimit(1)
+            .padding(.leading, 8)
 
             Spacer()
 
@@ -394,9 +405,9 @@ struct NotchView: View {
                 AppWindows.showTokenHistory()
             } label: {
                 Image(systemName: "chart.bar.xaxis")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.ink.opacity(0.4))
-                    .frame(width: 22, height: 22)
+                    .font(.system(size: 11.5, weight: .medium))
+                    .foregroundColor(.ink.opacity(0.5))
+                    .frame(width: 26, height: 26)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -410,9 +421,9 @@ struct NotchView: View {
                 AppWindows.showSettings()
             } label: {
                 Image(systemName: "gearshape")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.ink.opacity(0.4))
-                    .frame(width: 22, height: 22)
+                    .font(.system(size: 11.5, weight: .medium))
+                    .foregroundColor(.ink.opacity(0.5))
+                    .frame(width: 26, height: 26)
                     .contentShape(Rectangle())
             }
             .help("Settings")

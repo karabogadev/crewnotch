@@ -15,7 +15,7 @@ struct KeepAwakeButton: View {
         switch controller.state {
         case .active: return TerminalColors.green
         case .paused: return TerminalColors.amber
-        case .off: return .ink.opacity(isHovered ? 0.7 : 0.4)
+        case .off: return .ink.opacity(isHovered ? 0.8 : 0.5)
         }
     }
 
@@ -37,7 +37,7 @@ struct KeepAwakeButton: View {
             Image(systemName: controller.isEnabled ? "hourglass.circle.fill" : "hourglass")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(color)
-                .frame(width: 22, height: 22)
+                .frame(width: 26, height: 26)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
