@@ -119,11 +119,14 @@ struct SessionListView: View {
                     ForEach(group.sessions) { session in
                         InstanceRow(
                             session: session,
+                            isKeyboardTarget: session.sessionId == keyboardTargetId,
                             onFocus: { focusSession(session) },
                             onChat: { openChat(session) },
                             onArchive: { archiveSession(session) },
                             onApprove: { approveSession(session) },
-                            onReject: { rejectSession(session) }
+                            onApproveAlways: { sessionMonitor.approvePermission(sessionId: session.sessionId, always: true) },
+                            onReject: { rejectSession(session) },
+                            onAnswer: { answers in sessionMonitor.answerQuestion(sessionId: session.sessionId, answers: answers) }
                         )
                         .id(session.stableId)
                     }
@@ -134,6 +137,14 @@ struct SessionListView: View {
             .reportHeight()
         }
         .scrollBounceBehavior(.basedOnSize)
+    }
+
+    @AppStorage(FeatureKeys.panelShortcuts) private var panelShortcuts = true
+
+    /// The request ⌘↩ / ⌘⌫ act on, marked with a shortcut hint
+    private var keyboardTargetId: String? {
+        guard panelShortcuts else { return nil }
+        return ApprovalActions.keyboardTarget(in: sessionMonitor.instances)?.sessionId
     }
 
     // MARK: - Actions
@@ -178,21 +189,35 @@ struct InstanceRow: View {
     @AppStorage(FeatureKeys.showTaskProgress) private var showTaskProgress = true
     @AppStorage(FeatureKeys.contextFill) private var contextFill: ContextFillDisplay = .aboveHalf
     @AppStorage(FeatureKeys.stalledAfterMinutes) private var stalledAfterMinutes = 10
+    @AppStorage(FeatureKeys.offerAlwaysAllow) private var offerAlwaysAllow = true
+    @AppStorage(FeatureKeys.answerQuestionsInNotch) private var answerQuestionsInNotch = true
     let session: SessionState
+    var isKeyboardTarget = false
     let onFocus: () -> Void
     let onChat: () -> Void
     let onArchive: () -> Void
     let onApprove: () -> Void
+    var onApproveAlways: () -> Void = {}
     let onReject: () -> Void
+    var onAnswer: ([String: String]) -> Void = { _ in }
 
     @State private var isHovered = false
     @State private var subagentsExpanded = false
 
     private var isWaitingForApproval: Bool { session.phase.isWaitingForApproval }
 
+    /// The agent's multiple-choice question, when it can be answered here
+    private var answerableQuestions: [AgentQuestion]? {
+        guard answerQuestionsInNotch, let permission = session.activePermission,
+              permission.toolName == "AskUserQuestion", permission.canRespond else { return nil }
+        let questions = AgentQuestion.parse(permission.rawInput)
+        return questions.isEmpty ? nil : questions
+    }
+
     /// The request needs more than approve/deny, or only the agent itself can answer it
     private var isInteractiveTool: Bool {
         guard let permission = session.activePermission else { return false }
+        if answerableQuestions != nil { return false }
         return permission.toolName == "AskUserQuestion" || !permission.canRespond
     }
 
@@ -273,7 +298,18 @@ struct InstanceRow: View {
             }
 
             if isWaitingForApproval {
-                approvalStrip
+                if let questions = answerableQuestions {
+                    QuestionCard(
+                        questions: questions,
+                        showsShortcuts: isKeyboardTarget,
+                        onSubmit: onAnswer,
+                        onOpenAgent: SessionFocuser.canFocus(session) ? onFocus : nil
+                    )
+                    .padding(.leading, 41)
+                    .id(session.activePermission?.toolUseId)
+                } else {
+                    approvalStrip
+                }
             }
 
             if subagentsExpanded && !activeSubagents.isEmpty {
@@ -418,8 +454,12 @@ struct InstanceRow: View {
                         SoftPill(title: session.agent.isTerminalAgent ? "Terminal" : "Open", prominent: true, action: onFocus)
                     }
                 } else {
-                    SoftPill(title: "Deny", prominent: false, action: onReject)
-                    SoftPill(title: "Allow", prominent: true, action: onApprove)
+                    SoftPill(title: "Deny", prominent: false, hint: isKeyboardTarget ? "⌘⌫" : nil, action: onReject)
+                    if offerAlwaysAllow, let rule = session.activePermission?.suggestionSummary {
+                        SoftPill(title: "Always", prominent: false, hint: isKeyboardTarget ? "⌘⇧↩" : nil, action: onApproveAlways)
+                            .help(String(localized: "Allow and don't ask again: \(rule)"))
+                    }
+                    SoftPill(title: "Allow", prominent: true, hint: isKeyboardTarget ? "⌘↩" : nil, action: onApprove)
                 }
             }
 
@@ -565,6 +605,8 @@ private struct StatusDot: View {
 struct SoftPill: View {
     let title: LocalizedStringKey
     let prominent: Bool
+    /// Keyboard shortcut shown faintly after the title
+    var hint: String? = nil
     let action: () -> Void
 
     @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
@@ -572,7 +614,14 @@ struct SoftPill: View {
 
     var body: some View {
         Button(action: action) {
-            Text(title)
+            HStack(spacing: 4) {
+                Text(title)
+                if let hint {
+                    Text(hint)
+                        .font(.system(size: 9.5 * textScale.factor, weight: .medium))
+                        .opacity(0.55)
+                }
+            }
                 .font(.system(size: 11 * textScale.factor, weight: .semibold))
                 .foregroundColor(prominent ? .canvas : .ink.opacity(0.75))
                 .padding(.horizontal, 12)

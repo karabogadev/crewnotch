@@ -18,6 +18,29 @@ extension PermissionContext {
     func riskWarnings(cwd: String?) -> [String] {
         CommandRisk.warnings(toolName: toolName, input: rawInput, cwd: cwd)
     }
+
+    /// What "Always allow" would save, e.g. "Bash(npm test:*)".
+    var suggestionSummary: String? {
+        guard let suggestions else { return nil }
+        var parts: [String] = []
+        for case let suggestion as [String: Any] in suggestions.map(\.value) {
+            if let rules = suggestion["rules"] as? [[String: Any]] {
+                for rule in rules {
+                    guard let tool = rule["toolName"] as? String else { continue }
+                    if let content = rule["ruleContent"] as? String, !content.isEmpty {
+                        parts.append("\(tool)(\(content))")
+                    } else {
+                        parts.append(tool)
+                    }
+                }
+            } else if suggestion["type"] as? String == "setMode", let mode = suggestion["mode"] as? String {
+                parts.append(mode == "acceptEdits" ? String(localized: "Accept edits for this session") : mode)
+            } else if let directories = suggestion["directories"] as? [String] {
+                parts.append(contentsOf: directories)
+            }
+        }
+        return parts.isEmpty ? nil : parts.joined(separator: ", ")
+    }
 }
 
 struct ApprovalDetailView: View {

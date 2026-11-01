@@ -71,7 +71,18 @@ struct ChatView: View {
 
                 // Approval bar, interactive prompt, or Input bar
                 if let tool = approvalTool {
-                    if tool == "AskUserQuestion" || session.activePermission?.canRespond == false {
+                    if let questions = answerableQuestions {
+                        QuestionCard(
+                            questions: questions,
+                            onSubmit: { answers in sessionMonitor.answerQuestion(sessionId: sessionId, answers: answers) },
+                            onOpenAgent: SessionFocuser.canFocus(session) ? { focusTerminal() } : nil
+                        )
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
+                        .background(Color.recess)
+                        .id(session.activePermission?.toolUseId)
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                    } else if tool == "AskUserQuestion" || session.activePermission?.canRespond == false {
                         // Questions, or approvals only the agent can answer: jump to it
                         interactivePromptBar
                             .transition(.asymmetric(
@@ -422,6 +433,16 @@ struct ChatView: View {
         .zIndex(1) // Render above message list
     }
 
+    @AppStorage(FeatureKeys.answerQuestionsInNotch) private var answerQuestionsInNotch = true
+
+    /// The agent's multiple-choice question, when it can be answered here
+    private var answerableQuestions: [AgentQuestion]? {
+        guard answerQuestionsInNotch, let permission = session.activePermission,
+              permission.toolName == "AskUserQuestion", permission.canRespond else { return nil }
+        let questions = AgentQuestion.parse(permission.rawInput)
+        return questions.isEmpty ? nil : questions
+    }
+
     // MARK: - Approval Bar
 
     private func approvalBar(tool: String) -> some View {
@@ -431,6 +452,7 @@ struct ChatView: View {
             permission: session.activePermission,
             cwd: session.cwd,
             onApprove: { approvePermission() },
+            onApproveAlways: { sessionMonitor.approvePermission(sessionId: sessionId, always: true) },
             onDeny: { denyPermission() }
         )
     }
@@ -1147,8 +1169,10 @@ struct ChatApprovalBar: View {
     var permission: PermissionContext? = nil
     var cwd: String = ""
     let onApprove: () -> Void
+    var onApproveAlways: () -> Void = {}
     let onDeny: () -> Void
 
+    @AppStorage(FeatureKeys.offerAlwaysAllow) private var offerAlwaysAllow = true
     @AppStorage(FeatureKeys.showApprovalDetails) private var showApprovalDetails = true
     @AppStorage(FeatureKeys.warnRiskyCommands) private var warnRiskyCommands = true
     @State private var showContent = false
@@ -1224,6 +1248,24 @@ struct ChatApprovalBar: View {
             .buttonStyle(.plain)
             .opacity(showDenyButton ? 1 : 0)
             .scaleEffect(showDenyButton ? 1 : 0.8)
+
+            if offerAlwaysAllow, let rule = permission?.suggestionSummary {
+                Button {
+                    onApproveAlways()
+                } label: {
+                    Text("Always")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundColor(.ink.opacity(0.7))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(Color.ink.opacity(0.1))
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .help(String(localized: "Allow and don't ask again: \(rule)"))
+                .opacity(showAllowButton ? 1 : 0)
+                .scaleEffect(showAllowButton ? 1 : 0.8)
+            }
 
             // Allow button
             Button {
