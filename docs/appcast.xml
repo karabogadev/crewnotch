@@ -3,6 +3,46 @@
     <channel>
         <title>CrewNotch</title>
         <item>
+            <title>1.2.0</title>
+            <pubDate>Sun, 01 Nov 2026 10:30:38 +0300</pubDate>
+            <link>https://karabogadev.github.io/crewnotch/</link>
+            <sparkle:fullReleaseNotesLink>https://github.com/karabogadev/crewnotch/releases</sparkle:fullReleaseNotesLink>
+            <sparkle:version>8</sparkle:version>
+            <sparkle:shortVersionString>1.2.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.6</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[## What's new
+
+**Know what you approve**
+- Approvals show the whole command, the diff of an edit or the start of a new file before you allow them.
+- Risky requests get a red warning: deleting files, force-pushing, `sudo`, running downloaded scripts, editing secrets or files outside the project.
+- **Always** saves the rule Claude Code suggests (like `Bash(npm test:*)`) so it stops asking.
+- **OpenCode** requests can now be answered from the notch too.
+
+**Answer Claude's questions in the notch**
+- When Claude Code asks you to choose, pick an option, tick several or type your own answer, right in the notch.
+
+**Keyboard first**
+- A global shortcut opens the notch from any app (⌃⌥N by default; change it in Settings → General).
+- Then ⌘↩ allows, ⌘⇧↩ always allows, ⌘⌫ denies, 1–9 picks an answer and ⎋ closes.
+
+**More in every row**
+- The git branch, how full the context window is (Claude Code, Codex), and the agent's own to-do progress, like *3/7 · Writing tests*.
+- A session that has been working without a sound for a while is marked as quiet, so a stuck one is easy to spot and clear.
+
+**When you're away**
+- Mac notifications and pushes to your phone through ntfy, always or only after you've stepped away. Both are off until you turn them on in Settings → Notifications.
+- The notch tells you when a plan limit runs low and when it resets.
+
+**Also new**
+- `crewnotch run npm test` shows any long command in the notch and tells you when it finishes or fails. Install the command in Settings → General.
+- Recently ended sessions stay at the bottom of the list. **Resume** reopens the conversation in a terminal.
+- Hide the notch from screen sharing and recordings (Settings → General → Privacy).
+- A new **Approvals** pane in Settings. Every new feature can be turned off or tuned.
+
+]]></description>
+            <enclosure url="https://github.com/karabogadev/crewnotch/releases/download/v1.2.0/CrewNotch-1.2.0.dmg" length="5950177" type="application/octet-stream" sparkle:edSignature="67LIoYrUr2K5WNAS/UJQIrVTXkSHbUaLMu5xD0OvBn7Z7qWDdLHHApJikS/TNW/wgsjQno+OhdAvCCNpvMO0BQ=="/>
+        </item>
+        <item>
             <title>1.1.5</title>
             <pubDate>Sun, 01 Nov 2026 07:54:47 +0300</pubDate>
             <link>https://karabogadev.github.io/crewnotch/</link>
