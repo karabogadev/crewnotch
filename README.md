@@ -29,6 +29,7 @@ You run Claude Code in one terminal, Codex in another, Cursor and Antigravity in
 - **Plan usage in the notch.** Session, weekly and per-model limits for Claude, Codex, Antigravity, Cursor, Copilot, Grok, OpenCode Go and Kiro, with no separate app.
 - **Token history.** Tokens per day across agents, the estimated API value of your Claude usage, and your busiest day. Share it as an image.
 - **Keep Awake.** Agents keep running when the display sleeps or the screen locks. It works on power adapter only, stops below a battery threshold and turns itself off after a time limit.
+- **Light or dark.** A light and a dark theme for the panel and windows, or follow the system. The closed notch always stays black.
 - **Make it yours.** Six working indicators, notch animations, materials and colors, sounds per event, text size and much more.
 - **Private by design.** No account and no analytics. Everything stays on your Mac.
 - **Speaks your language.** English, 简体中文, हिन्दी, Español, Français, العربية, Português (Brasil), Русский, 日本語 and Türkçe. Switch any time in Settings → General.
@@ -76,7 +77,7 @@ flowchart LR
 
 ## Install
 
-**Download:** get [CrewNotch.dmg](https://github.com/karabogadev/crewnotch/releases/latest/download/CrewNotch.dmg) (version 1.0.0, universal), open it and drag CrewNotch to Applications. Every version is on the [Releases](https://github.com/karabogadev/crewnotch/releases) page.
+**Download:** get [CrewNotch.dmg](https://github.com/karabogadev/crewnotch/releases/latest/download/CrewNotch.dmg) (version 1.1.0, universal), open it and drag CrewNotch to Applications. Every version is on the [Releases](https://github.com/karabogadev/crewnotch/releases) page.
 
 **First launch:** this build isn't notarized by Apple yet, so macOS blocks it the first time. Open **System Settings → Privacy & Security** and click **Open Anyway** next to CrewNotch, or run once:
 
@@ -108,7 +109,7 @@ You can change everything later from the ⚙︎ in the notch.
 |---|---|
 | **General** | Launch at login, which display shows the notch, Keep Awake and its limits |
 | **Notifications** | Live notch preview, show requests, reply from the notch, finished banner, a sound per event |
-| **Appearance** | Text size, panel material and color, what the closed notch shows, session list options, working indicator, animations |
+| **Appearance** | Theme (System, Dark or Light), text size, panel material and color, what the closed notch shows, session list options, working indicator, animations |
 | **Usage** | Line, Bars or Compact layout, used or left, provider order and per-metric visibility |
 | **Agents** | Every supported agent with its status: connect, disconnect, setup notes |
 
@@ -159,7 +160,6 @@ Open **Settings → Agents** and press **Disconnect** for each agent; this remov
 
 ## Roadmap
 
-- Light panel themes
 - Notarized builds signed with a Developer ID
 - An agent detail page with diagnostics
 - A Homebrew cask
