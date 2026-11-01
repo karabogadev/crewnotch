@@ -121,7 +121,7 @@ You can change everything later from the ⚙︎ in the notch.
 - Agent activity comes from hooks and log files on your Mac and never leaves it.
 - **Codex usage** is read from Codex's local session files.
 - **Every other usage provider** is off until you turn it on in Settings → Usage, where each one says exactly what it reads.
-- **Claude usage** is opt-in. CrewNotch reads Claude Code's existing sign-in from the keychain (macOS asks once) and calls Anthropic's usage endpoint at most every five minutes. The token is never refreshed or written.
+- **Claude usage** is opt-in. CrewNotch reads Claude Code's existing sign-in from the keychain the way Claude Code itself does, so macOS doesn't ask, and calls Anthropic's usage endpoint at most every five minutes. The token is never refreshed or written.
 - **Update checks** fetch a small appcast file from this project's website once a day. Nothing about you or your work is sent.
 - **Token history** is computed from local logs and cached in `~/.crewnotch/token-history.json`.
 - **Phone notifications** are off by default. When you turn them on, pushes go to the ntfy server you choose, under a random topic. They only name the agent that needs you unless you also allow the project and request.
