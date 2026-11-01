@@ -14,7 +14,11 @@ struct AgentIcon: View {
     var size: CGFloat = 14
 
     var body: some View {
-        if let image = AgentIconCache.appIcon(for: agent) {
+        if agent == .claude {
+            ClaudeSpark()
+                .fill(agent.badgeColor)
+                .frame(width: size, height: size)
+        } else if let image = AgentIconCache.appIcon(for: agent) {
             Image(nsImage: image)
                 .resizable()
                 .interpolation(.high)
@@ -78,5 +82,40 @@ extension AgentKind {
         case .grok: return Color(white: 0.15)
         case .kiro: return Color(red: 0.5, green: 0.32, blue: 0.95)
         }
+    }
+}
+
+/// Claude's spark mark: tapered rays of uneven length around a small core.
+struct ClaudeSpark: Shape {
+    private static let rays: [(angle: Double, length: Double)] = [
+        (0, 1.0), (31, 0.86), (58, 0.97), (92, 0.9), (121, 1.0), (149, 0.84),
+        (181, 0.98), (211, 0.88), (238, 1.0), (272, 0.85), (301, 0.96), (329, 0.9),
+    ]
+
+    func path(in rect: CGRect) -> Path {
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let radius = min(rect.width, rect.height) / 2
+        let baseHalfWidth = radius * 0.13
+        let tipHalfWidth = radius * 0.035
+        var path = Path()
+
+        for ray in Self.rays {
+            let angle = (ray.angle - 90) * .pi / 180
+            let direction = CGVector(dx: cos(angle), dy: sin(angle))
+            let normal = CGVector(dx: -direction.dy, dy: direction.dx)
+            let base = CGPoint(x: center.x + direction.dx * radius * 0.12, y: center.y + direction.dy * radius * 0.12)
+            let tip = CGPoint(x: center.x + direction.dx * radius * ray.length, y: center.y + direction.dy * radius * ray.length)
+
+            path.move(to: CGPoint(x: base.x + normal.dx * baseHalfWidth, y: base.y + normal.dy * baseHalfWidth))
+            path.addLine(to: CGPoint(x: tip.x + normal.dx * tipHalfWidth, y: tip.y + normal.dy * tipHalfWidth))
+            path.addQuadCurve(
+                to: CGPoint(x: tip.x - normal.dx * tipHalfWidth, y: tip.y - normal.dy * tipHalfWidth),
+                control: CGPoint(x: tip.x + direction.dx * tipHalfWidth * 2, y: tip.y + direction.dy * tipHalfWidth * 2)
+            )
+            path.addLine(to: CGPoint(x: base.x - normal.dx * baseHalfWidth, y: base.y - normal.dy * baseHalfWidth))
+            path.closeSubpath()
+        }
+        path.addEllipse(in: CGRect(x: center.x - radius * 0.2, y: center.y - radius * 0.2, width: radius * 0.4, height: radius * 0.4))
+        return path
     }
 }
