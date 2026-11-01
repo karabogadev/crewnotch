@@ -52,7 +52,6 @@ class ScreenSelector: ObservableObject {
     @Published private(set) var availableScreens: [NSScreen] = []
     @Published private(set) var selectedScreen: NSScreen?
     @Published var selectionMode: ScreenSelectionMode = .automatic
-    @Published var isPickerExpanded: Bool = false
 
     // MARK: - UserDefaults Keys
     private let modeKey = "screenSelectionMode"
@@ -97,11 +96,6 @@ class ScreenSelector: ObservableObject {
     }
 
     /// Extra height needed when picker is expanded
-    var expandedPickerHeight: CGFloat {
-        guard isPickerExpanded else { return 0 }
-        // +1 for "Automatic" option
-        return CGFloat(availableScreens.count + 1) * 40
-    }
 
     // MARK: - Private Methods
 

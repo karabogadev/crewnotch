@@ -25,13 +25,11 @@ enum NotchOpenReason {
 
 enum NotchContentType: Equatable {
     case instances
-    case menu
     case chat(SessionState)
 
     var id: String {
         switch self {
         case .instances: return "instances"
-        case .menu: return "menu"
         case .chat(let session): return "chat-\(session.sessionId)"
         }
     }
@@ -45,12 +43,6 @@ class NotchViewModel: ObservableObject {
     @Published var openReason: NotchOpenReason = .unknown
     @Published var contentType: NotchContentType = .instances
     @Published var isHovering: Bool = false
-
-    // MARK: - Dependencies
-
-    private let screenSelector = ScreenSelector.shared
-    private let soundSelector = SoundSelector.shared
-    private let claudeDirSelector = ClaudeDirSelector.shared
 
     // MARK: - Geometry
 
@@ -70,17 +62,6 @@ class NotchViewModel: ObservableObject {
             return CGSize(
                 width: min(screenRect.width * 0.5, 600),
                 height: 580
-            )
-        case .menu:
-            // Base height covers all static rows (Back, 3 picker rows, 3 toggles,
-            // Accessibility, Update, GitHub, Quit + 4 dividers + padding).
-            // Picker expansion deltas added on top when expanded.
-            return CGSize(
-                width: min(screenRect.width * 0.4, 480),
-                height: 540
-                    + screenSelector.expandedPickerHeight
-                    + soundSelector.expandedPickerHeight
-                    + claudeDirSelector.expandedPickerHeight
             )
         case .instances:
             return CGSize(
@@ -112,21 +93,6 @@ class NotchViewModel: ObservableObject {
         )
         self.hasPhysicalNotch = hasPhysicalNotch
         setupEventHandlers()
-        observeSelectors()
-    }
-
-    private func observeSelectors() {
-        screenSelector.$isPickerExpanded
-            .sink { [weak self] _ in self?.objectWillChange.send() }
-            .store(in: &cancellables)
-
-        soundSelector.$isPickerExpanded
-            .sink { [weak self] _ in self?.objectWillChange.send() }
-            .store(in: &cancellables)
-
-        claudeDirSelector.$isPickerExpanded
-            .sink { [weak self] _ in self?.objectWillChange.send() }
-            .store(in: &cancellables)
     }
 
     // MARK: - Event Handling
@@ -274,10 +240,6 @@ class NotchViewModel: ObservableObject {
     func notchUnpop() {
         guard status == .popping else { return }
         status = .closed
-    }
-
-    func toggleMenu() {
-        contentType = contentType == .menu ? .instances : .menu
     }
 
     func showChat(for session: SessionState) {
