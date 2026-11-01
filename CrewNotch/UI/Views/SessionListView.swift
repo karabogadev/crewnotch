@@ -38,6 +38,8 @@ struct SessionListView: View {
                 isAnyAgentBusy: sessionMonitor.instances.contains { $0.phase.isActive || $0.phase.isWaitingForApproval }
             )
             .reportHeight()
+            ShortcutsSection()
+                .reportHeight()
         }
         .onChange(of: hasRequest, initial: true) { _, value in
             if viewModel.showsRequest != value { viewModel.showsRequest = value }

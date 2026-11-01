@@ -20,6 +20,7 @@ nonisolated enum FeatureKeys {
     // Keyboard
     static let hotkey = "notchHotkey"
     static let panelShortcuts = "panelShortcuts"
+    static let shortcutsExpanded = "shortcutsExpanded"
 
     // Privacy
     static let hideFromScreenSharing = "hideFromScreenSharing"
