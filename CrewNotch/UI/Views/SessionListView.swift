@@ -174,6 +174,10 @@ struct InstanceRow: View {
     @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
     @AppStorage(FeatureKeys.showApprovalDetails) private var showApprovalDetails = true
     @AppStorage(FeatureKeys.warnRiskyCommands) private var warnRiskyCommands = true
+    @AppStorage(FeatureKeys.showGitBranch) private var showGitBranch = true
+    @AppStorage(FeatureKeys.showTaskProgress) private var showTaskProgress = true
+    @AppStorage(FeatureKeys.contextFill) private var contextFill: ContextFillDisplay = .aboveHalf
+    @AppStorage(FeatureKeys.stalledAfterMinutes) private var stalledAfterMinutes = 10
     let session: SessionState
     let onFocus: () -> Void
     let onChat: () -> Void
@@ -254,7 +258,13 @@ struct InstanceRow: View {
                         .font(.system(size: 13 * textScale.factor, weight: .medium))
                         .foregroundColor(.ink.opacity(0.92))
                         .lineLimit(1)
-                    metaLine
+                    TimelineView(.periodic(from: .now, by: 30)) { timeline in
+                        metaLine(now: timeline.date)
+                    }
+                    if let progress = visibleProgress {
+                        TaskProgressLine(progress: progress)
+                            .padding(.top, 2)
+                    }
                 }
 
                 Spacer(minLength: 8)
@@ -289,12 +299,57 @@ struct InstanceRow: View {
         .task(id: session.pid) { await replyHosts.resolve(session) }
     }
 
-    private var metaLine: some View {
-        HStack(spacing: 5) {
-            Text(statusWord).foregroundColor(statusColor)
+    // MARK: - Row extras
+
+    /// Working, but nothing has happened for a while: maybe stuck.
+    private func isStalled(now: Date) -> Bool {
+        guard stalledAfterMinutes > 0, session.phase.isActive else { return false }
+        return now.timeIntervalSince(session.lastActivity) >= Double(stalledAfterMinutes) * 60
+    }
+
+    private var branch: String? {
+        guard showGitBranch, !session.cwd.isEmpty, let name = GitBranch.name(for: session.cwd) else { return nil }
+        return name.count > 28 ? String(name.prefix(27)) + "…" : name
+    }
+
+    private var visibleContext: ContextUsage? {
+        guard let threshold = contextFill.threshold, let usage = session.contextUsage,
+              usage.fraction >= threshold else { return nil }
+        return usage
+    }
+
+    private var visibleProgress: TaskProgress? {
+        guard showTaskProgress, let progress = session.taskProgress else { return nil }
+        // A completed list stays only while the agent is still wrapping up
+        return progress.isFinished && !session.phase.isActive ? nil : progress
+    }
+
+    private func metaLine(now: Date) -> some View {
+        let stalled = isStalled(now: now)
+        return HStack(spacing: 5) {
+            if stalled {
+                Text("Quiet for \(RelativeTime.short(since: session.lastActivity, now: now))")
+                    .foregroundColor(TerminalColors.amber)
+                    .help("No activity for a while. If the agent is stuck, clear the session.")
+            } else {
+                Text(statusWord).foregroundColor(statusColor)
+            }
             if showsProject {
                 Text("·").foregroundColor(.ink.opacity(0.25))
                 Text(session.projectName).foregroundColor(.ink.opacity(0.45))
+            }
+            if let branch {
+                Text("·").foregroundColor(.ink.opacity(0.25))
+                HStack(spacing: 2) {
+                    Image(systemName: "arrow.triangle.branch")
+                        .font(.system(size: 8.5 * textScale.factor, weight: .semibold))
+                    Text(branch)
+                }
+                .foregroundColor(.ink.opacity(0.45))
+            }
+            if let context = visibleContext {
+                Text("·").foregroundColor(.ink.opacity(0.25))
+                ContextFillBadge(usage: context)
             }
             if !activeSubagents.isEmpty {
                 Text("·").foregroundColor(.ink.opacity(0.25))
@@ -326,8 +381,9 @@ struct InstanceRow: View {
                 if SessionFocuser.canFocus(session) {
                     IconButton(icon: "arrow.up.forward") { onFocus() }
                 }
-                if session.phase == .idle || session.phase == .waitingForInput {
+                if session.phase == .idle || session.phase == .waitingForInput || isStalled(now: Date()) {
                     IconButton(icon: "xmark") { onArchive() }
+                        .help(session.phase.isActive ? "Clear this session" : "Remove")
                 }
             }
             .transition(.opacity)
@@ -388,6 +444,71 @@ struct InstanceRow: View {
     private var riskWarnings: [String] {
         guard warnRiskyCommands, let permission = session.activePermission else { return [] }
         return permission.riskWarnings(cwd: session.cwd)
+    }
+}
+
+/// "3/7 · Writing tests" with a thin bar, from the agent's to-do list.
+private struct TaskProgressLine: View {
+    let progress: TaskProgress
+    @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Capsule()
+                .fill(Color.ink.opacity(0.12))
+                .frame(width: 42, height: 3)
+                .overlay(alignment: .leading) {
+                    Capsule()
+                        .fill(TerminalColors.green.opacity(0.85))
+                        .frame(width: max(3, 42 * progress.fraction), height: 3)
+                }
+            Text("\(progress.completed)/\(progress.total)")
+                .monospacedDigit()
+                .foregroundColor(.ink.opacity(0.55))
+            if let current = progress.currentTitle, !progress.isFinished {
+                Text("·").foregroundColor(.ink.opacity(0.25))
+                Text(current)
+                    .foregroundColor(.ink.opacity(0.55))
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+        }
+        .font(.system(size: 10.5 * textScale.factor))
+        .animation(.easeOut(duration: 0.25), value: progress.completed)
+    }
+}
+
+/// A small ring and percentage for how full the context window is.
+private struct ContextFillBadge: View {
+    let usage: ContextUsage
+    @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
+
+    private var color: Color {
+        if usage.fraction >= 0.9 { return TerminalColors.red }
+        if usage.fraction >= 0.8 { return TerminalColors.amber }
+        return .ink.opacity(0.45)
+    }
+
+    var body: some View {
+        HStack(spacing: 3) {
+            ZStack {
+                Circle().stroke(Color.ink.opacity(0.15), lineWidth: 1.6)
+                Circle()
+                    .trim(from: 0, to: usage.fraction)
+                    .stroke(color, style: StrokeStyle(lineWidth: 1.6, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+            }
+            .frame(width: 8 * textScale.factor, height: 8 * textScale.factor)
+            Text("\(Int((usage.fraction * 100).rounded()))%")
+                .monospacedDigit()
+        }
+        .foregroundColor(color)
+        .help(String(localized: "Context: \(Self.tokens(usage.usedTokens)) of \(Self.tokens(usage.windowTokens)) tokens"))
+    }
+
+    static func tokens(_ count: Int) -> String {
+        count >= 1_000_000 ? String(format: "%.1fM", Double(count) / 1_000_000)
+            : count >= 1000 ? "\(count / 1000)K" : "\(count)"
     }
 }
 
