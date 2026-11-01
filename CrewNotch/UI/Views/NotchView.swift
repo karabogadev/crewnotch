@@ -173,7 +173,7 @@ struct NotchView: View {
                             : cornerRadiusInsets.closed.bottom
                     )
                     .padding([.horizontal, .bottom], viewModel.status == .opened ? 12 : 0)
-                    .background(.black)
+                    .background(PanelBackground(isOpened: viewModel.status == .opened))
                     .clipShape(currentNotchShape)
                     .overlay(alignment: .top) {
                         Rectangle()
