@@ -50,6 +50,8 @@ struct ApprovalDetailView: View {
     let cwd: String
     var showsDetails = true
     var showsWarnings = true
+    /// The rule "Always" would save, shown in the open rather than only in a tooltip
+    var alwaysRule: String? = nil
 
     @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
 
@@ -71,6 +73,12 @@ struct ApprovalDetailView: View {
             }
             if showsDetails {
                 detail
+            }
+            if let alwaysRule {
+                Text("Always allows: \(alwaysRule)")
+                    .font(.system(size: 10 * scale))
+                    .foregroundColor(.ink.opacity(0.4))
+                    .lineLimit(2)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

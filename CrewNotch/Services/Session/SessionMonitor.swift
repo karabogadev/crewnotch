@@ -84,16 +84,17 @@ class SessionMonitor: ObservableObject {
 
     // MARK: - Permission Handling
 
-    func approvePermission(sessionId: String, always: Bool = false) {
-        ApprovalActions.approve(sessionId: sessionId, always: always)
+    /// `toolUseId` is the request the user saw; a different one is left alone.
+    func approvePermission(sessionId: String, toolUseId: String?, always: Bool = false) {
+        ApprovalActions.approve(sessionId: sessionId, toolUseId: toolUseId, always: always)
     }
 
-    func denyPermission(sessionId: String, reason: String?) {
-        ApprovalActions.deny(sessionId: sessionId, reason: reason)
+    func denyPermission(sessionId: String, toolUseId: String?, reason: String?) {
+        ApprovalActions.deny(sessionId: sessionId, toolUseId: toolUseId, reason: reason)
     }
 
-    func answerQuestion(sessionId: String, answers: [String: String]) {
-        ApprovalActions.answer(sessionId: sessionId, answers: answers)
+    func answerQuestion(sessionId: String, toolUseId: String?, answers: [String: String]) {
+        ApprovalActions.answer(sessionId: sessionId, toolUseId: toolUseId, answers: answers)
     }
 
     /// Archive (remove) a session from the instances list

@@ -158,6 +158,9 @@ actor SessionStore {
         if let sourceApp = event.sourceApp {
             session.sourceApp = sourceApp
         }
+        if let branch = event.gitBranch {
+            session.gitBranch = branch
+        }
 
         let newPhase = event.determinePhase()
 
@@ -482,17 +485,10 @@ actor SessionStore {
         updateToolStatus(in: &session, toolId: toolUseId, status: .running)
 
         // Check if there are other tools still waiting for approval
-        if let nextPending = findNextPendingTool(in: session, excluding: toolUseId) {
-            // Another tool is waiting - stay in waitingForApproval with that tool's context
-            let newPhase = SessionPhase.waitingForApproval(PermissionContext(
-                toolUseId: nextPending.id,
-                toolName: nextPending.name,
-                toolInput: nil,  // We don't have the input stored in chatItems
-                receivedAt: nextPending.timestamp
-            ))
+        if let newPhase = nextPendingPhase(in: session, excluding: toolUseId) {
             if session.phase.canTransition(to: newPhase) {
                 session.phase = newPhase
-                Self.logger.debug("Switched to next pending tool: \(nextPending.id.prefix(12), privacy: .public)")
+                Self.logger.debug("Switched to the next pending request")
             }
         } else {
             // No more pending tools - transition to processing
@@ -547,15 +543,9 @@ actor SessionStore {
         // Update session phase if needed
         // If the completed tool was the one in the phase context, switch to next pending or processing
         if case .waitingForApproval(let ctx) = session.phase, ctx.toolUseId == toolUseId {
-            if let nextPending = findNextPendingTool(in: session, excluding: toolUseId) {
-                let newPhase = SessionPhase.waitingForApproval(PermissionContext(
-                    toolUseId: nextPending.id,
-                    toolName: nextPending.name,
-                    toolInput: nil,
-                    receivedAt: nextPending.timestamp
-                ))
+            if let newPhase = nextPendingPhase(in: session, excluding: toolUseId) {
                 session.phase = newPhase
-                Self.logger.debug("Switched to next pending tool after completion: \(nextPending.id.prefix(12), privacy: .public)")
+                Self.logger.debug("Switched to the next pending request")
             } else {
                 if session.phase.canTransition(to: .processing) {
                     session.phase = .processing
@@ -566,13 +556,18 @@ actor SessionStore {
         sessions[sessionId] = session
     }
 
-    /// Find the next tool waiting for approval (excluding a specific tool ID)
-    private func findNextPendingTool(in session: SessionState, excluding toolId: String) -> (id: String, name: String, timestamp: Date)? {
-        for item in session.chatItems {
-            if item.id == toolId { continue }
-            if case .toolCall(let tool) = item.type, tool.status == .waitingForApproval {
-                return (id: item.id, name: tool.name, timestamp: item.timestamp)
-            }
+    /// The next request still waiting on its hook, rebuilt from the hook's own
+    /// event so its input, suggestions and answerability come along. A tool
+    /// whose hook is gone (answered elsewhere) is not resurrected.
+    private func nextPendingPhase(in session: SessionState, excluding toolId: String) -> SessionPhase? {
+        for item in session.chatItems where item.id != toolId {
+            guard case .toolCall(let tool) = item.type, tool.status == .waitingForApproval,
+                  let pending = HookSocketServer.shared.pendingRequest(toolUseId: item.id),
+                  case .waitingForApproval(var context) = pending.event.determinePhase() else { continue }
+            context = PermissionContext(
+                toolUseId: item.id, toolName: context.toolName, toolInput: context.toolInput,
+                receivedAt: pending.receivedAt, canRespond: context.canRespond, suggestions: context.suggestions)
+            return .waitingForApproval(context)
         }
         return nil
     }
@@ -584,17 +579,10 @@ actor SessionStore {
         updateToolStatus(in: &session, toolId: toolUseId, status: .error)
 
         // Check if there are other tools still waiting for approval
-        if let nextPending = findNextPendingTool(in: session, excluding: toolUseId) {
-            // Another tool is waiting - stay in waitingForApproval with that tool's context
-            let newPhase = SessionPhase.waitingForApproval(PermissionContext(
-                toolUseId: nextPending.id,
-                toolName: nextPending.name,
-                toolInput: nil,
-                receivedAt: nextPending.timestamp
-            ))
+        if let newPhase = nextPendingPhase(in: session, excluding: toolUseId) {
             if session.phase.canTransition(to: newPhase) {
                 session.phase = newPhase
-                Self.logger.debug("Switched to next pending tool after denial: \(nextPending.id.prefix(12), privacy: .public)")
+                Self.logger.debug("Switched to the next pending request")
             }
         } else {
             // No more pending tools - transition to processing (Claude will handle denial)
@@ -620,17 +608,10 @@ actor SessionStore {
         updateToolStatus(in: &session, toolId: toolUseId, status: .error)
 
         // Check if there are other tools still waiting for approval
-        if let nextPending = findNextPendingTool(in: session, excluding: toolUseId) {
-            // Another tool is waiting - switch to that tool's context
-            let newPhase = SessionPhase.waitingForApproval(PermissionContext(
-                toolUseId: nextPending.id,
-                toolName: nextPending.name,
-                toolInput: nil,
-                receivedAt: nextPending.timestamp
-            ))
+        if let newPhase = nextPendingPhase(in: session, excluding: toolUseId) {
             if session.phase.canTransition(to: newPhase) {
                 session.phase = newPhase
-                Self.logger.debug("Switched to next pending tool after socket failure: \(nextPending.id.prefix(12), privacy: .public)")
+                Self.logger.debug("Switched to the next pending request")
             }
         } else {
             // No more pending tools - clear permission state
@@ -648,13 +629,15 @@ actor SessionStore {
     // MARK: - File Update Processing
 
     private func processFileUpdate(_ payload: FileUpdatePayload) async {
-        guard var session = sessions[payload.sessionId] else { return }
+        guard let cwd = sessions[payload.sessionId]?.cwd else { return }
 
         // Update conversationInfo from JSONL (summary, lastMessage, etc.)
         let conversationInfo = await ConversationParser.shared.parse(
             sessionId: payload.sessionId,
-            cwd: session.cwd
+            cwd: cwd
         )
+        // Read the session after the await: hook events handled meanwhile must not be overwritten
+        guard var session = sessions[payload.sessionId] else { return }
         session.conversationInfo = conversationInfo
         if !payload.messages.isEmpty {
             session.lastActivity = Date()
@@ -1175,6 +1158,7 @@ actor SessionStore {
     /// Recheck status of all active sessions
     private func recheckAllSessions() {
         var removedSession = false
+        HookSocketServer.shared.probePendingPermissions()
 
         for (sessionId, session) in Array(sessions) {
             if session.phase == .ended {

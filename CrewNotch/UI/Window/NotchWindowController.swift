@@ -72,7 +72,9 @@ class NotchWindowController: NSWindowController {
                     // Accept mouse events when opened so buttons work
                     notchWindow?.ignoresMouseEvents = false
                     // Don't steal focus when opened by notification (task finished)
-                    if let viewModel, viewModel.openReason != .notification {
+                    // Only a deliberate open takes keyboard focus; hovering or the
+                    // launch animation must not swallow what you're typing elsewhere
+                    if let viewModel, viewModel.openReason == .click || viewModel.openReason == .keyboard {
                         self?.takeFocus()
                     }
                 case .closed, .popping:
@@ -128,7 +130,7 @@ class NotchWindowController: NSWindowController {
         NSApp.activate(ignoringOtherApps: false)
         window?.makeKey()
         let deliberate = viewModel.openReason == .click || viewModel.openReason == .keyboard
-        PanelKeys.shared.activate(for: viewModel, deliberate: deliberate)
+        PanelKeys.shared.activate(for: viewModel, panel: window, deliberate: deliberate)
     }
 
     var hasFocus: Bool {

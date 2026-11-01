@@ -74,7 +74,7 @@ struct ChatView: View {
                     if let questions = answerableQuestions {
                         QuestionCard(
                             questions: questions,
-                            onSubmit: { answers in sessionMonitor.answerQuestion(sessionId: sessionId, answers: answers) },
+                            onSubmit: { answers in sessionMonitor.answerQuestion(sessionId: sessionId, toolUseId: session.pendingToolId, answers: answers) },
                             onOpenAgent: SessionFocuser.canFocus(session) ? { focusTerminal() } : nil
                         )
                         .padding(.horizontal, 16)
@@ -452,7 +452,7 @@ struct ChatView: View {
             permission: session.activePermission,
             cwd: session.cwd,
             onApprove: { approvePermission() },
-            onApproveAlways: { sessionMonitor.approvePermission(sessionId: sessionId, always: true) },
+            onApproveAlways: { sessionMonitor.approvePermission(sessionId: sessionId, toolUseId: session.pendingToolId, always: true) },
             onDeny: { denyPermission() }
         )
     }
@@ -495,11 +495,11 @@ struct ChatView: View {
     }
 
     private func approvePermission() {
-        sessionMonitor.approvePermission(sessionId: sessionId)
+        sessionMonitor.approvePermission(sessionId: sessionId, toolUseId: session.pendingToolId)
     }
 
     private func denyPermission() {
-        sessionMonitor.denyPermission(sessionId: sessionId, reason: nil)
+        sessionMonitor.denyPermission(sessionId: sessionId, toolUseId: session.pendingToolId, reason: nil)
     }
 
     private func sendMessage() {
@@ -1249,7 +1249,7 @@ struct ChatApprovalBar: View {
             .opacity(showDenyButton ? 1 : 0)
             .scaleEffect(showDenyButton ? 1 : 0.8)
 
-            if offerAlwaysAllow, let rule = permission?.suggestionSummary {
+            if let permission, ApprovalActions.offersAlways(permission, cwd: cwd), let rule = permission.suggestionSummary {
                 Button {
                     onApproveAlways()
                 } label: {

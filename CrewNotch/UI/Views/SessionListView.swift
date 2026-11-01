@@ -133,9 +133,9 @@ struct SessionListView: View {
                             onChat: { openChat(session) },
                             onArchive: { archiveSession(session) },
                             onApprove: { approveSession(session) },
-                            onApproveAlways: { sessionMonitor.approvePermission(sessionId: session.sessionId, always: true) },
+                            onApproveAlways: { sessionMonitor.approvePermission(sessionId: session.sessionId, toolUseId: session.pendingToolId, always: true) },
                             onReject: { rejectSession(session) },
-                            onAnswer: { answers in sessionMonitor.answerQuestion(sessionId: session.sessionId, answers: answers) }
+                            onAnswer: { answers in sessionMonitor.answerQuestion(sessionId: session.sessionId, toolUseId: session.pendingToolId, answers: answers) }
                         )
                         .id(session.stableId)
                     }
@@ -172,11 +172,11 @@ struct SessionListView: View {
     }
 
     private func approveSession(_ session: SessionState) {
-        sessionMonitor.approvePermission(sessionId: session.sessionId)
+        sessionMonitor.approvePermission(sessionId: session.sessionId, toolUseId: session.pendingToolId)
     }
 
     private func rejectSession(_ session: SessionState) {
-        sessionMonitor.denyPermission(sessionId: session.sessionId, reason: nil)
+        sessionMonitor.denyPermission(sessionId: session.sessionId, toolUseId: session.pendingToolId, reason: nil)
     }
 
     private func archiveSession(_ session: SessionState) {
@@ -352,12 +352,14 @@ struct InstanceRow: View {
 
     /// Working, but nothing has happened for a while: maybe stuck.
     private func isStalled(now: Date) -> Bool {
-        guard stalledAfterMinutes > 0, session.phase.isActive else { return false }
+        // A command reports only start and end, and a long tool call is legitimately quiet
+        guard stalledAfterMinutes > 0, session.phase.isActive, session.agent != .command,
+              session.toolTracker.inProgress.isEmpty else { return false }
         return now.timeIntervalSince(session.lastActivity) >= Double(stalledAfterMinutes) * 60
     }
 
     private var branch: String? {
-        guard showGitBranch, !session.cwd.isEmpty, let name = GitBranch.name(for: session.cwd) else { return nil }
+        guard showGitBranch, let name = session.gitBranch, !name.isEmpty else { return nil }
         return name.count > 28 ? String(name.prefix(27)) + "…" : name
     }
 
@@ -468,7 +470,8 @@ struct InstanceRow: View {
                     }
                 } else {
                     SoftPill(title: "Deny", prominent: false, hint: isKeyboardTarget ? "⌘⌫" : nil, action: onReject)
-                    if offerAlwaysAllow, let rule = session.activePermission?.suggestionSummary {
+                    if let permission = session.activePermission, ApprovalActions.offersAlways(permission, cwd: session.cwd),
+                       let rule = permission.suggestionSummary {
                         SoftPill(title: "Always", prominent: false, hint: isKeyboardTarget ? "⌘⇧↩" : nil, action: onApproveAlways)
                             .help(String(localized: "Allow and don't ask again: \(rule)"))
                     }
@@ -482,7 +485,8 @@ struct InstanceRow: View {
                     context: permission,
                     cwd: session.cwd,
                     showsDetails: showApprovalDetails,
-                    showsWarnings: warnRiskyCommands
+                    showsWarnings: warnRiskyCommands,
+                    alwaysRule: ApprovalActions.offersAlways(permission, cwd: session.cwd) ? permission.suggestionSummary : nil
                 )
             }
         }

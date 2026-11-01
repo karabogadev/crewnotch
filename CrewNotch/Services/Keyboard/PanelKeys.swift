@@ -17,8 +17,15 @@ final class PanelKeys {
 
     private var monitor: Any?
     private weak var viewModel: NotchViewModel?
+    private weak var panel: NSWindow?
     private var sessions: [SessionState] = []
     private var cancellable: AnyCancellable?
+
+    /// The request the keys would act on, and since when it has been the one shown
+    private var targetId: String?
+    private var targetShownAt = Date.distantPast
+    /// A request must have been on screen this long before a chord answers it
+    private let targetDelay: TimeInterval = 0.4
 
     /// Approval keys only work after a deliberate open (click or shortcut),
     /// never when the panel slid open under a resting pointer.
@@ -30,11 +37,21 @@ final class PanelKeys {
     private init() {
         cancellable = SessionStore.shared.sessionsPublisher
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] in self?.sessions = $0 }
+            .sink { [weak self] in self?.sessionsChanged($0) }
     }
 
-    func activate(for viewModel: NotchViewModel, deliberate: Bool) {
+    private func sessionsChanged(_ sessions: [SessionState]) {
+        self.sessions = sessions
+        let id = ApprovalActions.keyboardTarget(in: sessions)?.activePermission?.toolUseId
+        if id != targetId {
+            targetId = id
+            targetShownAt = Date()
+        }
+    }
+
+    func activate(for viewModel: NotchViewModel, panel: NSWindow?, deliberate: Bool) {
         self.viewModel = viewModel
+        self.panel = panel
         if deliberate { arm() } else { approvalsArmed = false }
         guard monitor == nil else { return }
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
@@ -57,7 +74,8 @@ final class PanelKeys {
 
     /// Returns true when the key press was used.
     private func handle(_ event: NSEvent) -> Bool {
-        guard let viewModel, viewModel.status == .opened else { return false }
+        // Only keys typed into the notch panel itself, never another CrewNotch window
+        guard let viewModel, viewModel.status == .opened, let panel, event.window === panel else { return false }
         let flags = event.modifierFlags.intersection([.command, .shift, .option, .control])
         let key = Int(event.keyCode)
 
@@ -67,35 +85,38 @@ final class PanelKeys {
             return true
         }
 
-        guard AppSettings.panelShortcuts, approvalsArmed, Date().timeIntervalSince(armedAt) >= armingDelay,
+        // A held key repeats; a repeat must never answer the next request in line
+        guard !event.isARepeat, !isEditingText,
+              AppSettings.panelShortcuts, approvalsArmed, Date().timeIntervalSince(armedAt) >= armingDelay,
               let target = ApprovalActions.keyboardTarget(in: sessions),
-              isVisible(target, in: viewModel),
-              let permission = target.activePermission else { return false }
+              let permission = target.activePermission,
+              permission.toolUseId == targetId, Date().timeIntervalSince(targetShownAt) >= targetDelay,
+              isVisible(target, in: viewModel) else { return false }
         let isQuestion = permission.toolName == "AskUserQuestion"
 
         switch (key, flags) {
         case (kVK_Return, [.command]), (kVK_ANSI_KeypadEnter, [.command]):
             guard !isQuestion else { return false }  // the question card's Send handles it
-            ApprovalActions.approve(sessionId: target.sessionId)
+            ApprovalActions.approve(sessionId: target.sessionId, toolUseId: permission.toolUseId)
             return true
         case (kVK_Return, [.command, .shift]), (kVK_ANSI_KeypadEnter, [.command, .shift]):
-            guard !isQuestion, AppSettings.offerAlwaysAllow, permission.suggestions != nil else { return false }
-            ApprovalActions.approve(sessionId: target.sessionId, always: true)
+            guard !isQuestion, ApprovalActions.offersAlways(permission, cwd: target.cwd) else { return false }
+            ApprovalActions.approve(sessionId: target.sessionId, toolUseId: permission.toolUseId, always: true)
             return true
         case (kVK_Delete, [.command]):
-            guard !isEditingText else { return false }
-            ApprovalActions.deny(sessionId: target.sessionId)
+            ApprovalActions.deny(sessionId: target.sessionId, toolUseId: permission.toolUseId)
             return true
         default:
             break
         }
 
         // 1–9 answers a single multiple-choice question
-        guard flags.isEmpty, !isEditingText, isQuestion, AppSettings.answerQuestionsInNotch,
+        guard flags.isEmpty, isQuestion, AppSettings.answerQuestionsInNotch,
               let digit = Self.digit(for: key) else { return false }
         let questions = AgentQuestion.parse(permission.rawInput)
         guard AgentQuestion.isOneClick(questions), questions[0].options.indices.contains(digit - 1) else { return false }
-        ApprovalActions.answer(sessionId: target.sessionId, answers: [questions[0].text: questions[0].options[digit - 1].label])
+        ApprovalActions.answer(sessionId: target.sessionId, toolUseId: permission.toolUseId,
+                               answers: [questions[0].text: questions[0].options[digit - 1].label])
         return true
     }
 
