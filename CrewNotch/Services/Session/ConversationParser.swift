@@ -59,14 +59,35 @@ actor ConversationParser {
         return formatter
     }()
 
-    /// Cache of parsed conversation info, keyed by session file path
-    private var cache: [String: CachedInfo] = [:]
+    /// Running summary of each transcript, keyed by file path
+    private var summaryStates: [String: SummaryState] = [:]
 
     private var incrementalState: [String: IncrementalParseState] = [:]
 
-    private struct CachedInfo {
-        let modificationDate: Date
-        let info: ConversationInfo
+    /// What the session list shows about a transcript, advanced by the lines
+    /// appended since the last read: long sessions grow to tens of megabytes,
+    /// and re-reading them on every tool call kept the app busy.
+    private struct SummaryState {
+        var offset: UInt64 = 0
+        var usage = UsageInfo()
+        var summary: String?
+        var lastMessage: String?
+        var lastMessageRole: String?
+        var lastToolName: String?
+        var firstUserMessage: String?
+        var lastUserMessageDate: Date?
+
+        var info: ConversationInfo {
+            ConversationInfo(
+                summary: summary,
+                lastMessage: lastMessage,
+                lastMessageRole: lastMessageRole,
+                lastToolName: lastToolName,
+                firstUserMessage: firstUserMessage,
+                lastUserMessageDate: lastUserMessageDate,
+                usage: usage
+            )
+        }
     }
 
     /// State for incremental JSONL parsing
@@ -104,165 +125,92 @@ actor ConversationParser {
         }
     }
 
-    /// Parse a JSONL file to extract conversation info
-    /// Uses caching based on file modification time
+    /// Summary, last message and token usage of a session's transcript.
+    /// Reads only what was appended since the last call.
     func parse(sessionId: String, cwd: String) -> ConversationInfo {
         let sessionFile = ClaudeTranscripts.path(sessionId: sessionId, cwd: cwd)
-
-        let fileManager = FileManager.default
-        guard fileManager.fileExists(atPath: sessionFile),
-              let attrs = try? fileManager.attributesOfItem(atPath: sessionFile),
-              let modDate = attrs[.modificationDate] as? Date else {
-            return ConversationInfo(summary: nil, lastMessage: nil, lastMessageRole: nil, lastToolName: nil, firstUserMessage: nil, lastUserMessageDate: nil)
+        guard let handle = FileHandle(forReadingAtPath: sessionFile) else {
+            return SummaryState().info
         }
+        defer { try? handle.close() }
 
-        if let cached = cache[sessionFile], cached.modificationDate == modDate {
-            return cached.info
+        var state = summaryStates[sessionFile] ?? SummaryState()
+        guard let size = try? handle.seekToEnd() else { return state.info }
+        if size < state.offset {
+            state = SummaryState()  // Rewritten: start over
         }
-
-        guard let data = fileManager.contents(atPath: sessionFile),
-              let content = String(data: data, encoding: .utf8) else {
-            return ConversationInfo(summary: nil, lastMessage: nil, lastMessageRole: nil, lastToolName: nil, firstUserMessage: nil, lastUserMessageDate: nil)
+        if size > state.offset, (try? handle.seek(toOffset: state.offset)) != nil,
+           let data = try? handle.readToEnd(),
+           let end = data.lastIndex(of: UInt8(ascii: "\n")) {
+            // Whole lines only: one still being written is read next time
+            for line in data[data.startIndex..<end].split(separator: UInt8(ascii: "\n")) {
+                guard let json = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: Any] else { continue }
+                consume(json, into: &state)
+            }
+            state.offset += UInt64(end - data.startIndex + 1)
         }
-
-        let info = parseContent(content)
-        cache[sessionFile] = CachedInfo(modificationDate: modDate, info: info)
-
-        return info
+        summaryStates[sessionFile] = state
+        return state.info
     }
 
-    /// Parse JSONL content
-    private func parseContent(_ content: String) -> ConversationInfo {
-        let lines = content.components(separatedBy: "\n").filter { !$0.isEmpty }
+    /// Folds one transcript line into the summary; later lines win.
+    private func consume(_ json: [String: Any], into state: inout SummaryState) {
+        let type = json["type"] as? String
+        let isMeta = json["isMeta"] as? Bool ?? false
 
-        var summary: String?
-        var lastMessage: String?
-        var lastMessageRole: String?
-        var lastToolName: String?
-        var firstUserMessage: String?
-        var lastUserMessageDate: Date?
-        var usage = UsageInfo()
+        if type == "summary", let summaryText = json["summary"] as? String {
+            state.summary = summaryText
+        }
 
-        let formatter = Self.isoFormatter
+        guard type == "user" || type == "assistant", !isMeta,
+              let message = json["message"] as? [String: Any] else { return }
 
-        // First pass: collect usage from all assistant messages
-        for line in lines {
-            guard let lineData = line.data(using: .utf8),
-                  let json = try? JSONSerialization.jsonObject(with: lineData) as? [String: Any] else {
-                continue
-            }
-
-            if json["type"] as? String == "assistant",
-               let message = json["message"] as? [String: Any],
-               let usageDict = message["usage"] as? [String: Any] {
-                let input = usageDict["input_tokens"] as? Int ?? 0
-                let cacheRead = usageDict["cache_read_input_tokens"] as? Int ?? 0
-                let cacheCreation = usageDict["cache_creation_input_tokens"] as? Int ?? 0
-                usage.inputTokens += input
-                usage.outputTokens += usageDict["output_tokens"] as? Int ?? 0
-                usage.cacheReadTokens += cacheRead
-                usage.cacheCreationTokens += cacheCreation
-                // Subagents run in their own context; only the main thread fills this one
-                if json["isSidechain"] as? Bool != true, input + cacheRead + cacheCreation > 0 {
-                    usage.contextTokens = input + cacheRead + cacheCreation
-                    usage.model = message["model"] as? String ?? usage.model
-                }
+        if type == "assistant", let usageDict = message["usage"] as? [String: Any] {
+            let input = usageDict["input_tokens"] as? Int ?? 0
+            let cacheRead = usageDict["cache_read_input_tokens"] as? Int ?? 0
+            let cacheCreation = usageDict["cache_creation_input_tokens"] as? Int ?? 0
+            state.usage.inputTokens += input
+            state.usage.outputTokens += usageDict["output_tokens"] as? Int ?? 0
+            state.usage.cacheReadTokens += cacheRead
+            state.usage.cacheCreationTokens += cacheCreation
+            // Subagents run in their own context; only the main thread fills this one
+            if json["isSidechain"] as? Bool != true, input + cacheRead + cacheCreation > 0 {
+                state.usage.contextTokens = input + cacheRead + cacheCreation
+                state.usage.model = message["model"] as? String ?? state.usage.model
             }
         }
 
-        for line in lines {
-            guard let lineData = line.data(using: .utf8),
-                  let json = try? JSONSerialization.jsonObject(with: lineData) as? [String: Any] else {
-                continue
+        if let text = message["content"] as? String {
+            guard !text.hasPrefix("<command-name>") && !text.hasPrefix("<local-command") && !text.hasPrefix("Caveat:") else { return }
+            let readable = SessionState.readableTitle(text) ?? text
+            state.lastMessage = Self.truncateMessage(readable, maxLength: 80)
+            state.lastMessageRole = type
+            state.lastToolName = nil
+            if type == "user" {
+                if state.firstUserMessage == nil {
+                    state.firstUserMessage = Self.truncateMessage(readable, maxLength: 80)
+                }
+                state.lastUserMessageDate = (json["timestamp"] as? String).flatMap { Self.isoFormatter.date(from: $0) }
             }
-
-            let type = json["type"] as? String
-            let isMeta = json["isMeta"] as? Bool ?? false
-
-            if type == "user" && !isMeta {
-                if let message = json["message"] as? [String: Any],
-                   let msgContent = message["content"] as? String {
-                    if !msgContent.hasPrefix("<command-name>") && !msgContent.hasPrefix("<local-command") && !msgContent.hasPrefix("Caveat:") {
-                        firstUserMessage = Self.truncateMessage(SessionState.readableTitle(msgContent) ?? msgContent, maxLength: 80)
-                        break
-                    }
+        } else if let blocks = message["content"] as? [[String: Any]] {
+            for block in blocks.reversed() {
+                let blockType = block["type"] as? String
+                if blockType == "tool_use" {
+                    let toolName = block["name"] as? String ?? "Tool"
+                    state.lastMessage = Self.truncateMessage(
+                        Self.formatToolInput(block["input"] as? [String: Any], toolName: toolName), maxLength: 80)
+                    state.lastMessageRole = "tool"
+                    state.lastToolName = toolName
+                    return
+                } else if blockType == "text", let text = block["text"] as? String,
+                          !text.hasPrefix("[Request interrupted by user") {
+                    state.lastMessage = Self.truncateMessage(text, maxLength: 80)
+                    state.lastMessageRole = type
+                    state.lastToolName = nil
+                    return
                 }
             }
         }
-
-        var foundLastUserMessage = false
-        for line in lines.reversed() {
-            guard let lineData = line.data(using: .utf8),
-                  let json = try? JSONSerialization.jsonObject(with: lineData) as? [String: Any] else {
-                continue
-            }
-
-            let type = json["type"] as? String
-
-            if lastMessage == nil {
-                if type == "user" || type == "assistant" {
-                    let isMeta = json["isMeta"] as? Bool ?? false
-                    if !isMeta, let message = json["message"] as? [String: Any] {
-                        if let msgContent = message["content"] as? String {
-                            if !msgContent.hasPrefix("<command-name>") && !msgContent.hasPrefix("<local-command") && !msgContent.hasPrefix("Caveat:") {
-                                lastMessage = SessionState.readableTitle(msgContent) ?? msgContent
-                                lastMessageRole = type
-                            }
-                        } else if let contentArray = message["content"] as? [[String: Any]] {
-                            for block in contentArray.reversed() {
-                                let blockType = block["type"] as? String
-                                if blockType == "tool_use" {
-                                    let toolName = block["name"] as? String ?? "Tool"
-                                    let toolInput = Self.formatToolInput(block["input"] as? [String: Any], toolName: toolName)
-                                    lastMessage = toolInput
-                                    lastMessageRole = "tool"
-                                    lastToolName = toolName
-                                    break
-                                } else if blockType == "text", let text = block["text"] as? String {
-                                    if !text.hasPrefix("[Request interrupted by user") {
-                                        lastMessage = text
-                                        lastMessageRole = type
-                                        break
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            if !foundLastUserMessage && type == "user" {
-                let isMeta = json["isMeta"] as? Bool ?? false
-                if !isMeta, let message = json["message"] as? [String: Any] {
-                    if let msgContent = message["content"] as? String {
-                        if !msgContent.hasPrefix("<command-name>") && !msgContent.hasPrefix("<local-command") && !msgContent.hasPrefix("Caveat:") {
-                            if let timestampStr = json["timestamp"] as? String {
-                                lastUserMessageDate = formatter.date(from: timestampStr)
-                            }
-                            foundLastUserMessage = true
-                        }
-                    }
-                }
-            }
-
-            if summary == nil, type == "summary", let summaryText = json["summary"] as? String {
-                summary = summaryText
-            }
-
-            if summary != nil && lastMessage != nil && foundLastUserMessage {
-                break
-            }
-        }
-
-        return ConversationInfo(
-            summary: summary,
-            lastMessage: Self.truncateMessage(lastMessage, maxLength: 80),
-            lastMessageRole: lastMessageRole,
-            lastToolName: lastToolName,
-            firstUserMessage: firstUserMessage,
-            lastUserMessageDate: lastUserMessageDate,
-            usage: usage
-        )
     }
 
     /// Format tool input for display in instance list
