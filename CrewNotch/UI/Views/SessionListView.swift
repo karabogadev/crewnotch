@@ -28,7 +28,7 @@ struct SessionListView: View {
                 .font(.system(size: 13, weight: .medium))
                 .foregroundColor(.white.opacity(0.4))
 
-            Text("Run claude in terminal")
+            Text("Start Claude Code, Codex, Cursor or another connected agent")
                 .font(.system(size: 11))
                 .foregroundColor(.white.opacity(0.25))
         }
@@ -88,15 +88,7 @@ struct SessionListView: View {
     // MARK: - Actions
 
     private func focusSession(_ session: SessionState) {
-        guard session.isInTmux else { return }
-
-        Task {
-            if let pid = session.pid {
-                _ = await YabaiController.shared.focusWindow(forClaudePid: pid)
-            } else {
-                _ = await YabaiController.shared.focusWindow(forWorkingDirectory: session.cwd)
-            }
-        }
+        Task { await SessionFocuser.focus(session) }
     }
 
     private func openChat(_ session: SessionState) {
@@ -128,7 +120,6 @@ struct InstanceRow: View {
 
     @State private var isHovered = false
     @State private var spinnerPhase = 0
-    @State private var isYabaiAvailable = false
 
     private let claudeOrange = Color(red: 0.85, green: 0.47, blue: 0.34)
     private let spinnerSymbols = ["·", "✢", "✳", "∗", "✻", "✽"]
@@ -139,10 +130,11 @@ struct InstanceRow: View {
         session.phase.isWaitingForApproval
     }
 
-    /// Whether the pending tool requires interactive input (not just approve/deny)
+    /// Whether the pending request needs more than approve/deny, or can only
+    /// be answered in the agent itself
     private var isInteractiveTool: Bool {
-        guard let toolName = session.pendingToolName else { return false }
-        return toolName == "AskUserQuestion"
+        guard let permission = session.activePermission else { return false }
+        return permission.toolName == "AskUserQuestion" || !permission.canRespond
     }
 
     /// Status text based on session phase (fallback when no other content)
@@ -172,6 +164,9 @@ struct InstanceRow: View {
             // Text content
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
+                    AgentIcon(agent: session.agent, size: 13)
+                        .help(session.agent.displayName)
+
                     Text(session.displayTitle)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.white)
@@ -261,16 +256,17 @@ struct InstanceRow: View {
 
             // Action icons or approval buttons
             if isWaitingForApproval && isInteractiveTool {
-                // Interactive tools like AskUserQuestion - show chat + terminal buttons
+                // Questions, or approvals only the agent can answer: jump to it
                 HStack(spacing: 8) {
                     IconButton(icon: "bubble.left") {
                         onChat()
                     }
 
-                    // Go to Terminal button (only if yabai available)
-                    if isYabaiAvailable {
+                    if SessionFocuser.canFocus(session) {
                         TerminalButton(
-                            isEnabled: session.isInTmux,
+                            label: session.agent.isTerminalAgent ? "Terminal" : "Open",
+                            icon: session.agent.isTerminalAgent ? "terminal" : "arrow.up.forward.app",
+                            isEnabled: true,
                             onTap: { onFocus() }
                         )
                     }
@@ -290,8 +286,7 @@ struct InstanceRow: View {
                         onChat()
                     }
 
-                    // Focus icon (only for tmux instances with yabai)
-                    if session.isInTmux && isYabaiAvailable {
+                    if SessionFocuser.canFocus(session) {
                         IconButton(icon: "eye") {
                             onFocus()
                         }
@@ -320,9 +315,6 @@ struct InstanceRow: View {
                 .fill(isHovered ? Color.white.opacity(0.06) : Color.clear)
         )
         .onHover { isHovered = $0 }
-        .task {
-            isYabaiAvailable = await WindowFinder.shared.isYabaiAvailable()
-        }
     }
 
     @ViewBuilder
@@ -477,6 +469,8 @@ struct CompactTerminalButton: View {
 // MARK: - Terminal Button
 
 struct TerminalButton: View {
+    var label = "Terminal"
+    var icon = "terminal"
     let isEnabled: Bool
     let onTap: () -> Void
 
@@ -487,9 +481,9 @@ struct TerminalButton: View {
             }
         } label: {
             HStack(spacing: 3) {
-                Image(systemName: "terminal")
+                Image(systemName: icon)
                     .font(.system(size: 9, weight: .medium))
-                Text("Terminal")
+                Text(label)
                     .font(.system(size: 11, weight: .medium))
             }
             .foregroundColor(isEnabled ? .black : .white.opacity(0.4))
