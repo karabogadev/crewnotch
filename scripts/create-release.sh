@@ -12,6 +12,25 @@ GITHUB_REPO="karabogadev/crewnotch"
 TEAM_ID="6Y4KN2T4LL"
 KEYCHAIN_PROFILE="CrewNotch"
 
+wait_for_pages_slot() {
+    echo "--- Waiting for an open Pages deploy slot"
+    for _ in $(seq 1 60); do
+        ACTIVE_COUNT=$(gh run list --repo "$GITHUB_REPO" --workflow "pages build and deployment" \
+            --branch main --limit 20 --json status \
+            --jq '[.[] | select(.status != "completed")] | length' 2>/dev/null || true)
+        if [ -z "$ACTIVE_COUNT" ]; then
+            echo "Warning: couldn't query Pages workflow runs; continuing."
+            return
+        fi
+        if [ "$ACTIVE_COUNT" -eq 0 ]; then
+            echo "Pages deploy slot is open."
+            return
+        fi
+        sleep 10
+    done
+    echo "Warning: a Pages deployment is still running; continuing anyway."
+}
+
 if [ ! -d "$APP_PATH" ]; then
     echo "ERROR: $APP_PATH not found. Run ./scripts/build.sh first."
     exit 1
@@ -85,6 +104,7 @@ if [ -n "$SPARKLE_BIN" ] && [ -f "$SPARKLE_KEY" ]; then
         --link "https://karabogadev.github.io/crewnotch/" \
         --embed-release-notes \
         -o "$PROJECT_DIR/docs/appcast.xml" "$APPCAST_DIR"
+    wait_for_pages_slot
     (cd "$PROJECT_DIR" && git add docs/appcast.xml && git commit -q -m "Publish the $VERSION update to the appcast" && git push -q origin main)
 
     # Pages deploys one commit at a time; pushing again while it deploys can
