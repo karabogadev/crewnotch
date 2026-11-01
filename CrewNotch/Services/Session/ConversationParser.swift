@@ -172,7 +172,7 @@ actor ConversationParser {
                 if let message = json["message"] as? [String: Any],
                    let msgContent = message["content"] as? String {
                     if !msgContent.hasPrefix("<command-name>") && !msgContent.hasPrefix("<local-command") && !msgContent.hasPrefix("Caveat:") {
-                        firstUserMessage = Self.truncateMessage(msgContent, maxLength: 50)
+                        firstUserMessage = Self.truncateMessage(SessionState.readableTitle(msgContent) ?? msgContent, maxLength: 80)
                         break
                     }
                 }
@@ -194,7 +194,7 @@ actor ConversationParser {
                     if !isMeta, let message = json["message"] as? [String: Any] {
                         if let msgContent = message["content"] as? String {
                             if !msgContent.hasPrefix("<command-name>") && !msgContent.hasPrefix("<local-command") && !msgContent.hasPrefix("Caveat:") {
-                                lastMessage = msgContent
+                                lastMessage = SessionState.readableTitle(msgContent) ?? msgContent
                                 lastMessageRole = type
                             }
                         } else if let contentArray = message["content"] as? [[String: Any]] {

@@ -145,9 +145,10 @@ struct SessionState: Equatable, Identifiable, Sendable {
     /// becomes "/review fix login", other tags are dropped.
     nonisolated static func readableTitle(_ text: String) -> String? {
         func tag(_ name: String) -> String? {
-            guard let open = text.range(of: "<\(name)>"),
-                  let close = text.range(of: "</\(name)>", range: open.upperBound..<text.endIndex) else { return nil }
-            let value = text[open.upperBound..<close.lowerBound].trimmingCharacters(in: .whitespacesAndNewlines)
+            guard let open = text.range(of: "<\(name)>") else { return nil }
+            // The closing tag may be missing when the text was cut short
+            let end = text.range(of: "</", range: open.upperBound..<text.endIndex)?.lowerBound ?? text.endIndex
+            let value = text[open.upperBound..<end].trimmingCharacters(in: .whitespacesAndNewlines)
             return value.isEmpty ? nil : value
         }
 
@@ -155,7 +156,7 @@ struct SessionState: Equatable, Identifiable, Sendable {
         if let command = tag("command-name") ?? tag("command-message") {
             title = [command, tag("command-args")].compactMap { $0 }.joined(separator: " ")
         } else {
-            title = text.replacingOccurrences(of: "<[^>]+>", with: " ", options: .regularExpression)
+            title = text.replacingOccurrences(of: "<[^>]+>|</?[a-z-]*$", with: " ", options: .regularExpression)
         }
         title = title.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
             .trimmingCharacters(in: .whitespacesAndNewlines)
