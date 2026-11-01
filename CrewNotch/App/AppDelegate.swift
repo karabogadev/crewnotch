@@ -55,6 +55,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         switch viewModel.status {
         case .opened where !controller.hasFocus:
             controller.takeFocus()
+            PanelKeys.shared.arm()
+        case .opened where !PanelKeys.shared.approvalsArmed:
+            // Opened by hovering: the shortcut makes the approval keys live
+            PanelKeys.shared.arm()
         case .opened:
             viewModel.notchClose()
         case .closed, .popping:

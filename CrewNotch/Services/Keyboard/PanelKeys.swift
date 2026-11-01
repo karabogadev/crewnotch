@@ -20,14 +20,22 @@ final class PanelKeys {
     private var sessions: [SessionState] = []
     private var cancellable: AnyCancellable?
 
+    /// Approval keys only work after a deliberate open (click or shortcut),
+    /// never when the panel slid open under a resting pointer.
+    private(set) var approvalsArmed = false
+    private var armedAt = Date.distantPast
+    /// Keys pressed this soon after arming were meant for another app.
+    private let armingDelay: TimeInterval = 0.5
+
     private init() {
         cancellable = SessionStore.shared.sessionsPublisher
             .receive(on: DispatchQueue.main)
             .sink { [weak self] in self?.sessions = $0 }
     }
 
-    func activate(for viewModel: NotchViewModel) {
+    func activate(for viewModel: NotchViewModel, deliberate: Bool) {
         self.viewModel = viewModel
+        if deliberate { arm() } else { approvalsArmed = false }
         guard monitor == nil else { return }
         monitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
             guard let self else { return event }
@@ -38,6 +46,13 @@ final class PanelKeys {
     func deactivate() {
         if let monitor { NSEvent.removeMonitor(monitor) }
         monitor = nil
+        approvalsArmed = false
+    }
+
+    /// Turns on the approval keys (the panel was opened on purpose).
+    func arm() {
+        approvalsArmed = true
+        armedAt = Date()
     }
 
     /// Returns true when the key press was used.
@@ -52,7 +67,9 @@ final class PanelKeys {
             return true
         }
 
-        guard AppSettings.panelShortcuts, let target = ApprovalActions.keyboardTarget(in: sessions),
+        guard AppSettings.panelShortcuts, approvalsArmed, Date().timeIntervalSince(armedAt) >= armingDelay,
+              let target = ApprovalActions.keyboardTarget(in: sessions),
+              isVisible(target, in: viewModel),
               let permission = target.activePermission else { return false }
         let isQuestion = permission.toolName == "AskUserQuestion"
 
@@ -80,6 +97,15 @@ final class PanelKeys {
         guard AgentQuestion.isOneClick(questions), questions[0].options.indices.contains(digit - 1) else { return false }
         ApprovalActions.answer(sessionId: target.sessionId, answers: [questions[0].text: questions[0].options[digit - 1].label])
         return true
+    }
+
+    /// Only answer a request the user can see: the list, or that session's chat.
+    private func isVisible(_ target: SessionState, in viewModel: NotchViewModel) -> Bool {
+        switch viewModel.contentType {
+        case .instances: return true
+        case .chat(let session): return session.sessionId == target.sessionId
+        case .banner: return false
+        }
     }
 
     private var isEditingText: Bool {

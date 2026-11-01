@@ -112,7 +112,8 @@ class NotchWindowController: NSWindowController {
         }
         NSApp.activate(ignoringOtherApps: false)
         window?.makeKey()
-        PanelKeys.shared.activate(for: viewModel)
+        let deliberate = viewModel.openReason == .click || viewModel.openReason == .keyboard
+        PanelKeys.shared.activate(for: viewModel, deliberate: deliberate)
     }
 
     var hasFocus: Bool {
