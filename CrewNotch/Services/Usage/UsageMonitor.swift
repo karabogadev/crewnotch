@@ -2,9 +2,9 @@
 //  UsageMonitor.swift
 //  CrewNotch
 //
-//  Keeps provider plan usage fresh for the notch: Codex from local session
-//  files every minute, Claude from its usage API every five minutes (only
-//  once the user allows reading Claude Code's sign-in).
+//  Keeps plan usage fresh for every provider the user turned on in
+//  Settings → Usage. Each source refreshes on its own interval; a failure
+//  keeps the last good numbers and records why.
 //
 
 import Combine
@@ -15,63 +15,86 @@ final class UsageMonitor: ObservableObject {
     static let shared = UsageMonitor()
 
     @Published private(set) var providers: [ProviderUsage] = []
+    @Published private(set) var enabled: Set<AgentKind> = UsageMonitor.loadEnabled()
 
-    private var codexTimer: Timer?
-    private var claudeTimer: Timer?
+    private var lastFetch: [AgentKind: Date] = [:]
+    private var inFlight: Set<AgentKind> = []
+    private var timer: Timer?
+
+    private static let enabledKey = "usageEnabledProviders"
 
     private init() {}
 
     func start() {
-        guard codexTimer == nil else { return }
-        refreshCodex()
-        refreshClaude()
-        codexTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { _ in
-            Task { @MainActor in UsageMonitor.shared.refreshCodex() }
-        }
-        claudeTimer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { _ in
-            Task { @MainActor in UsageMonitor.shared.refreshClaude() }
+        guard timer == nil else { return }
+        tick()
+        timer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { _ in
+            Task { @MainActor in UsageMonitor.shared.tick() }
         }
     }
 
-    /// Called when the user allows (or stops) reading Claude Code's sign-in.
+    func isEnabled(_ agent: AgentKind) -> Bool { enabled.contains(agent) }
+
+    /// Turning a provider on is the user's consent to read its sign-in.
+    func setEnabled(_ agent: AgentKind, _ on: Bool) {
+        if on { enabled.insert(agent) } else { enabled.remove(agent) }
+        UserDefaults.standard.set(enabled.map(\.rawValue).sorted(), forKey: Self.enabledKey)
+        if on {
+            refresh(agent)
+        } else {
+            providers.removeAll { $0.agent == agent }
+            lastFetch[agent] = nil
+        }
+    }
+
+    /// Kept for the onboarding and footer shortcuts.
     func setClaudeAllowed(_ allowed: Bool) {
         AppSettings.claudeUsageAllowed = allowed
-        if allowed {
-            refreshClaude()
-        } else {
-            providers.removeAll { $0.agent == .claude }
-        }
+        setEnabled(.claude, allowed)
     }
 
-    private func refreshCodex() {
-        guard AppSettings.showPlanUsage else { return }
+    func refresh(_ agent: AgentKind) {
+        guard AppSettings.showPlanUsage, enabled.contains(agent), !inFlight.contains(agent),
+              let source = UsageSources.source(for: agent) else { return }
+        inFlight.insert(agent)
+        lastFetch[agent] = Date()
         Task {
-            let usage = await Task.detached { CodexUsageReader.read() }.value
-            if let usage { update(usage) }
-        }
-    }
-
-    private func refreshClaude() {
-        guard AppSettings.showPlanUsage, AppSettings.claudeUsageAllowed else { return }
-        Task {
+            defer { inFlight.remove(agent) }
             do {
-                update(try await ClaudeUsageClient.fetch())
+                update(try await source.fetch())
             } catch {
-                // Keep the last good numbers; just surface why they're not updating.
-                var usage = providers.first { $0.agent == .claude }
-                    ?? ProviderUsage(agent: .claude, plan: nil, limits: [], updatedAt: Date())
+                var usage = providers.first { $0.agent == agent }
+                    ?? ProviderUsage(agent: agent, plan: nil, limits: [], updatedAt: Date())
                 usage.error = error.localizedDescription
                 update(usage)
             }
         }
     }
 
+    private func tick() {
+        let now = Date()
+        for source in UsageSources.all where enabled.contains(source.agent) {
+            let due = lastFetch[source.agent].map { now.timeIntervalSince($0) >= source.refreshInterval } ?? true
+            if due { refresh(source.agent) }
+        }
+    }
+
     private func update(_ usage: ProviderUsage) {
+        guard enabled.contains(usage.agent) else { return }
         if let index = providers.firstIndex(where: { $0.agent == usage.agent }) {
             providers[index] = usage
         } else {
             providers.append(usage)
-            providers.sort { $0.agent.rawValue < $1.agent.rawValue }
         }
+    }
+
+    /// Codex (local files) is on by default; Claude if the user allowed it before.
+    private static func loadEnabled() -> Set<AgentKind> {
+        if let saved = UserDefaults.standard.array(forKey: enabledKey) as? [String] {
+            return Set(saved.compactMap(AgentKind.init(rawValue:)))
+        }
+        var defaults: Set<AgentKind> = [.codex]
+        if AppSettings.claudeUsageAllowed { defaults.insert(.claude) }
+        return defaults
     }
 }
