@@ -28,8 +28,8 @@ enum NotchMoment: String, CaseIterable, Identifiable {
         switch self {
         case .launch: return .glow
         case .open: return .none
-        case .finished: return .confetti
-        case .needsYou: return .ripple
+        case .finished: return .none
+        case .needsYou: return .glow
         }
     }
 
