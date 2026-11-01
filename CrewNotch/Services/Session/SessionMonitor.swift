@@ -1,5 +1,5 @@
 //
-//  ClaudeSessionMonitor.swift
+//  SessionMonitor.swift
 //  CrewNotch
 //
 //  MainActor wrapper around SessionStore for UI binding.
@@ -11,7 +11,7 @@ import Combine
 import Foundation
 
 @MainActor
-class ClaudeSessionMonitor: ObservableObject {
+class SessionMonitor: ObservableObject {
     @Published var instances: [SessionState] = []
     @Published var pendingInstances: [SessionState] = []
 
@@ -42,7 +42,7 @@ class ClaudeSessionMonitor: ObservableObject {
                     await SessionStore.shared.process(.hookReceived(event))
                 }
 
-                if event.sessionPhase == .processing {
+                if event.agent.hasClaudeTranscript && event.sessionPhase == .processing {
                     Task { @MainActor in
                         InterruptWatcherManager.shared.startWatching(
                             sessionId: event.sessionId,
@@ -147,7 +147,7 @@ class ClaudeSessionMonitor: ObservableObject {
 
 // MARK: - Interrupt Watcher Delegate
 
-extension ClaudeSessionMonitor: JSONLInterruptWatcherDelegate {
+extension SessionMonitor: JSONLInterruptWatcherDelegate {
     nonisolated func didDetectInterrupt(sessionId: String) {
         Task {
             await SessionStore.shared.process(.interruptDetected(sessionId: sessionId))

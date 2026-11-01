@@ -11,7 +11,7 @@ import SwiftUI
 struct ChatView: View {
     let sessionId: String
     let initialSession: SessionState
-    let sessionMonitor: ClaudeSessionMonitor
+    let sessionMonitor: SessionMonitor
     @ObservedObject var viewModel: NotchViewModel
 
     @State private var inputText: String = ""
@@ -26,7 +26,7 @@ struct ChatView: View {
     @State private var isBottomVisible: Bool = true
     @FocusState private var isInputFocused: Bool
 
-    init(sessionId: String, initialSession: SessionState, sessionMonitor: ClaudeSessionMonitor, viewModel: NotchViewModel) {
+    init(sessionId: String, initialSession: SessionState, sessionMonitor: SessionMonitor, viewModel: NotchViewModel) {
         self.sessionId = sessionId
         self.initialSession = initialSession
         self.sessionMonitor = sessionMonitor

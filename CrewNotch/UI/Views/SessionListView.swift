@@ -1,5 +1,5 @@
 //
-//  ClaudeInstancesView.swift
+//  SessionListView.swift
 //  CrewNotch
 //
 //  Minimal instances list matching Dynamic Island aesthetic
@@ -8,8 +8,8 @@
 import Combine
 import SwiftUI
 
-struct ClaudeInstancesView: View {
-    @ObservedObject var sessionMonitor: ClaudeSessionMonitor
+struct SessionListView: View {
+    @ObservedObject var sessionMonitor: SessionMonitor
     @ObservedObject var viewModel: NotchViewModel
 
     var body: some View {

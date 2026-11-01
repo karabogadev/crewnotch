@@ -17,7 +17,7 @@ private let cornerRadiusInsets = (
 
 struct NotchView: View {
     @ObservedObject var viewModel: NotchViewModel
-    @StateObject private var sessionMonitor = ClaudeSessionMonitor()
+    @StateObject private var sessionMonitor = SessionMonitor()
     @StateObject private var activityCoordinator = NotchActivityCoordinator.shared
     @ObservedObject private var updateManager = UpdateManager.shared
     @State private var previousPendingIds: Set<String> = []
@@ -352,7 +352,7 @@ struct NotchView: View {
         Group {
             switch viewModel.contentType {
             case .instances:
-                ClaudeInstancesView(
+                SessionListView(
                     sessionMonitor: sessionMonitor,
                     viewModel: viewModel
                 )
