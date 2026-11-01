@@ -35,8 +35,7 @@ struct UsageFooter: View {
 
     var body: some View {
         if isVisible {
-            VStack(spacing: 6) {
-
+            VStack(spacing: 9) {
                 switch style {
                 case .line:
                     ForEach(visibleProviders) { UsageLineRow(usage: $0) }
@@ -47,11 +46,9 @@ struct UsageFooter: View {
                 }
 
             }
-            .padding(.vertical, 10)
-            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.ink.opacity(0.03)))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.ink.opacity(0.05), lineWidth: 0.5))
-            .padding(.top, 2)
-            .padding(.bottom, 4)
+            .padding(.top, 12)
+            .padding(.bottom, 6)
+            .overlay(alignment: .top) { Hairline() }
         }
     }
 }
@@ -85,6 +82,10 @@ private func usageTooltip(_ usage: ProviderUsage, mode: UsagePercentMode) -> Str
         if let reset = limit.resetsAt, reset > Date() {
             line += String(localized: ", resets in \(UsageFormat.timeUntil(reset))")
         }
+        if let pace = limit.pace() {
+            line += pace.runsOutAt.map { String(localized: " · at this pace it runs out in \(UsageFormat.timeUntil($0))") }
+                ?? String(localized: " · at this pace ~\(Int(pace.projectedPercent.rounded()))% by the reset")
+        }
         return line
     }
     if let error = usage.error { lines.append(error) }
@@ -102,35 +103,39 @@ private struct UsageLineRow: View {
 
     var body: some View {
         let numbers = UsageNumbers(mode: mode)
-        HStack(spacing: 6) {
-            AgentIcon(agent: usage.agent, size: 12)
-            Text(usage.agent.displayName).foregroundColor(.ink.opacity(0.6))
-            if let plan = usage.plan {
-                Text(plan).foregroundColor(.ink.opacity(0.3))
+        HStack(spacing: 10) {
+            HStack(spacing: 6) {
+                AgentIcon(agent: usage.agent, size: 11)
+                Text(usage.agent.displayName)
+                    .foregroundColor(.ink.opacity(0.6))
+                    .lineLimit(1)
+                if let limit = usage.limit(for: choice) {
+                    Text(limit.displayLabel).foregroundColor(.ink.opacity(0.45))
+                }
             }
-            Spacer(minLength: 8)
+            .font(.system(size: 10 * textScale.factor, weight: .medium, design: .monospaced))
+            .textCase(.uppercase)
+            .kerning(0.4)
+            .frame(width: 150 * textScale.factor, alignment: .leading)
 
             if let limit = usage.limit(for: choice) {
-                if choice == .mostUsed {
-                    Text(limit.displayLabel).foregroundColor(.ink.opacity(0.3))
-                }
-                UsageBar(fraction: numbers.barFraction(limit), usedPercent: limit.usedPercent)
-                    .frame(width: 56, height: 4)
+                UsageMeter(limit: limit, mode: mode)
+                    .frame(height: 9)
                 Text(numbers.label(limit))
-                    .font(.system(size: 11 * textScale.factor, weight: .semibold, design: .monospaced))
-                    .foregroundColor(.ink.opacity(0.75))
-                    .frame(minWidth: 32, alignment: .trailing)
-                if let reset = limit.resetsAt, reset > Date() {
-                    Text(UsageFormat.timeUntil(reset))
-                        .foregroundColor(.ink.opacity(0.3))
-                        .frame(minWidth: 44, alignment: .trailing)
+                    .font(.system(size: 11 * textScale.factor, weight: .medium, design: .monospaced))
+                    .foregroundColor(.ink.opacity(0.85))
+                    .frame(minWidth: 34, alignment: .trailing)
+                UsageOutlook(limit: limit)
+                    .frame(minWidth: 52 * textScale.factor, alignment: .trailing)
+            } else {
+                Spacer(minLength: 0)
+                if let error = usage.error {
+                    Text(error).foregroundColor(.ink.opacity(0.45)).lineLimit(1)
                 }
-            } else if let error = usage.error {
-                Text(error).foregroundColor(.ink.opacity(0.35)).lineLimit(1)
             }
         }
         .font(.system(size: 11 * textScale.factor, weight: .medium))
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 8)
         .contentShape(Rectangle())
         .help(usageTooltip(usage, mode: mode))
     }
@@ -145,38 +150,44 @@ private struct UsageBarsBlock: View {
 
     var body: some View {
         let numbers = UsageNumbers(mode: mode)
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
-                AgentIcon(agent: usage.agent, size: 12)
-                Text(usage.agent.displayName).foregroundColor(.ink.opacity(0.7))
-                if let plan = usage.plan {
-                    Text(plan).foregroundColor(.ink.opacity(0.3))
+                AgentIcon(agent: usage.agent, size: 11)
+                Group {
+                    Text(usage.agent.displayName).foregroundColor(.ink.opacity(0.7))
+                    if let plan = usage.plan {
+                        Text(plan).foregroundColor(.ink.opacity(0.45))
+                    }
                 }
+                .font(.system(size: 10 * textScale.factor, weight: .medium, design: .monospaced))
+                .textCase(.uppercase)
+                .kerning(0.4)
                 Spacer()
                 if let error = usage.error, usage.limits.isEmpty {
-                    Text(error).foregroundColor(.ink.opacity(0.35)).lineLimit(1)
+                    Text(error).foregroundColor(.ink.opacity(0.45)).lineLimit(1)
                 }
             }
             ForEach(usage.limits) { limit in
-                HStack(spacing: 8) {
+                HStack(spacing: 10) {
                     Text(limit.displayLabel)
-                        .foregroundColor(.ink.opacity(0.45))
-                        .frame(width: 74, alignment: .leading)
-                    UsageBar(fraction: numbers.barFraction(limit), usedPercent: limit.usedPercent)
-                        .frame(height: 4)
+                        .font(.system(size: 10 * textScale.factor, design: .monospaced))
+                        .foregroundColor(.ink.opacity(0.5))
+                        .lineLimit(1)
+                        .frame(width: 74 * textScale.factor, alignment: .leading)
+                    UsageMeter(limit: limit, mode: mode)
+                        .frame(height: 8)
                     Text(numbers.label(limit))
-                        .font(.system(size: 10 * textScale.factor, weight: .semibold, design: .monospaced))
-                        .foregroundColor(.ink.opacity(0.7))
+                        .font(.system(size: 10 * textScale.factor, weight: .medium, design: .monospaced))
+                        .foregroundColor(.ink.opacity(0.8))
                         .frame(minWidth: 56, alignment: .trailing)
-                    Text(limit.resetsAt.flatMap { $0 > Date() ? UsageFormat.timeUntil($0) : nil } ?? "")
-                        .foregroundColor(.ink.opacity(0.3))
-                        .frame(width: 44, alignment: .trailing)
+                    UsageOutlook(limit: limit)
+                        .frame(minWidth: 52 * textScale.factor, alignment: .trailing)
                 }
                 .font(.system(size: 10 * textScale.factor, weight: .medium))
             }
         }
         .font(.system(size: 11 * textScale.factor, weight: .medium))
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 8)
         .padding(.vertical, 2)
         .help(usageTooltip(usage, mode: mode))
     }
@@ -211,7 +222,7 @@ private struct UsageCompactRow: View {
             Spacer(minLength: 0)
         }
         .font(.system(size: 11 * textScale.factor, weight: .medium))
-        .padding(.horizontal, 10)
+        .padding(.horizontal, 8)
     }
 }
 
@@ -219,24 +230,57 @@ private struct UsageCompactRow: View {
 
 private func usageColor(_ usedPercent: Double) -> Color {
     switch usedPercent {
-    case ..<70: return .ink.opacity(0.55)
-    case ..<90: return TerminalColors.amber.opacity(0.85)
-    default: return Color(red: 0.95, green: 0.45, blue: 0.4)
+    case ..<70: return .ink.opacity(0.82)
+    case ..<90: return TerminalColors.amber
+    default: return TerminalColors.red
     }
 }
 
-private struct UsageBar: View {
-    let fraction: Double
-    let usedPercent: Double
+/// A row of ticks: what is used, a fainter run for where the pace leads by
+/// the reset, then what is left. Drains instead when showing what's left.
+private struct UsageMeter: View {
+    let limit: UsageLimit
+    let mode: UsagePercentMode
 
     var body: some View {
-        GeometryReader { geometry in
-            ZStack(alignment: .leading) {
-                Capsule().fill(Color.ink.opacity(0.08))
-                Capsule().fill(usageColor(usedPercent))
-                    .frame(width: geometry.size.width * min(max(fraction, 0), 1))
+        let used = min(max(limit.usedPercent, 0), 100) / 100
+        let projected = min(max(limit.pace()?.projectedPercent ?? 0, limit.usedPercent), 100) / 100
+        // Used: solid up to now, faint up to the projection. Left: the faint run is what the pace will eat.
+        let solidEnd = mode == .used ? used : 1 - projected
+        let paceEnd = mode == .used ? projected : 1 - used
+        let color = usageColor(limit.usedPercent)
+        Canvas { context, size in
+            let tick: CGFloat = 3, gap: CGFloat = 2
+            let count = max(2, Int((size.width + gap) / (tick + gap)))
+            let step = (size.width - tick) / CGFloat(count - 1)
+            for index in 0..<count {
+                let position = (Double(index) + 0.5) / Double(count)
+                let fill = position <= solidEnd ? color : position <= paceEnd ? color.opacity(0.32) : Color.ink.opacity(0.1)
+                let rect = CGRect(x: CGFloat(index) * step, y: 0, width: tick, height: size.height)
+                context.fill(Path(roundedRect: rect, cornerRadius: 1), with: .color(fill))
             }
         }
+    }
+}
+
+/// The reset countdown, or when the limit runs out first at the current pace.
+private struct UsageOutlook: View {
+    let limit: UsageLimit
+    @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
+
+    var body: some View {
+        Group {
+            if let runsOut = limit.pace()?.runsOutAt {
+                Text("out in \(UsageFormat.timeUntil(runsOut))")
+                    .foregroundColor(limit.usedPercent >= 90 ? TerminalColors.red : TerminalColors.amber)
+            } else if let reset = limit.resetsAt, reset > Date() {
+                Text(UsageFormat.timeUntil(reset)).foregroundColor(.ink.opacity(0.5))
+            } else {
+                Text("")
+            }
+        }
+        .font(.system(size: 10.5 * textScale.factor, design: .monospaced))
+        .lineLimit(1)
     }
 }
 
@@ -252,5 +296,12 @@ private struct UsageRing: View {
                 .stroke(usageColor(usedPercent), style: StrokeStyle(lineWidth: 2, lineCap: .round))
                 .rotationEffect(.degrees(-90))
         }
+    }
+}
+
+/// The thin rule between sections of the panel.
+struct Hairline: View {
+    var body: some View {
+        Rectangle().fill(Color.ink.opacity(0.08)).frame(height: 1)
     }
 }
