@@ -115,10 +115,10 @@ struct NotchView: View {
         let working = sessions.filter { $0.phase.isActive }.count
         let done = sessions.filter { $0.phase == .waitingForInput }.count
         var parts: [String] = []
-        if needsYou > 0 { parts.append("\(needsYou) needs you") }
-        if working > 0 { parts.append("\(working) working") }
-        if done > 0 { parts.append("\(done) done") }
-        if parts.isEmpty { return sessions.isEmpty ? "No agents running" : "All quiet" }
+        if needsYou > 0 { parts.append(String(localized: "\(needsYou) needs you")) }
+        if working > 0 { parts.append(String(localized: "\(working) working")) }
+        if done > 0 { parts.append(String(localized: "\(done) done")) }
+        if parts.isEmpty { return sessions.isEmpty ? String(localized: "No agents running") : String(localized: "All quiet") }
         return parts.joined(separator: " · ")
     }
 

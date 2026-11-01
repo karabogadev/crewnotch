@@ -360,8 +360,10 @@ struct ChatView: View {
 
     private var inputPlaceholder: String {
         let name = session.agent.displayName
-        if canSendMessages { return "Message \(name)..." }
-        return session.agent.isTerminalAgent ? "Run \(name) in tmux to reply from here" : "Reply in \(name)"
+        if canSendMessages { return String(localized: "Message \(name)...") }
+        return session.agent.isTerminalAgent
+            ? String(localized: "Run \(name) in tmux to reply from here")
+            : String(localized: "Reply in \(name)")
     }
 
     private var inputBar: some View {
@@ -430,8 +432,8 @@ struct ChatView: View {
         ChatInteractivePromptBar(
             toolName: approvalTool ?? "AskUserQuestion",
             message: approvalTool == "AskUserQuestion"
-                ? "\(session.agent.displayName) needs your input"
-                : session.pendingToolInput ?? "\(session.agent.displayName) is waiting for approval",
+                ? String(localized: "\(session.agent.displayName) needs your input")
+                : session.pendingToolInput ?? String(localized: "\(session.agent.displayName) is waiting for approval"),
             buttonLabel: session.agent.isTerminalAgent ? "Terminal" : "Open",
             buttonIcon: session.agent.isTerminalAgent ? "terminal" : "arrow.up.forward.app",
             isEnabled: SessionFocuser.canFocus(session),
@@ -905,7 +907,7 @@ struct SubagentToolRow: View {
     /// Get status text using the same logic as regular tools
     private var statusText: String {
         if tool.status == .interrupted {
-            return "Interrupted"
+            return String(localized: "Interrupted")
         } else if tool.status == .running {
             return ToolStatusDisplay.running(for: tool.name, input: tool.input).text
         } else {
@@ -1059,7 +1061,7 @@ struct InterruptedMessageView: View {
 struct ChatInteractivePromptBar: View {
     let toolName: String
     let message: String
-    var buttonLabel = "Terminal"
+    var buttonLabel: LocalizedStringKey = "Terminal"
     var buttonIcon = "terminal"
     let isEnabled: Bool
     let onOpen: () -> Void

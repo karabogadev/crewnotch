@@ -22,11 +22,11 @@ struct KeepAwakeButton: View {
     private var helpText: String {
         switch controller.state {
         case .active(let until):
-            return "Keep Awake is on until \(until.formatted(date: .omitted, time: .shortened)). Agents keep running while the display sleeps. Click to turn off."
+            return String(localized: "Keep Awake is on until \(until.formatted(date: .omitted, time: .shortened)). Agents keep running while the display sleeps. Click to turn off.")
         case .paused(let reason):
-            return "Keep Awake is paused: \(reason). Click to turn off."
+            return String(localized: "Keep Awake is paused: \(reason). Click to turn off.")
         case .off:
-            return "Keep Awake: keep agents running while the display sleeps"
+            return String(localized: "Keep Awake: keep agents running while the display sleeps")
         }
     }
 

@@ -189,12 +189,12 @@ struct InstanceRow: View {
     /// Short status word shown on the meta line
     private var statusWord: String {
         switch session.phase {
-        case .processing: return "Working"
-        case .compacting: return "Compacting"
-        case .waitingForInput: return "Done"
-        case .waitingForApproval: return "Needs you"
-        case .idle: return "Idle"
-        case .ended: return "Ended"
+        case .processing: return String(localized: "Working")
+        case .compacting: return String(localized: "Compacting")
+        case .waitingForInput: return String(localized: "Done")
+        case .waitingForApproval: return String(localized: "Needs you")
+        case .idle: return String(localized: "Idle")
+        case .ended: return String(localized: "Ended")
         }
     }
 
@@ -226,7 +226,7 @@ struct InstanceRow: View {
         }
         guard let message = session.lastMessage else { return nil }
         switch session.lastMessageRole {
-        case "user": return "You: \(message)"
+        case "user": return String(localized: "You: \(message)")
         case "tool": return [session.lastToolName.map { MCPToolFormatter.formatToolName($0) }, message].compactMap { $0 }.joined(separator: " ")
         default: return message
         }
@@ -300,7 +300,7 @@ struct InstanceRow: View {
                         } label: {
                             HStack(spacing: 3) {
                                 Image(systemName: "arrow.turn.down.right")
-                                Text("\(activeSubagents.count) subagent\(activeSubagents.count == 1 ? "" : "s")")
+                                Text("^[\(activeSubagents.count) subagent](inflect: true)")
                                 Image(systemName: subagentsExpanded ? "chevron.up" : "chevron.down")
                                     .font(.system(size: 8 * textScale.factor, weight: .semibold))
                             }
@@ -527,7 +527,7 @@ struct CompactTerminalButton: View {
 
 struct TerminalButton: View {
     @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
-    var label = "Terminal"
+    var label: LocalizedStringKey = "Terminal"
     var icon = "terminal"
     let isEnabled: Bool
     let onTap: () -> Void
@@ -575,7 +575,7 @@ private struct SubagentList: View {
                             .lineLimit(1)
                     }
                     Spacer(minLength: 0)
-                    Text("\(task.subagentTools.count) tools")
+                    Text("^[\(task.subagentTools.count) tool](inflect: true)")
                         .foregroundColor(.white.opacity(0.3))
                 }
                 .font(.system(size: 10.5 * textScale.factor))
