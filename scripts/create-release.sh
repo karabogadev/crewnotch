@@ -86,6 +86,17 @@ if [ -n "$SPARKLE_BIN" ] && [ -f "$SPARKLE_KEY" ]; then
         --embed-release-notes \
         -o "$PROJECT_DIR/docs/appcast.xml" "$APPCAST_DIR"
     (cd "$PROJECT_DIR" && git add docs/appcast.xml && git commit -q -m "Publish the $VERSION update to the appcast" && git push -q origin main)
+
+    # Pages deploys one commit at a time; pushing again while it deploys can
+    # wedge it and leave the old appcast live. Wait until the new one is served.
+    echo "--- Waiting for the website to serve $VERSION"
+    for _ in $(seq 1 60); do
+        if curl -fs "https://karabogadev.github.io/crewnotch/appcast.xml?nocache=$RANDOM" | grep -q "<sparkle:shortVersionString>$VERSION<"; then
+            echo "Appcast is live. Wait for this before pushing anything else."
+            break
+        fi
+        sleep 10
+    done
 else
     echo "Warning: Sparkle tools or signing key not found; the appcast was not updated."
 fi
