@@ -389,6 +389,19 @@ struct NotchView: View {
 
             Spacer()
 
+            Button {
+                viewModel.notchClose()
+                AppWindows.showTokenHistory()
+            } label: {
+                Image(systemName: "chart.bar.xaxis")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.white.opacity(0.4))
+                    .frame(width: 22, height: 22)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help("Token history")
+
             KeepAwakeButton(controller: keepAwake)
 
             // Settings

@@ -13,11 +13,18 @@ import SwiftUI
 enum AppWindows {
     private static var settings: NSWindow?
     private static var onboarding: NSWindow?
+    private static var tokenHistory: NSWindow?
 
     static func showSettings(pane: SettingsPane = .general) {
         SettingsNavigation.shared.pane = pane
         present(&settings, title: "CrewNotch Settings", size: NSSize(width: 760, height: 560)) {
             SettingsView()
+        }
+    }
+
+    static func showTokenHistory() {
+        present(&tokenHistory, title: "Token history", size: NSSize(width: 720, height: 640)) {
+            TokenHistoryView()
         }
     }
 
