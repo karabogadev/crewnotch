@@ -77,6 +77,8 @@ struct NotificationsPane: View {
                 Text("Turning sounds off or choosing None keeps the visual notifications.")
                     .foregroundStyle(.secondary)
             }
+
+            AwayNotificationsSection()
         }
         .formStyle(.grouped)
     }

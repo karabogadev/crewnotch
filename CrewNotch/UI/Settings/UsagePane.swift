@@ -48,6 +48,8 @@ struct UsagePane: View {
                     Text(styleDescription).foregroundStyle(.secondary)
                 }
 
+                UsageAlertsSection()
+
                 Section {
                     ForEach(order) { agent in
                         ProviderRow(agent: agent, usage: monitor.providers.first { $0.agent == agent },
