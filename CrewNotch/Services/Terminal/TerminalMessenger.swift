@@ -9,6 +9,7 @@
 //
 
 import AppKit
+import Combine
 import os.log
 
 enum ReplyHost: Equatable {
@@ -147,5 +148,31 @@ enum TerminalMessenger {
     /// Terminal and iTerm2 submit at the first newline, so send one line.
     private static func singleLine(_ text: String) -> String {
         text.components(separatedBy: .newlines).filter { !$0.isEmpty }.joined(separator: " ")
+    }
+}
+
+/// Remembers which sessions can be replied to, so rows only offer the chat
+/// button where a reply can actually be delivered.
+@MainActor
+final class ReplyHostCache: ObservableObject {
+    static let shared = ReplyHostCache()
+
+    @Published private(set) var hosts: [String: ReplyHost?] = [:]
+
+    private init() {}
+
+    /// nil while unknown; `.some(nil)` when the session can't be replied to
+    func host(for session: SessionState) -> ReplyHost?? {
+        hosts[key(session)]
+    }
+
+    func resolve(_ session: SessionState) async {
+        let key = key(session)
+        guard hosts[key] == nil else { return }
+        hosts[key] = .some(await TerminalMessenger.host(for: session))
+    }
+
+    private func key(_ session: SessionState) -> String {
+        "\(session.sessionId)-\(session.pid ?? 0)-\(session.isInTmux)"
     }
 }
