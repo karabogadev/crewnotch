@@ -121,21 +121,11 @@ nonisolated enum ClaudeUsageClient {
         let plan: String?
     }
 
-    /// Reads Claude Code's sign-in through /usr/bin/security, which macOS
-    /// asks the user to allow once ("Always Allow").
+    /// Reads Claude Code's sign-in from the keychain in-process; macOS asks the
+    /// user once to let CrewNotch (and only CrewNotch) read it.
     private static func readCredentials() throws -> Credentials {
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/security")
-        process.arguments = ["find-generic-password", "-s", "Claude Code-credentials", "-w"]
-        let output = Pipe()
-        process.standardOutput = output
-        process.standardError = FileHandle.nullDevice
-        try process.run()
-        let data = output.fileHandleForReading.readDataToEndOfFile()
-        process.waitUntilExit()
-        guard process.terminationStatus == 0 else { throw Failure.notSignedIn }
-
-        var raw = String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
+        guard var raw = LocalData.keychainPassword("Claude Code-credentials")?
+            .trimmingCharacters(in: .whitespacesAndNewlines) else { throw Failure.notSignedIn }
         if !raw.hasPrefix("{"), let decoded = hexDecoded(raw) { raw = decoded }
 
         guard let json = try? JSONSerialization.jsonObject(with: Data(raw.utf8)) as? [String: Any],

@@ -9,6 +9,7 @@
 //
 
 import Foundation
+import Security
 
 nonisolated protocol UsageSource: Sendable {
     var agent: AgentKind { get }
@@ -348,12 +349,27 @@ nonisolated enum LocalData {
         return String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    /// Checks for a keychain item without reading its secret (no prompt).
     static func keychainItemExists(_ service: String) -> Bool {
-        run("/usr/bin/security", ["find-generic-password", "-s", service]) != nil
+        let query: [CFString: Any] = [
+            kSecClass: kSecClassGenericPassword, kSecAttrService: service,
+            kSecReturnAttributes: true, kSecMatchLimit: kSecMatchLimitOne,
+        ]
+        return SecItemCopyMatching(query as CFDictionary, nil) == errSecSuccess
     }
 
+    /// Reads a keychain item in-process, so macOS asks on behalf of CrewNotch
+    /// and an "Always Allow" applies to CrewNotch only, not to a shared tool
+    /// like /usr/bin/security that any program could run.
     static func keychainPassword(_ service: String) -> String? {
-        run("/usr/bin/security", ["find-generic-password", "-s", service, "-w"]).flatMap { $0.isEmpty ? nil : $0 }
+        let query: [CFString: Any] = [
+            kSecClass: kSecClassGenericPassword, kSecAttrService: service,
+            kSecReturnData: true, kSecMatchLimit: kSecMatchLimitOne,
+        ]
+        var result: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let data = result as? Data, let text = String(data: data, encoding: .utf8), !text.isEmpty else { return nil }
+        return text
     }
 
     /// A value from a VS Code-style `state.vscdb` (opened read-only).
