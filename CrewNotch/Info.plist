@@ -16,6 +16,14 @@
     <true/>
     <key>NSAppleEventsUsageDescription</key>
     <string>CrewNotch types the replies you write in the notch into the terminal running your agent.</string>
+    <key>SUFeedURL</key>
+    <string>https://karabogadev.github.io/crewnotch/appcast.xml</string>
+    <key>SUPublicEDKey</key>
+    <string>ThFAh89zgU9laTtLcu4tLAcgcoqQAP7chATLtFhrFng=</string>
+    <key>SUEnableAutomaticChecks</key>
+    <true/>
+    <key>SUScheduledCheckInterval</key>
+    <integer>86400</integer>
     <key>NSHumanReadableCopyright</key>
     <string>Copyright © 2026 Cihat Karaboğa</string>
 </dict>
