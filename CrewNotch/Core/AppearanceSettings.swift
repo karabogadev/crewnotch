@@ -72,6 +72,18 @@ nonisolated enum PanelTint: String, CaseIterable, Identifiable {
         case .plum: return Color(red: 0.12, green: 0.07, blue: 0.12)
         }
     }
+
+    /// The same hue as a light surface, for the light theme
+    var lightColor: Color {
+        switch self {
+        case .black: return Color(white: 0.97)
+        case .graphite: return Color(white: 0.92)
+        case .midnight: return Color(red: 0.92, green: 0.94, blue: 0.99)
+        case .ocean: return Color(red: 0.91, green: 0.97, blue: 0.97)
+        case .forest: return Color(red: 0.93, green: 0.97, blue: 0.92)
+        case .plum: return Color(red: 0.97, green: 0.93, blue: 0.97)
+        }
+    }
 }
 
 nonisolated enum IdleNotchBehavior: String, CaseIterable, Identifiable {
@@ -102,12 +114,13 @@ enum AccentMode: String, CaseIterable, Identifiable {
         }
     }
 
-    var finishedColor: Color { self == .full ? TerminalColors.green : .white.opacity(0.85) }
-    var attentionColor: Color { self == .off ? .white.opacity(0.9) : TerminalColors.amber }
+    var finishedColor: Color { self == .full ? TerminalColors.green : .ink.opacity(0.85) }
+    var attentionColor: Color { self == .off ? .ink.opacity(0.9) : TerminalColors.amber }
 }
 
 nonisolated enum AppearanceKeys {
     static let textScale = "textScale"
+    static let theme = "panelTheme"
     static let material = "panelMaterial"
     static let tint = "panelTint"
     static let closedShowsWorking = "closedShowsWorking"
