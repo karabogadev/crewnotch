@@ -383,6 +383,8 @@ private struct AppearancePane: View {
                     ForEach(TitleOrder.allCases) { Text($0.title).tag($0) }
                 }
                 Stepper("Rows at once: \(rowsAtOnce)", value: $rowsAtOnce, in: 3...10)
+                    // Picking a row count replaces a height dragged in the notch
+                    .onChange(of: rowsAtOnce) { UserDefaults.standard.removeObject(forKey: AppearanceKeys.panelHeight) }
                 Picker("Mark a session idle after", selection: $idleAfterMinutes) {
                     Text("15 minutes").tag(15)
                     Text("30 minutes").tag(30)
