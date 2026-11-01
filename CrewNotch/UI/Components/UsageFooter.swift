@@ -26,7 +26,9 @@ struct UsageFooter: View {
 
     private var visibleProviders: [ProviderUsage] {
         _ = (hiddenProviders, hiddenMetrics, providerOrder)
-        return UsagePreferences.apply(to: monitor.providers)
+        // Providers with nothing to show (e.g. an expired sign-in) stay out of
+        // the notch; Settings → Usage shows why.
+        return UsagePreferences.apply(to: monitor.providers).filter { !$0.limits.isEmpty }
     }
 
     private var offerClaude: Bool {
@@ -96,7 +98,7 @@ private func usageTooltip(_ usage: ProviderUsage, mode: UsagePercentMode) -> Str
     let numbers = UsageNumbers(mode: mode)
     var lines = usage.limits.map { limit in
         var line = "\(limit.label): \(numbers.shownPercent(limit))% \(mode.rawValue)"
-        if let reset = limit.resetsAt { line += ", resets in \(UsageFormat.timeUntil(reset))" }
+        if let reset = limit.resetsAt, reset > Date() { line += ", resets in \(UsageFormat.timeUntil(reset))" }
         return line
     }
     if let error = usage.error { lines.append(error) }
@@ -132,7 +134,7 @@ private struct UsageLineRow: View {
                     .font(.system(size: 11 * textScale.factor, weight: .semibold, design: .monospaced))
                     .foregroundColor(.white.opacity(0.75))
                     .frame(minWidth: 32, alignment: .trailing)
-                if let reset = limit.resetsAt {
+                if let reset = limit.resetsAt, reset > Date() {
                     Text(UsageFormat.timeUntil(reset))
                         .foregroundColor(.white.opacity(0.3))
                         .frame(minWidth: 44, alignment: .trailing)
@@ -180,7 +182,7 @@ private struct UsageBarsBlock: View {
                         .font(.system(size: 10 * textScale.factor, weight: .semibold, design: .monospaced))
                         .foregroundColor(.white.opacity(0.7))
                         .frame(minWidth: 56, alignment: .trailing)
-                    Text(limit.resetsAt.map { UsageFormat.timeUntil($0) } ?? "")
+                    Text(limit.resetsAt.flatMap { $0 > Date() ? UsageFormat.timeUntil($0) : nil } ?? "")
                         .foregroundColor(.white.opacity(0.3))
                         .frame(width: 44, alignment: .trailing)
                 }
