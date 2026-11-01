@@ -50,17 +50,17 @@ nonisolated enum TokenHistoryRange: String, CaseIterable, Identifiable, Sendable
 
     var title: String {
         switch self {
-        case .today: return "Today"
-        case .week: return "7 days"
-        case .month: return "30 days"
+        case .today: return String(localized: "Today")
+        case .week: return String(localized: "7 days")
+        case .month: return String(localized: "30 days")
         }
     }
 
     var caption: String {
         switch self {
-        case .today: return "TODAY"
-        case .week: return "LAST 7 DAYS"
-        case .month: return "LAST 30 DAYS"
+        case .today: return String(localized: "TODAY")
+        case .week: return String(localized: "LAST 7 DAYS")
+        case .month: return String(localized: "LAST 30 DAYS")
         }
     }
 

@@ -90,19 +90,24 @@ private struct UsageNumbers {
     }
 
     func label(_ limit: UsageLimit) -> String {
-        "\(shownPercent(limit))%" + (mode == .left ? " left" : "")
+        mode == .left ? String(localized: "\(shownPercent(limit))% left") : "\(shownPercent(limit))%"
     }
 }
 
 private func usageTooltip(_ usage: ProviderUsage, mode: UsagePercentMode) -> String {
     let numbers = UsageNumbers(mode: mode)
     var lines = usage.limits.map { limit in
-        var line = "\(limit.label): \(numbers.shownPercent(limit))% \(mode.rawValue)"
-        if let reset = limit.resetsAt, reset > Date() { line += ", resets in \(UsageFormat.timeUntil(reset))" }
+        let percent = numbers.shownPercent(limit)
+        var line = mode == .used
+            ? String(localized: "\(limit.displayLabel): \(percent)% used")
+            : String(localized: "\(limit.displayLabel): \(percent)% left")
+        if let reset = limit.resetsAt, reset > Date() {
+            line += String(localized: ", resets in \(UsageFormat.timeUntil(reset))")
+        }
         return line
     }
     if let error = usage.error { lines.append(error) }
-    lines.append("Updated \(usage.updatedAt.formatted(.relative(presentation: .named)))")
+    lines.append(String(localized: "Updated \(usage.updatedAt.formatted(.relative(presentation: .named)))"))
     return lines.joined(separator: "\n")
 }
 
@@ -126,7 +131,7 @@ private struct UsageLineRow: View {
 
             if let limit = usage.limit(for: choice) {
                 if choice == .mostUsed {
-                    Text(limit.label).foregroundColor(.white.opacity(0.3))
+                    Text(limit.displayLabel).foregroundColor(.white.opacity(0.3))
                 }
                 UsageBar(fraction: numbers.barFraction(limit), usedPercent: limit.usedPercent)
                     .frame(width: 56, height: 4)
@@ -173,7 +178,7 @@ private struct UsageBarsBlock: View {
             }
             ForEach(usage.limits) { limit in
                 HStack(spacing: 8) {
-                    Text(limit.label)
+                    Text(limit.displayLabel)
                         .foregroundColor(.white.opacity(0.45))
                         .frame(width: 74, alignment: .leading)
                     UsageBar(fraction: numbers.barFraction(limit), usedPercent: limit.usedPercent)

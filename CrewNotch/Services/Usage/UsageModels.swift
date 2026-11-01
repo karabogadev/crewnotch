@@ -15,6 +15,18 @@ nonisolated struct UsageLimit: Identifiable, Equatable, Sendable {
     let resetsAt: Date?
 
     var id: String { label }
+
+    /// The label in the user's language ("Session", "Weekly"... are also used as ids).
+    var displayLabel: String { Self.displayName(label) }
+
+    static func displayName(_ label: String) -> String {
+        switch label {
+        case "Session": return String(localized: "Session")
+        case "Weekly": return String(localized: "Weekly")
+        case "Extra usage": return String(localized: "Extra usage")
+        default: return label  // model names like Sonnet or Fable
+        }
+    }
 }
 
 nonisolated struct ProviderUsage: Identifiable, Equatable, Sendable {

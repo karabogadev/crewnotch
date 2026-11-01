@@ -60,7 +60,7 @@ nonisolated enum IntegrationError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingBundledScript:
-            return "The CrewNotch hook script is missing from the app bundle."
+            return String(localized: "The CrewNotch hook script is missing from the app bundle.")
         case .unreadableConfig(let url):
             return "\(url.path) isn't valid JSON, so CrewNotch left it untouched."
         }

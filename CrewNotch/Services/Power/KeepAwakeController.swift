@@ -85,9 +85,9 @@ final class KeepAwakeController: ObservableObject {
 
         let power = PowerStatus.current()
         if AppSettings.keepAwakeRequiresAdapter && !power.onAdapter {
-            apply(.paused(reason: "On battery"))
+            apply(.paused(reason: String(localized: "On battery")))
         } else if let level = power.batteryPercent, !power.onAdapter, level < AppSettings.keepAwakeMinBattery {
-            apply(.paused(reason: "Battery below \(AppSettings.keepAwakeMinBattery)%"))
+            apply(.paused(reason: String(localized: "Battery below \(AppSettings.keepAwakeMinBattery)%")))
         } else {
             apply(.active(until: deadline))
         }

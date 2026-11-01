@@ -24,11 +24,11 @@ nonisolated enum ClaudeUsageClient {
 
         var errorDescription: String? {
             switch self {
-            case .notSignedIn: return "Sign in to Claude Code"
-            case .signInExpired: return "Open Claude Code to renew sign-in"
-            case .noUsageScope: return "This sign-in can't read usage"
-            case .rateLimited(let until): return "Paused until \(until.formatted(date: .omitted, time: .shortened))"
-            case .server(let code): return "Usage unavailable (\(code))"
+            case .notSignedIn: return String(localized: "Sign in to Claude Code")
+            case .signInExpired: return String(localized: "Open Claude Code to renew sign-in")
+            case .noUsageScope: return String(localized: "This sign-in can't read usage")
+            case .rateLimited(let until): return String(localized: "Paused until \(until.formatted(date: .omitted, time: .shortened))")
+            case .server(let code): return String(localized: "Usage unavailable (\(code))")
             }
         }
     }

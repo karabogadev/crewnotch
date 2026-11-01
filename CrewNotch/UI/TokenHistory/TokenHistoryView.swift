@@ -152,7 +152,7 @@ struct TokenHistoryCard: View {
                      detail: report.busiest.flatMap { $0.total > 0 ? label(for: $0.start) : nil })
                 Spacer()
                 stat(report.range.isHourly ? "ACTIVE HOURS" : "ACTIVE DAYS",
-                     "\(report.activeBars.count)", detail: "of \(report.bars.count)")
+                     "\(report.activeBars.count)", detail: String(localized: "of \(report.bars.count)"))
             }
         }
         .foregroundStyle(.white)
@@ -198,7 +198,7 @@ struct TokenHistoryCard: View {
         }
     }
 
-    private func stat(_ title: String, _ value: String, detail: String? = nil) -> some View {
+    private func stat(_ title: LocalizedStringKey, _ value: String, detail: String? = nil) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             Text(title)
                 .font(.system(size: 11, weight: .semibold, design: .monospaced))
@@ -220,7 +220,7 @@ struct TokenHistoryCard: View {
 
     private func label(for date: Date) -> String {
         if report.range.isHourly { return date.formatted(.dateTime.hour()) }
-        if Calendar.current.isDateInToday(date) { return "Today" }
+        if Calendar.current.isDateInToday(date) { return String(localized: "Today") }
         return date.formatted(.dateTime.day().month(.abbreviated))
     }
 }
