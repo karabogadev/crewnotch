@@ -219,6 +219,8 @@ private struct AppearancePane: View {
                 Toggle("Group by project", isOn: $groupByProject)
             }
 
+            AnimationSettingsSection()
+
             Section {
                 Toggle("Show plan usage", isOn: $showPlanUsage)
                 Group {
@@ -294,5 +296,54 @@ private struct AboutPane: View {
                 .padding(.top, 4)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - Animations
+
+private struct AnimationSettingsSection: View {
+    @AppStorage("animationSpeed") private var speed: NotchEffectSpeed = .normal
+
+    var body: some View {
+        Section {
+            ForEach(NotchMoment.allCases) { moment in
+                AnimationMomentRow(moment: moment)
+            }
+            Picker("Speed", selection: $speed) {
+                ForEach(NotchEffectSpeed.allCases) { Text($0.title).tag($0) }
+            }
+            .pickerStyle(.segmented)
+        } header: {
+            Text("Animations")
+        } footer: {
+            Text("Press play to preview an animation in the notch.").foregroundStyle(.secondary)
+        }
+    }
+}
+
+private struct AnimationMomentRow: View {
+    let moment: NotchMoment
+    @AppStorage private var style: NotchEffectStyle
+
+    init(moment: NotchMoment) {
+        self.moment = moment
+        _style = AppStorage(wrappedValue: moment.defaultStyle, moment.settingsKey)
+    }
+
+    var body: some View {
+        HStack {
+            Picker(moment.title, selection: $style) {
+                ForEach(NotchEffectStyle.allCases) { Text($0.title).tag($0) }
+            }
+            Button {
+                NotchEffects.shared.play(style, tint: moment.tint)
+            } label: {
+                Image(systemName: "play.circle.fill").font(.title3)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .disabled(style == .none)
+            .help("Preview")
+        }
     }
 }
