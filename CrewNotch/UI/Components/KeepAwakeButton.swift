@@ -34,7 +34,7 @@ struct KeepAwakeButton: View {
         Button {
             controller.toggle()
         } label: {
-            Image(systemName: controller.isEnabled ? "hourglass.circle.fill" : "hourglass")
+            Image(systemName: controller.isEnabled ? "cup.and.heat.waves.fill" : "cup.and.saucer")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(color)
                 .frame(width: 26, height: 26)
