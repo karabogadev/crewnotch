@@ -505,7 +505,17 @@ footer .legal { flex-basis: 100%; font-size: 12.5px; }
       <div class="feature">
         <div class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="var(--amber)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.5l6 2.5v4.5c0 3.8-2.6 6.6-6 8-3.4-1.4-6-4.2-6-8V5z"/><path d="M7.3 10l1.9 1.9 3.6-3.8"/></svg></div>
         <h3>Approve from the notch</h3>
-        <p>Allow or deny Claude Code and Codex tool calls with the exact command in view. No window switching.</p>
+        <p>Allow, deny or always allow Claude Code, Codex and OpenCode requests with the whole command or diff in view. Risky ones get a warning.</p>
+      </div>
+      <div class="feature">
+        <div class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="#9fd8ff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 016.5 3h7A2.5 2.5 0 0116 5.5v5a2.5 2.5 0 01-2.5 2.5H9l-3.5 3v-3A2.5 2.5 0 014 10.5z"/><path d="M8.6 6.6a1.5 1.5 0 112.1 1.4c-.5.2-.7.6-.7 1.1M10 11h0"/></svg></div>
+        <h3>Questions, answered</h3>
+        <p>When Claude Code asks you to choose, pick an option or type an answer right in the notch.</p>
+      </div>
+      <div class="feature">
+        <div class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="#e7e7ea" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="5" width="15" height="10" rx="2.5"/><path d="M6 8.5h0M9 8.5h0M12 8.5h0M15 8.5h0M6.5 12h7"/></svg></div>
+        <h3>Keyboard first</h3>
+        <p>Open the notch from anywhere with one shortcut, then allow, deny or answer without touching the mouse.</p>
       </div>
       <div class="feature">
         <div class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="var(--green)" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8a5 5 0 0110 0c0 4 1.5 5.5 1.5 5.5h-13S5 12 5 8z"/><path d="M8.5 16.5a1.7 1.7 0 003 0"/></svg></div>
@@ -520,7 +530,7 @@ footer .legal { flex-basis: 100%; font-size: 12.5px; }
       <div class="feature">
         <div class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="#c9a7ff" stroke-width="1.7" stroke-linecap="round"><path d="M3 15.5h14M5.5 12.5V9M10 12.5V5.5M14.5 12.5v-5"/></svg></div>
         <h3>Plan usage, built in</h3>
-        <p>Session and weekly limits for Claude, Codex, Antigravity, Cursor, Copilot and more, without a separate app.</p>
+        <p>Session and weekly limits for Claude, Codex, Antigravity, Cursor, Copilot and more, with a heads-up when one runs low or resets.</p>
       </div>
       <div class="feature">
         <div class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="#ff8fa3" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 15l4-5 3 3 4-6 3 4"/></svg></div>
@@ -534,8 +544,13 @@ footer .legal { flex-basis: 100%; font-size: 12.5px; }
       </div>
       <div class="feature">
         <div class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="#ffd36e" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 016.5 3h7A2.5 2.5 0 0116 5.5v5a2.5 2.5 0 01-2.5 2.5H9l-3.5 3v-3A2.5 2.5 0 014 10.5z"/></svg></div>
-        <h3>Reply from the notch</h3>
-        <p>Read the conversation and type a reply. CrewNotch delivers it to the agent's terminal or tmux session.</p>
+        <h3>Reply, resume, run</h3>
+        <p>Type a reply to the agent's terminal, resume a finished session, or watch any long command with <code>crewnotch run</code>.</p>
+      </div>
+      <div class="feature">
+        <div class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="#b4f0a8" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="2.5" width="8" height="15" rx="2"/><path d="M9 14.5h2"/></svg></div>
+        <h3>Away from your desk</h3>
+        <p>Get a Mac notification or a push on your phone when an agent needs you, only while you're away if you like.</p>
       </div>
       <div class="feature">
         <div class="ic"><svg viewBox="0 0 20 20" fill="none" stroke="#a9c4ff" stroke-width="1.7" stroke-linecap="round"><circle cx="10" cy="10" r="7"/><path d="M3 10h14M10 3c2 2.2 2.8 4.5 2.8 7s-.8 4.8-2.8 7c-2-2.2-2.8-4.5-2.8-7S8 5.2 10 3z"/></svg></div>
@@ -579,7 +594,7 @@ footer .legal { flex-basis: 100%; font-size: 12.5px; }
       <div class="tr" role="row"><span class="name"><img src="assets/agents/gemini.svg" alt="">Gemini CLI</span><span class="how">Hooks in <code>~/.gemini/settings.json</code></span><span class="y"></span><span class="n"></span><span class="n"></span></div>
       <div class="tr" role="row"><span class="name"><img src="assets/agents/antigravity.svg" alt="">Antigravity</span><span class="how">A named hook in <code>~/.gemini/config/hooks.json</code></span><span class="y"></span><span class="n"></span><span class="y"></span></div>
       <div class="tr" role="row"><span class="name"><img src="assets/agents/deepseek.svg" alt="">DeepSeek Harness</span><span class="how">Reads its session logs, nothing installed</span><span class="y"></span><span class="n"></span><span class="n"></span></div>
-      <div class="tr" role="row"><span class="name"><img class="mono" src="assets/agents/opencode.svg" alt="">OpenCode</span><span class="how">A small plugin in <code>~/.config/opencode/plugin/</code></span><span class="y"></span><span class="n"></span><span class="y"></span></div>
+      <div class="tr" role="row"><span class="name"><img class="mono" src="assets/agents/opencode.svg" alt="">OpenCode</span><span class="how">A small plugin in <code>~/.config/opencode/plugin/</code></span><span class="y"></span><span class="y"></span><span class="y"></span></div>
       <div class="tr" role="row"><span class="name"><img class="mono" src="assets/agents/copilot.svg" alt="">Copilot CLI</span><span class="how">Its own file in <code>~/.copilot/hooks/</code></span><span class="y"></span><span class="n"></span><span class="y"></span></div>
       <div class="tr" role="row"><span class="name"><img class="mono" src="assets/agents/grok.svg" alt="">Grok</span><span class="how">Its own file in <code>~/.grok/hooks/</code></span><span class="y"></span><span class="n"></span><span class="y"></span></div>
       <div class="tr" role="row"><span class="name"><img src="assets/agents/kiro.svg" alt="">Kiro</span><span class="how">Its own file in <code>~/.kiro/hooks/</code></span><span class="y"></span><span class="n"></span><span class="y"></span></div>
@@ -598,6 +613,7 @@ footer .legal { flex-basis: 100%; font-size: 12.5px; }
       <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 10.5l3.5 3.5 7.5-8"/></svg><span><strong>No account, no analytics.</strong> Nothing about your work is collected or sent anywhere.</span></li>
       <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 10.5l3.5 3.5 7.5-8"/></svg><span><strong>Observe-only hooks.</strong> If CrewNotch isn't running, the hook exits quietly and your agent carries on as usual.</span></li>
       <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 10.5l3.5 3.5 7.5-8"/></svg><span><strong>Usage is opt-in, per provider.</strong> Each one says exactly what it reads. Sign-ins are never refreshed, written or stored.</span></li>
+      <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 10.5l3.5 3.5 7.5-8"/></svg><span><strong>Notifications are yours.</strong> Phone pushes are off until you set them up, and name only the agent unless you allow more. The notch can hide itself from screen sharing.</span></li>
       <li><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 10.5l3.5 3.5 7.5-8"/></svg><span><strong>Open source.</strong> Every line is on GitHub under Apache 2.0.</span></li>
     </ul>
   </div>
@@ -641,7 +657,7 @@ xcodebuild -scheme CrewNotch -configuration Release build</pre>
       </details>
       <details>
         <summary>Will it slow down or change my agents?</summary>
-        <p>No. Hooks only report what's happening. They never change an agent's behavior, apart from an approval you give from the notch, and they exit right away if CrewNotch isn't running.</p>
+        <p>No. Hooks only report what's happening. They never change an agent's behavior, apart from an approval or answer you give from the notch, and they exit right away if CrewNotch isn't running.</p>
       </details>
       <details>
         <summary>Codex doesn't show up.</summary>
