@@ -42,6 +42,8 @@ struct HookEvent: Codable, Sendable {
     let transcriptPath: String?
     /// Permission rules Claude Code offers as "always allow" for this request
     let permissionSuggestions: [AnyCodable]?
+    /// Branch of the repo the agent works in, read by the hook
+    let gitBranch: String?
     /// Result of a TaskCreate call (carries the new task's id)
     let toolResponse: [String: AnyCodable]?
     /// `crewnotch run`: how the command ended
@@ -63,6 +65,7 @@ struct HookEvent: Codable, Sendable {
         case permissionSuggestions = "permission_suggestions"
         case exitCode = "exit_code"
         case toolResponse = "tool_response"
+        case gitBranch = "git_branch"
         case signal
         case durationSeconds = "duration_seconds"
     }
@@ -97,6 +100,7 @@ struct HookEvent: Codable, Sendable {
         self.permissionSuggestions = permissionSuggestions
         self.exitCode = nil
         self.toolResponse = nil
+        self.gitBranch = nil
         self.signal = nil
         self.durationSeconds = nil
     }
@@ -124,6 +128,7 @@ struct HookEvent: Codable, Sendable {
         permissionSuggestions = try? c.decodeIfPresent([AnyCodable].self, forKey: .permissionSuggestions)
         exitCode = try? c.decodeIfPresent(Int.self, forKey: .exitCode)
         toolResponse = try? c.decodeIfPresent([String: AnyCodable].self, forKey: .toolResponse)
+        gitBranch = try? c.decodeIfPresent(String.self, forKey: .gitBranch)
         signal = try? c.decodeIfPresent(Int.self, forKey: .signal)
         durationSeconds = try? c.decodeIfPresent(Double.self, forKey: .durationSeconds)
     }
@@ -200,6 +205,8 @@ class HookSocketServer {
 
     /// Pending permission requests indexed by toolUseId
     private var pendingPermissions: [String: PendingPermission] = [:]
+    /// Last time pending hooks were checked for having gone away
+    private var lastProbe = Date.distantPast
     private let permissionsLock = NSLock()
 
     /// Cache tool_use_id from PreToolUse to correlate with PermissionRequest
@@ -312,9 +319,38 @@ class HookSocketServer {
         respondToPermission(toolUseId: toolUseId, response: HookResponse(decision: decision, reason: reason))
     }
 
-    func respondToPermission(toolUseId: String, response: HookResponse) {
+    /// `completion` gets whether the hook really received the answer.
+    func respondToPermission(toolUseId: String, response: HookResponse, completion: (@Sendable (Bool) -> Void)? = nil) {
         queue.async { [weak self] in
-            self?.sendPermissionResponse(toolUseId: toolUseId, response: response)
+            let delivered = self?.sendPermissionResponse(toolUseId: toolUseId, response: response) ?? false
+            completion?(delivered)
+        }
+    }
+
+    /// Finds requests whose hook has gone away (answered in the agent itself,
+    /// timed out, or killed) by writing a newline, which a live hook ignores
+    /// as leading whitespace before the JSON answer.
+    func probePendingPermissions() {
+        queue.async { [weak self] in
+            guard let self else { return }
+            let now = Date()
+            guard now.timeIntervalSince(self.lastProbe) >= 10 else { return }
+            self.lastProbe = now
+            self.permissionsLock.lock()
+            let all = Array(self.pendingPermissions.values)
+            self.permissionsLock.unlock()
+            for pending in all {
+                var newline: UInt8 = 10
+                if write(pending.clientSocket, &newline, 1) < 0 && errno != EAGAIN && errno != EWOULDBLOCK {
+                    self.permissionsLock.lock()
+                    let removed = self.pendingPermissions.removeValue(forKey: pending.toolUseId) != nil
+                    self.permissionsLock.unlock()
+                    guard removed else { continue }
+                    close(pending.clientSocket)
+                    logger.debug("Hook went away for \(pending.sessionId.prefix(8), privacy: .public)")
+                    self.permissionFailureHandler?(pending.sessionId, pending.toolUseId)
+                }
+            }
         }
     }
 
@@ -347,6 +383,13 @@ class HookSocketServer {
             return nil
         }
         return (pending.event.tool, pending.toolUseId, pending.event.toolInput)
+    }
+
+    /// A request whose hook is still waiting, with when it arrived.
+    func pendingRequest(toolUseId: String) -> (event: HookEvent, receivedAt: Date)? {
+        permissionsLock.lock()
+        defer { permissionsLock.unlock() }
+        return pendingPermissions[toolUseId].map { ($0.event, $0.receivedAt) }
     }
 
     /// Cancel a specific pending permission by toolUseId (when tool completes via terminal approval)
@@ -518,6 +561,7 @@ class HookSocketServer {
 
         if event.event == "SessionEnd" {
             cleanupCache(sessionId: event.sessionId)
+            cleanupPendingPermissions(sessionId: event.sessionId)
         }
 
         if event.agent == .command && !AppSettings.showCommandSessions {
@@ -562,8 +606,10 @@ class HookSocketServer {
                 receivedAt: Date()
             )
             permissionsLock.lock()
-            pendingPermissions[toolUseId] = pending
+            let replaced = pendingPermissions.updateValue(pending, forKey: toolUseId)
             permissionsLock.unlock()
+            // The same request sent twice: the older hook gets no answer, not a leak
+            if let replaced { close(replaced.clientSocket) }
 
             eventHandler?(updatedEvent)
             return
@@ -574,38 +620,38 @@ class HookSocketServer {
         eventHandler?(event)
     }
 
-    private func sendPermissionResponse(toolUseId: String, response: HookResponse) {
+    @discardableResult
+    private func sendPermissionResponse(toolUseId: String, response: HookResponse) -> Bool {
         let decision = response.decision
         permissionsLock.lock()
         guard let pending = pendingPermissions.removeValue(forKey: toolUseId) else {
             permissionsLock.unlock()
             logger.debug("No pending permission for toolUseId: \(toolUseId.prefix(12), privacy: .public)")
-            return
+            return false
         }
         permissionsLock.unlock()
 
         guard let data = try? JSONEncoder().encode(response) else {
             close(pending.clientSocket)
-            return
+            return false
         }
 
         let age = Date().timeIntervalSince(pending.receivedAt)
         logger.info("Sending response: \(decision, privacy: .public) for \(pending.sessionId.prefix(8), privacy: .public) tool:\(toolUseId.prefix(12), privacy: .public) (age: \(String(format: "%.1f", age), privacy: .public)s)")
 
-        data.withUnsafeBytes { bytes in
-            guard let baseAddress = bytes.baseAddress else {
-                logger.error("Failed to get data buffer address")
-                return
-            }
-            let result = write(pending.clientSocket, baseAddress, data.count)
-            if result < 0 {
-                logger.error("Write failed with errno: \(errno)")
-            } else {
-                logger.debug("Write succeeded: \(result) bytes")
-            }
+        // The socket is non-blocking; a short write would leave the hook with half an answer
+        let flags = fcntl(pending.clientSocket, F_GETFL)
+        _ = fcntl(pending.clientSocket, F_SETFL, flags & ~O_NONBLOCK)
+        let written = data.withUnsafeBytes { bytes -> Int in
+            guard let baseAddress = bytes.baseAddress else { return -1 }
+            return write(pending.clientSocket, baseAddress, data.count)
         }
-
         close(pending.clientSocket)
+        if written != data.count {
+            logger.error("Write failed with errno: \(errno)")
+            return false
+        }
+        return true
     }
 
     private func sendPermissionResponseBySession(sessionId: String, decision: String, reason: String?) {
