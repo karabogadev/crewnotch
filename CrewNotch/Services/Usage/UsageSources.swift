@@ -51,7 +51,8 @@ nonisolated struct ClaudeUsageSource: UsageSource {
     let agent = AgentKind.claude
     let refreshInterval: TimeInterval = 300
     var accessNote: String { String(localized: "Reads Claude Code's sign-in from the keychain (macOS asks once).") }
-    func isAvailable() -> Bool { LocalData.keychainItemExists("Claude Code-credentials") }
+    /// Claude Code is installed; the keychain is only touched once the user turns this on.
+    func isAvailable() -> Bool { LocalData.exists(".claude") }
     func fetch() async throws -> ProviderUsage { try await ClaudeUsageClient.fetch() }
 }
 
@@ -195,7 +196,8 @@ nonisolated struct CopilotUsageSource: UsageSource {
     let refreshInterval: TimeInterval = 300
     var accessNote: String { String(localized: "Reads the GitHub CLI sign-in from the keychain (macOS asks once).") }
 
-    func isAvailable() -> Bool { LocalData.keychainItemExists("gh:github.com") }
+    /// The GitHub CLI is set up; the keychain is only touched once the user turns this on.
+    func isAvailable() -> Bool { LocalData.exists(".config/gh/hosts.yml") }
 
     func fetch() async throws -> ProviderUsage {
         guard var token = LocalData.keychainPassword("gh:github.com") else { throw UsageSourceError.notSignedIn("GitHub CLI") }
@@ -347,15 +349,6 @@ nonisolated enum LocalData {
         process.waitUntilExit()
         guard process.terminationStatus == 0 else { return nil }
         return String(decoding: data, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    /// Checks for a keychain item without reading its secret (no prompt).
-    static func keychainItemExists(_ service: String) -> Bool {
-        let query: [CFString: Any] = [
-            kSecClass: kSecClassGenericPassword, kSecAttrService: service,
-            kSecReturnAttributes: true, kSecMatchLimit: kSecMatchLimitOne,
-        ]
-        return SecItemCopyMatching(query as CFDictionary, nil) == errSecSuccess
     }
 
     /// Reads a keychain item in-process, so macOS asks on behalf of CrewNotch
