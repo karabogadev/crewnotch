@@ -66,19 +66,20 @@ class NotchWindowController: NSWindowController {
         // - Opened: ignoresMouseEvents = false (buttons inside panel work)
         viewModel.$status
             .receive(on: DispatchQueue.main)
-            .sink { [weak notchWindow, weak viewModel] status in
+            .sink { [weak self, weak notchWindow, weak viewModel] status in
                 switch status {
                 case .opened:
                     // Accept mouse events when opened so buttons work
                     notchWindow?.ignoresMouseEvents = false
                     // Don't steal focus when opened by notification (task finished)
-                    if viewModel?.openReason != .notification {
-                        NSApp.activate(ignoringOtherApps: false)
-                        notchWindow?.makeKey()
+                    if let viewModel, viewModel.openReason != .notification {
+                        self?.takeFocus()
                     }
                 case .closed, .popping:
                     // Ignore mouse events when closed so clicks pass through
                     notchWindow?.ignoresMouseEvents = true
+                    PanelKeys.shared.deactivate()
+                    self?.returnFocus()
                 }
             }
             .store(in: &cancellables)
@@ -96,5 +97,37 @@ class NotchWindowController: NSWindowController {
 
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
+    }
+
+    // MARK: - Focus
+
+    /// The app that had focus before the panel took it.
+    private var previousApp: NSRunningApplication?
+
+    /// Makes the panel the key window so its shortcuts and text fields work.
+    func takeFocus() {
+        let frontmost = NSWorkspace.shared.frontmostApplication
+        if frontmost?.processIdentifier != Foundation.ProcessInfo.processInfo.processIdentifier {
+            previousApp = frontmost
+        }
+        NSApp.activate(ignoringOtherApps: false)
+        window?.makeKey()
+        PanelKeys.shared.activate(for: viewModel)
+    }
+
+    var hasFocus: Bool {
+        window?.isKeyWindow == true
+    }
+
+    /// Gives focus back to the previous app once the panel closes, unless
+    /// one of CrewNotch's own windows (Settings, history) took over.
+    private func returnFocus() {
+        guard let app = previousApp else { return }
+        previousApp = nil
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            let ownWindowShown = NSApp.windows.contains { $0.isVisible && $0.styleMask.contains(.titled) }
+            guard NSApp.isActive, !ownWindowShown, !app.isTerminated else { return }
+            app.activate()
+        }
     }
 }

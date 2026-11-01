@@ -79,6 +79,7 @@ struct QuestionCard: View {
                 Spacer(minLength: 8)
                 if !oneClick || hasTypedAnswer {
                     SoftPill(title: "Send", prominent: true, hint: showsShortcuts ? "⌘↩" : nil) { submit() }
+                        .keyboardShortcut(showsShortcuts ? KeyboardShortcut(.return, modifiers: .command) : nil)
                         .disabled(!isComplete || submitted)
                         .opacity(isComplete ? 1 : 0.45)
                 }
