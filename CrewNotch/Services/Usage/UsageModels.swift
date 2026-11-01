@@ -31,6 +31,15 @@ nonisolated struct ProviderUsage: Identifiable, Equatable, Sendable {
     var headline: UsageLimit? {
         limits.max { $0.usedPercent < $1.usedPercent }
     }
+
+    /// The limit picked in Settings, falling back to the one closest to running out.
+    func limit(for choice: UsageLimitChoice) -> UsageLimit? {
+        switch choice {
+        case .mostUsed: return headline
+        case .session: return limits.first { $0.label == "Session" } ?? headline
+        case .weekly: return limits.first { $0.label == "Weekly" } ?? headline
+        }
+    }
 }
 
 nonisolated enum UsageFormat {
