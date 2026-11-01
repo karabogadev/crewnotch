@@ -3,6 +3,25 @@
     <channel>
         <title>CrewNotch</title>
         <item>
+            <title>1.3.2</title>
+            <pubDate>Sun, 01 Nov 2026 13:55:21 +0300</pubDate>
+            <link>https://karabogadev.github.io/crewnotch/</link>
+            <sparkle:fullReleaseNotesLink>https://github.com/karabogadev/crewnotch/releases</sparkle:fullReleaseNotesLink>
+            <sparkle:version>13</sparkle:version>
+            <sparkle:shortVersionString>1.3.2</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.6</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[## What's new
+
+- **Resize the panel.** Drag the small grip at the bottom of the opened notch: up and down for height, sideways for width. CrewNotch remembers the size. Double-click the grip to go back to the automatic size.
+
+## What's fixed
+
+- **Clicking near the bottom of the panel no longer closes it.** The bottom strip of the panel, where the new Shortcuts toggle sits, was treated as outside the panel. The notch now knows its exact size.
+
+]]></description>
+            <enclosure url="https://github.com/karabogadev/crewnotch/releases/download/v1.3.2/CrewNotch-1.3.2.dmg" length="6023144" type="application/octet-stream" sparkle:edSignature="sjltx5tXpJHva8nxmcBsRdkDAa9q43PsWzuAj2TrlZ/sLUyL6X0kB/lh3LI/f1FHQMPsqsZlMPwjQtlcDOH+Dw=="/>
+        </item>
+        <item>
             <title>1.3.1</title>
             <pubDate>Sun, 01 Nov 2026 13:46:41 +0300</pubDate>
             <link>https://karabogadev.github.io/crewnotch/</link>
@@ -44,23 +63,6 @@ The opened notch has a new, quieter look that puts the important things first.
 
 ]]></description>
             <enclosure url="https://github.com/karabogadev/crewnotch/releases/download/v1.3.0/CrewNotch-1.3.0.dmg" length="5979282" type="application/octet-stream" sparkle:edSignature="9ucVHxJN/K6XmOEdxdwbDZRmfDUq9DWt/2MBh+JwGmgic3DXwhjFWIDoL8x8QAkncTrdCJ2Zn2itg2uzXOI5Dw=="/>
-        </item>
-        <item>
-            <title>1.2.2</title>
-            <pubDate>Sun, 01 Nov 2026 12:25:26 +0300</pubDate>
-            <link>https://karabogadev.github.io/crewnotch/</link>
-            <sparkle:fullReleaseNotesLink>https://github.com/karabogadev/crewnotch/releases</sparkle:fullReleaseNotesLink>
-            <sparkle:version>10</sparkle:version>
-            <sparkle:shortVersionString>1.2.2</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>15.6</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[## What's fixed
-
-- **Finished sessions no longer stay on "Working".** When a turn ended while CrewNotch was still reading the conversation, the session could fall back to "Working" and stay there until the next prompt. It now always shows "Done".
-- **Much lighter on long sessions.** CrewNotch reread a session's whole conversation file after every tool call. Long chats grow to tens of megabytes, which kept the app busy and used a lot of CPU. It now reads only what was added since the last read.
-- Settings panes keep a proper title bar while you scroll, so the title no longer overlaps the content.
-
-]]></description>
-            <enclosure url="https://github.com/karabogadev/crewnotch/releases/download/v1.2.2/CrewNotch-1.2.2.dmg" length="5944322" type="application/octet-stream" sparkle:edSignature="ylGTZXM4eO3NkCGmw5vlQoGJ6T5TIcXIqf26H9/fFvigTO0+GwHy8l9FkTyKHa2jibMiU6GSeQ/7iUvQwZtFCg=="/>
         </item>
     </channel>
 </rss>
