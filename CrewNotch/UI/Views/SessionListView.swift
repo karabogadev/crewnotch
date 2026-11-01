@@ -147,6 +147,9 @@ struct SessionListView: View {
 // MARK: - Instance Row
 
 struct InstanceRow: View {
+    @AppStorage(AppearanceKeys.accentMode) private var accent: AccentMode = .full
+    @AppStorage(AppearanceKeys.showSubagents) private var showSubagents = true
+    @State private var subagentsExpanded = false
     @AppStorage(AppearanceKeys.titleOrder) private var titleOrder: TitleOrder = .conversation
     @AppStorage(AppearanceKeys.idleAfterMinutes) private var idleAfterMinutes = 30
     @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
@@ -186,10 +189,16 @@ struct InstanceRow: View {
 
     private var statusColor: Color {
         switch session.phase {
-        case .waitingForApproval: return TerminalColors.amber
-        case .waitingForInput: return TerminalColors.green
+        case .waitingForApproval: return accent.attentionColor
+        case .waitingForInput: return accent == .full ? TerminalColors.green : .white.opacity(0.6)
         default: return .white.opacity(0.45)
         }
+    }
+
+    /// Subagents the session is currently delegating to (Claude Code)
+    private var activeSubagents: [TaskContext] {
+        guard showSubagents else { return [] }
+        return session.subagentState.activeTasks.values.sorted { $0.startTime < $1.startTime }
     }
 
     /// One-line preview: the pending request, else the latest message
@@ -208,6 +217,35 @@ struct InstanceRow: View {
     }
 
     var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            rowContent
+            if subagentsExpanded && !activeSubagents.isEmpty {
+                SubagentList(tasks: activeSubagents)
+                    .padding(.leading, 34)
+                    .padding(.trailing, 12)
+                    .padding(.bottom, 8)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture(count: 2) {
+            // Double-click jumps to the agent's window; chat is one click on the bubble
+            if SessionFocuser.canFocus(session) {
+                onFocus()
+            } else {
+                onChat()
+            }
+        }
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isWaitingForApproval)
+        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: subagentsExpanded)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(isHovered ? Color.white.opacity(0.06) : Color.clear)
+        )
+        .onHover { isHovered = $0 }
+        .opacity(session.isIdle(afterMinutes: idleAfterMinutes) && !isHovered ? 0.55 : 1)
+    }
+
+    private var rowContent: some View {
         HStack(alignment: .center, spacing: 10) {
             stateIndicator
                 .frame(width: 16)
@@ -239,6 +277,21 @@ struct InstanceRow: View {
                         Text(branch)
                             .foregroundColor(.white.opacity(0.45))
                     }
+                    if !activeSubagents.isEmpty {
+                        Text("·").foregroundColor(.white.opacity(0.25))
+                        Button {
+                            subagentsExpanded.toggle()
+                        } label: {
+                            HStack(spacing: 3) {
+                                Image(systemName: "arrow.turn.down.right")
+                                Text("\(activeSubagents.count) subagent\(activeSubagents.count == 1 ? "" : "s")")
+                                Image(systemName: subagentsExpanded ? "chevron.up" : "chevron.down")
+                                    .font(.system(size: 8 * textScale.factor, weight: .semibold))
+                            }
+                            .foregroundColor(.white.opacity(0.7))
+                        }
+                        .buttonStyle(.plain)
+                    }
                     if let preview {
                         Text("·").foregroundColor(.white.opacity(0.25))
                         Text(preview)
@@ -257,22 +310,6 @@ struct InstanceRow: View {
         .padding(.leading, 8)
         .padding(.trailing, 12)
         .padding(.vertical, 8)
-        .contentShape(Rectangle())
-        .onTapGesture(count: 2) {
-            // Double-click jumps to the agent's window; chat is one click on the bubble
-            if SessionFocuser.canFocus(session) {
-                onFocus()
-            } else {
-                onChat()
-            }
-        }
-        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: isWaitingForApproval)
-        .background(
-            RoundedRectangle(cornerRadius: 12)
-                .fill(isHovered ? Color.white.opacity(0.06) : Color.clear)
-        )
-        .onHover { isHovered = $0 }
-        .opacity(session.isIdle(afterMinutes: idleAfterMinutes) && !isHovered ? 0.55 : 1)
     }
 
     @ViewBuilder
@@ -498,5 +535,35 @@ struct TerminalButton: View {
             .clipShape(Capsule())
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Subagent List
+
+/// Subagents a session is delegating to, shown under its row when expanded.
+private struct SubagentList: View {
+    let tasks: [TaskContext]
+    @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            ForEach(tasks, id: \.taskToolId) { task in
+                HStack(spacing: 6) {
+                    WorkingIndicator(size: 9)
+                    Text(task.description ?? "Subagent")
+                        .foregroundColor(.white.opacity(0.75))
+                        .lineLimit(1)
+                    if let last = task.subagentTools.last {
+                        Text("· \(MCPToolFormatter.formatToolName(last.name))")
+                            .foregroundColor(.white.opacity(0.4))
+                            .lineLimit(1)
+                    }
+                    Spacer(minLength: 0)
+                    Text("\(task.subagentTools.count) tools")
+                        .foregroundColor(.white.opacity(0.3))
+                }
+                .font(.system(size: 10.5 * textScale.factor))
+            }
+        }
     }
 }
