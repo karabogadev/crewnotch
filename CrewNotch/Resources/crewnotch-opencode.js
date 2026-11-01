@@ -108,22 +108,31 @@ export const CrewNotch = async ({ client, directory, worktree, serverUrl }) => {
   const toolArgs = new Map()
 
   // What the request would do, in the shape CrewNotch shows for other agents.
-  // Only the tool's actual arguments are shown as the command; OpenCode's
-  // permission patterns (which may be wildcards) stay labeled as patterns.
+  // OpenCode's own description of the request comes first and is never
+  // overwritten; from the tool's arguments only the fields the tool really
+  // runs with are added. Long values are cut visibly, never dropped.
   const requestInput = (props) => {
     const input = {}
-    const copyStrings = (source) => {
-      for (const [key, value] of Object.entries(source || {})) {
-        if (typeof value === "string" && value.length < 8000) input[key] = value
-      }
+    const take = (key, value) => {
+      if (typeof value !== "string" || key in input) return
+      input[key] = value.length > 100000 ? value.slice(0, 100000) + "\n…[truncated]" : value
     }
-    copyStrings(props.metadata)
+    const meta = props.metadata || {}
+    for (const [key, value] of Object.entries(meta)) take(key, value)
     const callID = (props.tool && props.tool.callID) || props.callID
-    if (callID && toolArgs.has(callID)) copyStrings(toolArgs.get(callID))
+    const args = callID ? toolArgs.get(callID) : undefined
+    if (args) {
+      take("command", args.command)
+      take("description", args.description)
+      take("file_path", args.filePath)
+      take("old_string", args.oldString)
+      take("new_string", args.newString)
+      take("content", args.content)
+      take("url", args.url)
+    }
+    take("file_path", meta.filePath || meta.filepath)
     const patterns = [].concat(props.patterns || props.pattern || []).filter((p) => typeof p === "string")
     if (patterns.length) input.patterns = patterns.join(", ")
-    const path = input.filePath || input.filepath
-    if (path && !input.file_path) input.file_path = path
     return input
   }
 
