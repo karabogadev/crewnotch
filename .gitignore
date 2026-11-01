@@ -40,3 +40,6 @@ releases/
 *.xcodeproj.backup/
 CLAUDE.md
 tasks/
+
+# Python
+__pycache__/
