@@ -636,7 +636,13 @@ actor SessionStore {
             sessionId: payload.sessionId,
             cwd: cwd
         )
-        // Read the session after the await: hook events handled meanwhile must not be overwritten
+        let subagentTools = await loadSubagentTools(
+            sessionId: payload.sessionId,
+            cwd: cwd,
+            structuredResults: payload.structuredResults
+        )
+        // Read the session after the last await and write it back with none in
+        // between: a Stop handled meanwhile must not be overwritten with "processing"
         guard var session = sessions[payload.sessionId] else { return }
         session.conversationInfo = conversationInfo
         if !payload.messages.isEmpty {
@@ -763,12 +769,7 @@ actor SessionStore {
 
         session.toolTracker.lastSyncTime = Date()
 
-        await populateSubagentToolsFromAgentFiles(
-            sessionId: payload.sessionId,
-            session: &session,
-            cwd: payload.cwd,
-            structuredResults: payload.structuredResults
-        )
+        applySubagentTools(subagentTools, to: &session, structuredResults: payload.structuredResults)
 
         sessions[payload.sessionId] = session
 
@@ -781,13 +782,40 @@ actor SessionStore {
         )
     }
 
-    /// Populate subagent tools for Task/Agent tools using their agent JSONL files
-    private func populateSubagentToolsFromAgentFiles(
+    /// The tools each finished subagent ran, read from its agent JSONL file, keyed by agent id
+    private func loadSubagentTools(
         sessionId: String,
-        session: inout SessionState,
         cwd: String,
         structuredResults: [String: ToolResultData]
-    ) async {
+    ) async -> [String: [SubagentToolCall]] {
+        var toolsByAgent: [String: [SubagentToolCall]] = [:]
+        for case .task(let taskResult) in structuredResults.values where !taskResult.agentId.isEmpty {
+            guard toolsByAgent[taskResult.agentId] == nil else { continue }
+            let infos = await ConversationParser.shared.parseSubagentTools(
+                sessionId: sessionId,
+                agentId: taskResult.agentId,
+                cwd: cwd
+            )
+            guard !infos.isEmpty else { continue }
+            toolsByAgent[taskResult.agentId] = infos.map { info in
+                SubagentToolCall(
+                    id: info.id,
+                    name: info.name,
+                    input: info.input,
+                    status: info.isCompleted ? .success : .running,
+                    timestamp: parseTimestamp(info.timestamp) ?? Date()
+                )
+            }
+        }
+        return toolsByAgent
+    }
+
+    /// Attaches the loaded subagent tools to their Task/Agent tool calls
+    private func applySubagentTools(
+        _ toolsByAgent: [String: [SubagentToolCall]],
+        to session: inout SessionState,
+        structuredResults: [String: ToolResultData]
+    ) {
         for i in 0..<session.chatItems.count {
             guard case .toolCall(var tool) = session.chatItems[i].type,
                   tool.isSubagentContainer,
@@ -804,31 +832,13 @@ actor SessionStore {
                 session.subagentState.agentDescriptions[taskResult.agentId] = description
             }
 
-            let subagentToolInfos = await ConversationParser.shared.parseSubagentTools(
-                sessionId: sessionId,
-                agentId: taskResult.agentId,
-                cwd: cwd
-            )
-
-            guard !subagentToolInfos.isEmpty else { continue }
-
-            tool.subagentTools = subagentToolInfos.map { info in
-                SubagentToolCall(
-                    id: info.id,
-                    name: info.name,
-                    input: info.input,
-                    status: info.isCompleted ? .success : .running,
-                    timestamp: parseTimestamp(info.timestamp) ?? Date()
-                )
-            }
-
+            guard let subagentTools = toolsByAgent[taskResult.agentId] else { continue }
+            tool.subagentTools = subagentTools
             session.chatItems[i] = ChatHistoryItem(
                 id: taskToolId,
                 type: .toolCall(tool),
                 timestamp: session.chatItems[i].timestamp
             )
-
-            Self.logger.debug("Populated \(subagentToolInfos.count) subagent tools for Task \(taskToolId.prefix(12), privacy: .public) from agent \(taskResult.agentId.prefix(8), privacy: .public)")
         }
     }
 
