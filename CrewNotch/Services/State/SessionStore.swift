@@ -256,7 +256,7 @@ actor SessionStore {
             lastRole = "user"
             lastUserDate = now
         }
-        if let reply = event.assistantMessage {
+        if let reply = event.commandSummary ?? event.assistantMessage {
             session.chatItems.append(ChatHistoryItem(id: UUID().uuidString, type: .assistant(reply), timestamp: now))
             lastMessage = reply
             lastRole = "assistant"

@@ -42,6 +42,10 @@ struct HookEvent: Codable, Sendable {
     let transcriptPath: String?
     /// Permission rules Claude Code offers as "always allow" for this request
     let permissionSuggestions: [AnyCodable]?
+    /// `crewnotch run`: how the command ended
+    let exitCode: Int?
+    let signal: Int?
+    let durationSeconds: Double?
 
     enum CodingKeys: String, CodingKey {
         case sessionId = "session_id"
@@ -55,6 +59,9 @@ struct HookEvent: Codable, Sendable {
         case sourceApp = "source_app"
         case transcriptPath = "transcript_path"
         case permissionSuggestions = "permission_suggestions"
+        case exitCode = "exit_code"
+        case signal
+        case durationSeconds = "duration_seconds"
     }
 
     nonisolated init(
@@ -85,6 +92,9 @@ struct HookEvent: Codable, Sendable {
         self.sourceApp = sourceApp
         self.transcriptPath = transcriptPath
         self.permissionSuggestions = permissionSuggestions
+        self.exitCode = nil
+        self.signal = nil
+        self.durationSeconds = nil
     }
 
     init(from decoder: Decoder) throws {
@@ -108,6 +118,18 @@ struct HookEvent: Codable, Sendable {
         sourceApp = try c.decodeIfPresent(String.self, forKey: .sourceApp)
         transcriptPath = try c.decodeIfPresent(String.self, forKey: .transcriptPath)
         permissionSuggestions = try? c.decodeIfPresent([AnyCodable].self, forKey: .permissionSuggestions)
+        exitCode = try? c.decodeIfPresent(Int.self, forKey: .exitCode)
+        signal = try? c.decodeIfPresent(Int.self, forKey: .signal)
+        durationSeconds = try? c.decodeIfPresent(Double.self, forKey: .durationSeconds)
+    }
+
+    /// A finished command's outcome in the user's language.
+    var commandSummary: String? {
+        guard agent == .command, let exitCode else { return nil }
+        let took = Duration.seconds(durationSeconds ?? 0).formatted(.units(allowed: [.hours, .minutes, .seconds], width: .abbreviated, maximumUnitCount: 2))
+        if exitCode == 0 { return String(localized: "Finished in \(took)") }
+        if let signal, [2, 15, 1].contains(signal) { return String(localized: "Stopped after \(took)") }
+        return String(localized: "Failed with exit code \(exitCode) after \(took)")
     }
 
     var sessionPhase: SessionPhase {
@@ -491,6 +513,11 @@ class HookSocketServer {
 
         if event.event == "SessionEnd" {
             cleanupCache(sessionId: event.sessionId)
+        }
+
+        if event.agent == .command && !AppSettings.showCommandSessions {
+            close(clientSocket)
+            return
         }
 
         if event.expectsResponse && !AppSettings.approveFromNotch {
