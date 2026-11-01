@@ -80,6 +80,8 @@ private struct GeneralPane: View {
     @ObservedObject private var screens = ScreenSelector.shared
     @ObservedObject private var keepAwake = KeepAwakeController.shared
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
+    @State private var language = AppLanguage.current
+    @State private var languageChanged = false
     @AppStorage("keepAwakeMaxHours") private var maxHours = 3
     @AppStorage("keepAwakeMinBattery") private var minBattery = 20
     @AppStorage("keepAwakeRequiresAdapter") private var requiresAdapter = true
@@ -103,6 +105,24 @@ private struct GeneralPane: View {
                             launchAtLogin = SMAppService.mainApp.status == .enabled
                         }
                     }
+            }
+
+            Section {
+                Picker("Language", selection: $language) {
+                    ForEach(AppLanguage.allCases) { Text($0.nativeName).tag($0) }
+                }
+                .onChange(of: language) { _, newValue in
+                    AppLanguage.select(newValue)
+                    languageChanged = true
+                }
+                if languageChanged {
+                    HStack {
+                        Text("Restart CrewNotch to use the new language.")
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Button("Restart now") { AppLanguage.relaunch() }
+                    }
+                }
             }
 
             Section("Show notch on") {
