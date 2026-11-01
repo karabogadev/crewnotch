@@ -49,10 +49,15 @@ struct SessionListView: View {
     /// Priority: active (approval/processing/compacting) > waitingForInput > idle
     /// Secondary sort: by last user message date (stable - doesn't change when agent responds)
     /// Note: approval requests stay in their date-based position to avoid layout shift
+    @AppStorage(AppearanceKeys.idleAfterMinutes) private var idleAfterMinutes = 30
+    @AppStorage(AppearanceKeys.hideIdleSessions) private var hideIdleSessions = false
+
     private var sortedInstances: [SessionState] {
-        sessionMonitor.instances.sorted { a, b in
-            let priorityA = phasePriority(a.phase)
-            let priorityB = phasePriority(b.phase)
+        sessionMonitor.instances
+            .filter { !(hideIdleSessions && $0.isIdle(afterMinutes: idleAfterMinutes)) }
+            .sorted { a, b in
+            let priorityA = a.isIdle(afterMinutes: idleAfterMinutes) ? 2 : phasePriority(a.phase)
+            let priorityB = b.isIdle(afterMinutes: idleAfterMinutes) ? 2 : phasePriority(b.phase)
             if priorityA != priorityB {
                 return priorityA < priorityB
             }
@@ -142,6 +147,8 @@ struct SessionListView: View {
 // MARK: - Instance Row
 
 struct InstanceRow: View {
+    @AppStorage(AppearanceKeys.titleOrder) private var titleOrder: TitleOrder = .conversation
+    @AppStorage(AppearanceKeys.idleAfterMinutes) private var idleAfterMinutes = 30
     @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
     let session: SessionState
     let onFocus: () -> Void
@@ -207,7 +214,7 @@ struct InstanceRow: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    Text(session.displayTitle)
+                    Text(titleOrder == .project ? session.projectName : session.displayTitle)
                         .font(.system(size: 13 * textScale.factor, weight: .medium))
                         .foregroundColor(.white)
                         .lineLimit(1)
@@ -265,6 +272,7 @@ struct InstanceRow: View {
                 .fill(isHovered ? Color.white.opacity(0.06) : Color.clear)
         )
         .onHover { isHovered = $0 }
+        .opacity(session.isIdle(afterMinutes: idleAfterMinutes) && !isHovered ? 0.55 : 1)
     }
 
     @ViewBuilder
