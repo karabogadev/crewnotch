@@ -250,6 +250,8 @@ struct NotchView: View {
         .opacity(isVisible ? 1 : 0)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .preferredColorScheme(.dark)
+        // The notch is anchored to the hardware cutout, so it never mirrors
+        .environment(\.layoutDirection, .leftToRight)
         .onAppear {
             sessionMonitor.startMonitoring()
             // On non-notched devices, keep visible so users have a target to interact with
