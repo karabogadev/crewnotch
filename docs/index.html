@@ -5,7 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CrewNotch · Every AI coding agent, live in your notch</title>
 <meta name="description" content="CrewNotch shows Claude Code, Codex, Cursor, Gemini, Antigravity and more in your MacBook notch: who's working, who's done, and who needs you. Free and open source.">
-<meta name="theme-color" content="#09090c">
+<meta name="theme-color" content="#09090c" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
+<script>try { var t = localStorage.getItem("theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}</script>
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/icon.png">
 <meta property="og:type" content="website">
@@ -17,6 +19,13 @@
 <style>
 :root {
   color-scheme: dark;
+  --nav-bg: rgba(9,9,12,.72);
+  --chip: rgba(255,255,255,.06);
+  --tile: rgba(255,255,255,.06);
+  --alt-bg: linear-gradient(rgba(255,255,255,.015), rgba(255,255,255,0));
+  --btn-bg: #fff; --btn-fg: #000; --btn-hover: #e9e9ee;
+  --ok: #4ddb7a;
+  --card-shadow: none;
   --bg: #09090c;
   --surface: rgba(255,255,255,.035);
   --surface-hover: rgba(255,255,255,.06);
@@ -33,6 +42,42 @@
   --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, monospace;
 }
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f5f5f7;
+  --surface: #ffffff;
+  --surface-hover: #ffffff;
+  --line: rgba(17,17,20,.08);
+  --text: #121216;
+  --muted: rgba(18,18,22,.66);
+  --faint: rgba(18,18,22,.42);
+  --nav-bg: rgba(245,245,247,.78);
+  --chip: rgba(17,17,20,.05);
+  --tile: #15161c;
+  --alt-bg: linear-gradient(rgba(17,17,20,.025), rgba(17,17,20,0));
+  --btn-bg: #121216; --btn-fg: #fff; --btn-hover: #2a2a31;
+  --ok: #1f9d4c;
+  --card-shadow: 0 1px 2px rgba(17,17,20,.04), 0 8px 24px rgba(17,17,20,.05);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --bg: #f5f5f7;
+    --surface: #ffffff;
+    --surface-hover: #ffffff;
+    --line: rgba(17,17,20,.08);
+    --text: #121216;
+    --muted: rgba(18,18,22,.66);
+    --faint: rgba(18,18,22,.42);
+    --nav-bg: rgba(245,245,247,.78);
+    --chip: rgba(17,17,20,.05);
+    --tile: #15161c;
+    --alt-bg: linear-gradient(rgba(17,17,20,.025), rgba(17,17,20,0));
+    --btn-bg: #121216; --btn-fg: #fff; --btn-hover: #2a2a31;
+    --ok: #1f9d4c;
+    --card-shadow: 0 1px 2px rgba(17,17,20,.04), 0 8px 24px rgba(17,17,20,.05);
+  }
+}
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {
@@ -48,7 +93,7 @@ img { display: block; }
 nav.top {
   position: sticky; top: 0; z-index: 20;
   backdrop-filter: saturate(160%) blur(18px); -webkit-backdrop-filter: saturate(160%) blur(18px);
-  background: rgba(9,9,12,.72); border-bottom: 1px solid var(--line);
+  background: var(--nav-bg); border-bottom: 1px solid var(--line);
 }
 nav.top .wrap { display: flex; align-items: center; gap: 28px; height: 60px; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; letter-spacing: -.01em; }
@@ -61,7 +106,20 @@ nav.top .links a:hover { color: var(--text); }
 }
 .gh:hover { background: var(--surface-hover); }
 .gh svg { width: 16px; height: 16px; }
-@media (max-width: 760px) { nav.top .links { display: none; } .gh { margin-left: auto; } }
+.theme {
+  width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; cursor: pointer;
+  background: var(--surface); border: 1px solid var(--line); color: var(--muted);
+}
+.theme:hover { color: var(--text); background: var(--surface-hover); }
+.theme svg { width: 16px; height: 16px; }
+.theme .sun { display: none; }
+:root[data-theme="light"] .theme .sun { display: block; }
+:root[data-theme="light"] .theme .moon { display: none; }
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) .theme .sun { display: block; }
+  :root:not([data-theme="dark"]) .theme .moon { display: none; }
+}
+@media (max-width: 760px) { nav.top .links { display: none; } .theme { margin-left: auto; } }
 
 /* ---------- hero ---------- */
 .hero { position: relative; padding: 88px 0 0; text-align: center; overflow: hidden; }
@@ -183,8 +241,8 @@ nav.top .links a:hover { color: var(--text); }
   padding: 12px 22px; border-radius: 999px; transition: transform .15s, background .15s;
 }
 .btn:hover { transform: translateY(-1px); }
-.btn.primary { background: #fff; color: #000; }
-.btn.primary:hover { background: #e9e9ee; }
+.btn.primary { background: var(--btn-bg); color: var(--btn-fg); }
+.btn.primary:hover { background: var(--btn-hover); }
 .btn.ghost { background: var(--surface); border: 1px solid var(--line); }
 .btn.ghost:hover { background: var(--surface-hover); }
 .btn svg { width: 17px; height: 17px; }
@@ -199,10 +257,12 @@ nav.top .links a:hover { color: var(--text); }
   border-radius: 14px; background: var(--surface); border: 1px solid var(--line); font-size: 14px; color: var(--muted);
 }
 .logo img { width: 20px; height: 20px; }
+:root[data-theme="light"] .logo img.mono, :root[data-theme="light"] .tr img.mono { filter: invert(1); }
+@media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .logo img.mono, :root:not([data-theme="dark"]) .tr img.mono { filter: invert(1); } }
 
 /* ---------- sections ---------- */
 section { padding: 88px 0; }
-section.alt { background: linear-gradient(rgba(255,255,255,.015), rgba(255,255,255,0)); border-top: 1px solid var(--line); }
+section.alt { background: var(--alt-bg); border-top: 1px solid var(--line); }
 h2 { font-size: clamp(30px, 4.4vw, 44px); letter-spacing: -.03em; line-height: 1.1; margin: 0 0 14px; font-weight: 700; }
 .sub { color: var(--muted); font-size: 18px; max-width: 52ch; margin: 0 0 44px; }
 .center { text-align: center; }
@@ -212,13 +272,13 @@ h2 { font-size: clamp(30px, 4.4vw, 44px); letter-spacing: -.03em; line-height: 1
 @media (max-width: 900px) { .grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
 .feature {
-  padding: 24px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line);
+  padding: 24px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--card-shadow);
   transition: background .2s, transform .2s;
 }
 .feature:hover { background: var(--surface-hover); transform: translateY(-2px); }
 .feature .ic {
   width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; margin-bottom: 16px;
-  background: rgba(255,255,255,.06);
+  background: var(--tile);
 }
 .feature .ic svg { width: 18px; height: 18px; }
 .feature h3 { margin: 0 0 6px; font-size: 16.5px; letter-spacing: -.01em; font-weight: 620; }
@@ -227,18 +287,18 @@ h2 { font-size: clamp(30px, 4.4vw, 44px); letter-spacing: -.03em; line-height: 1
 /* steps */
 .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; counter-reset: step; }
 @media (max-width: 800px) { .steps { grid-template-columns: 1fr; } }
-.step { padding: 26px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); }
+.step { padding: 26px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--card-shadow); }
 .step::before {
   counter-increment: step; content: counter(step);
   display: grid; place-items: center; width: 28px; height: 28px; border-radius: 50%;
-  background: rgba(255,255,255,.08); font-size: 13px; font-weight: 650; margin-bottom: 16px;
+  background: var(--chip); font-size: 13px; font-weight: 650; margin-bottom: 16px;
 }
 .step h3 { margin: 0 0 6px; font-size: 17px; font-weight: 620; }
 .step p { margin: 0; color: var(--muted); font-size: 14.5px; }
-.step code { font-family: var(--mono); font-size: 12.5px; background: rgba(255,255,255,.06); padding: 1px 6px; border-radius: 6px; }
+.step code { font-family: var(--mono); font-size: 12.5px; background: var(--chip); padding: 1px 6px; border-radius: 6px; }
 
 /* table */
-.table { border-radius: var(--radius); border: 1px solid var(--line); overflow: hidden; background: var(--surface); }
+.table { border-radius: var(--radius); border: 1px solid var(--line); overflow: hidden; background: var(--surface); box-shadow: var(--card-shadow); }
 .tr { display: grid; grid-template-columns: 1.4fr 2fr .8fr .8fr .8fr; align-items: center; padding: 13px 20px; border-top: 1px solid var(--line); font-size: 14px; }
 .tr:first-child { border-top: 0; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--faint); font-weight: 600; }
 .tr .name { display: flex; align-items: center; gap: 10px; font-weight: 560; }
@@ -246,7 +306,7 @@ h2 { font-size: clamp(30px, 4.4vw, 44px); letter-spacing: -.03em; line-height: 1
 .tr .how { color: var(--muted); font-size: 13px; }
 .tr .how code { font-family: var(--mono); font-size: 12px; }
 .tr .y, .tr .n { text-align: center; }
-.tr .y::before { content: "●"; color: var(--green); font-size: 10px; }
+.tr .y::before { content: "●"; color: var(--ok); font-size: 10px; }
 .tr .n::before { content: "–"; color: var(--faint); }
 @media (max-width: 760px) {
   .tr { grid-template-columns: 1fr repeat(3, 56px); padding: 12px 14px; }
@@ -260,12 +320,12 @@ h2 { font-size: clamp(30px, 4.4vw, 44px); letter-spacing: -.03em; line-height: 1
 .checks { list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
 .checks li { display: flex; gap: 12px; padding: 16px 18px; border-radius: 14px; background: var(--surface); border: 1px solid var(--line); color: var(--muted); font-size: 14.5px; }
 .checks li strong { color: var(--text); font-weight: 600; }
-.checks svg { flex: none; width: 18px; height: 18px; color: var(--green); margin-top: 2px; }
+.checks svg { flex: none; width: 18px; height: 18px; color: var(--ok); margin-top: 2px; }
 
 /* install */
 .install { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 @media (max-width: 860px) { .install { grid-template-columns: 1fr; } }
-.box { padding: 26px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); }
+.box { padding: 26px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); box-shadow: var(--card-shadow); }
 .box h3 { margin: 0 0 6px; font-size: 17px; font-weight: 620; }
 .box p { margin: 0 0 18px; color: var(--muted); font-size: 14.5px; }
 .code { position: relative; background: #000; border: 1px solid var(--line); border-radius: 12px; padding: 44px 18px 16px; overflow-x: auto; }
@@ -278,7 +338,7 @@ h2 { font-size: clamp(30px, 4.4vw, 44px); letter-spacing: -.03em; line-height: 1
 }
 .copy:hover { background: rgba(255,255,255,.14); }
 .reqs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
-.reqs span { font-size: 12.5px; color: var(--muted); padding: 5px 11px; border-radius: 999px; background: rgba(255,255,255,.05); }
+.reqs span { font-size: 12.5px; color: var(--muted); padding: 5px 11px; border-radius: 999px; background: var(--chip); }
 
 /* faq */
 .faq { max-width: 760px; margin: 0 auto; display: grid; gap: 10px; }
@@ -288,7 +348,7 @@ summary::-webkit-details-marker { display: none; }
 summary::after { content: "+"; color: var(--faint); font-weight: 400; font-size: 20px; line-height: 1; transition: transform .2s; }
 details[open] summary::after { transform: rotate(45deg); }
 details p { margin: 0 0 18px; color: var(--muted); font-size: 14.5px; }
-details code { font-family: var(--mono); font-size: 12.5px; background: rgba(255,255,255,.06); padding: 1px 6px; border-radius: 6px; }
+details code { font-family: var(--mono); font-size: 12.5px; background: var(--chip); padding: 1px 6px; border-radius: 6px; }
 
 /* footer */
 footer { border-top: 1px solid var(--line); padding: 40px 0 56px; color: var(--faint); font-size: 13.5px; }
@@ -318,6 +378,10 @@ footer .legal { flex-basis: 100%; font-size: 12.5px; }
       <a href="#install">Install</a>
       <a href="#faq">FAQ</a>
     </div>
+    <button class="theme" id="theme" type="button" aria-label="Switch between light and dark theme">
+      <svg class="moon" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 12.2A6.5 6.5 0 017.8 4.5a6.5 6.5 0 107.7 7.7z"/></svg>
+      <svg class="sun" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><circle cx="10" cy="10" r="3.5"/><path d="M10 2v1.8M10 16.2V18M2 10h1.8M16.2 10H18M4.3 4.3l1.3 1.3M14.4 14.4l1.3 1.3M4.3 15.7l1.3-1.3M14.4 5.6l1.3-1.3"/></svg>
+    </button>
     <a class="gh" href="https://github.com/karabogadev/crewnotch">
       <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
       GitHub
@@ -392,13 +456,13 @@ footer .legal { flex-basis: 100%; font-size: 12.5px; }
     <div class="logos">
       <span class="logo"><img src="assets/agents/claude.svg" alt="">Claude Code</span>
       <span class="logo"><img src="assets/agents/codex.svg" alt="">Codex</span>
-      <span class="logo"><img src="assets/agents/cursor.svg" alt="">Cursor</span>
+      <span class="logo"><img class="mono" src="assets/agents/cursor.svg" alt="">Cursor</span>
       <span class="logo"><img src="assets/agents/gemini.svg" alt="">Gemini CLI</span>
       <span class="logo"><img src="assets/agents/antigravity.svg" alt="">Antigravity</span>
       <span class="logo"><img src="assets/agents/deepseek.svg" alt="">DeepSeek Harness</span>
-      <span class="logo"><img src="assets/agents/opencode.svg" alt="">OpenCode</span>
-      <span class="logo"><img src="assets/agents/copilot.svg" alt="">Copilot CLI</span>
-      <span class="logo"><img src="assets/agents/grok.svg" alt="">Grok</span>
+      <span class="logo"><img class="mono" src="assets/agents/opencode.svg" alt="">OpenCode</span>
+      <span class="logo"><img class="mono" src="assets/agents/copilot.svg" alt="">Copilot CLI</span>
+      <span class="logo"><img class="mono" src="assets/agents/grok.svg" alt="">Grok</span>
       <span class="logo"><img src="assets/agents/kiro.svg" alt="">Kiro</span>
     </div>
   </div>
@@ -487,13 +551,13 @@ footer .legal { flex-basis: 100%; font-size: 12.5px; }
       <div class="tr" role="row"><span>Agent</span><span class="how">How it connects</span><span class="center">Status</span><span class="center">Approve</span><span class="center">Usage</span></div>
       <div class="tr" role="row"><span class="name"><img src="assets/agents/claude.svg" alt="">Claude Code</span><span class="how">Hooks in <code>~/.claude/settings.json</code></span><span class="y"></span><span class="y"></span><span class="y"></span></div>
       <div class="tr" role="row"><span class="name"><img src="assets/agents/codex.svg" alt="">Codex</span><span class="how">Hooks in <code>~/.codex/hooks.json</code></span><span class="y"></span><span class="y"></span><span class="y"></span></div>
-      <div class="tr" role="row"><span class="name"><img src="assets/agents/cursor.svg" alt="">Cursor</span><span class="how">Hooks in <code>~/.cursor/hooks.json</code></span><span class="y"></span><span class="n"></span><span class="y"></span></div>
+      <div class="tr" role="row"><span class="name"><img class="mono" src="assets/agents/cursor.svg" alt="">Cursor</span><span class="how">Hooks in <code>~/.cursor/hooks.json</code></span><span class="y"></span><span class="n"></span><span class="y"></span></div>
       <div class="tr" role="row"><span class="name"><img src="assets/agents/gemini.svg" alt="">Gemini CLI</span><span class="how">Hooks in <code>~/.gemini/settings.json</code></span><span class="y"></span><span class="n"></span><span class="n"></span></div>
       <div class="tr" role="row"><span class="name"><img src="assets/agents/antigravity.svg" alt="">Antigravity</span><span class="how">A named hook in <code>~/.gemini/config/hooks.json</code></span><span class="y"></span><span class="n"></span><span class="y"></span></div>
       <div class="tr" role="row"><span class="name"><img src="assets/agents/deepseek.svg" alt="">DeepSeek Harness</span><span class="how">Reads its session logs, nothing installed</span><span class="y"></span><span class="n"></span><span class="n"></span></div>
-      <div class="tr" role="row"><span class="name"><img src="assets/agents/opencode.svg" alt="">OpenCode</span><span class="how">A small plugin in <code>~/.config/opencode/plugin/</code></span><span class="y"></span><span class="n"></span><span class="y"></span></div>
-      <div class="tr" role="row"><span class="name"><img src="assets/agents/copilot.svg" alt="">Copilot CLI</span><span class="how">Its own file in <code>~/.copilot/hooks/</code></span><span class="y"></span><span class="n"></span><span class="y"></span></div>
-      <div class="tr" role="row"><span class="name"><img src="assets/agents/grok.svg" alt="">Grok</span><span class="how">Its own file in <code>~/.grok/hooks/</code></span><span class="y"></span><span class="n"></span><span class="y"></span></div>
+      <div class="tr" role="row"><span class="name"><img class="mono" src="assets/agents/opencode.svg" alt="">OpenCode</span><span class="how">A small plugin in <code>~/.config/opencode/plugin/</code></span><span class="y"></span><span class="n"></span><span class="y"></span></div>
+      <div class="tr" role="row"><span class="name"><img class="mono" src="assets/agents/copilot.svg" alt="">Copilot CLI</span><span class="how">Its own file in <code>~/.copilot/hooks/</code></span><span class="y"></span><span class="n"></span><span class="y"></span></div>
+      <div class="tr" role="row"><span class="name"><img class="mono" src="assets/agents/grok.svg" alt="">Grok</span><span class="how">Its own file in <code>~/.grok/hooks/</code></span><span class="y"></span><span class="n"></span><span class="y"></span></div>
       <div class="tr" role="row"><span class="name"><img src="assets/agents/kiro.svg" alt="">Kiro</span><span class="how">Its own file in <code>~/.kiro/hooks/</code></span><span class="y"></span><span class="n"></span><span class="y"></span></div>
     </div>
     <p class="note">Agents without notch approval still show when they need you, with an Open button that takes you straight there. OpenCode usage covers OpenCode Go.</p>
@@ -594,6 +658,15 @@ xcodebuild -scheme CrewNotch -configuration Release build</pre>
   const clock = document.getElementById("clock");
   const tick = () => { clock.textContent = new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }); };
   tick(); setInterval(tick, 30000);
+
+  // Theme: follows the system until the visitor picks one
+  document.getElementById("theme").addEventListener("click", () => {
+    const root = document.documentElement;
+    const current = root.dataset.theme || (matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark");
+    const next = current === "light" ? "dark" : "light";
+    root.dataset.theme = next;
+    try { localStorage.setItem("theme", next); } catch (e) {}
+  });
 
   // Copy buttons
   document.querySelectorAll(".copy").forEach(button => {
