@@ -14,6 +14,9 @@ struct PermissionContext: Sendable {
     let toolName: String
     let toolInput: [String: AnyCodable]?
     let receivedAt: Date
+    /// False when CrewNotch can only show the request (the agent has no
+    /// approval hook, or approving from the notch is turned off).
+    var canRespond: Bool = true
 
     /// Format tool input for display
     var formattedInput: String? {
@@ -58,7 +61,8 @@ extension PermissionContext: Equatable {
         // Compare by identity fields only (AnyCodable doesn't conform to Equatable)
         lhs.toolUseId == rhs.toolUseId &&
         lhs.toolName == rhs.toolName &&
-        lhs.receivedAt == rhs.receivedAt
+        lhs.receivedAt == rhs.receivedAt &&
+        lhs.canRespond == rhs.canRespond
     }
 }
 
@@ -120,6 +124,8 @@ enum SessionPhase: Sendable {
             return true  // Can become idle
         case (.waitingForInput, .compacting):
             return true
+        case (.waitingForInput, .waitingForApproval):
+            return true  // Agents that report approvals without a preceding prompt event
 
         // WaitingForApproval transitions
         case (.waitingForApproval, .processing):
@@ -137,6 +143,8 @@ enum SessionPhase: Sendable {
         case (.compacting, .idle):
             return true
         case (.compacting, .waitingForInput):
+            return true
+        case (.compacting, .waitingForApproval):
             return true
 
         // Allow staying in same state (no-op transitions)
