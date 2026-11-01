@@ -5,6 +5,7 @@
 //  App settings manager using UserDefaults
 //
 
+import AppKit
 import Foundation
 
 /// Available notification sounds
@@ -84,6 +85,37 @@ nonisolated enum AppSettings {
         static let groupByProject = "groupByProject"
         static let openNotchOnRequest = "openNotchOnRequest"
         static let hasCompletedOnboarding = "hasCompletedOnboarding"
+        static let playSounds = "playSounds"
+        static let questionSound = "questionSound"
+        static let showFinishedBanner = "showFinishedBanner"
+        static let usageProviderOrder = "usageProviderOrder"
+        static let hiddenUsageMetrics = "hiddenUsageMetrics"
+    }
+
+    // MARK: - Sounds and banners
+
+    /// Master switch for every CrewNotch sound.
+    static var playSounds: Bool {
+        get { defaults.object(forKey: Keys.playSounds) as? Bool ?? true }
+        set { defaults.set(newValue, forKey: Keys.playSounds) }
+    }
+
+    /// Sound when an agent asks you a question.
+    static var questionSound: NotificationSound {
+        get { defaults.string(forKey: Keys.questionSound).flatMap(NotificationSound.init(rawValue:)) ?? .tink }
+        set { defaults.set(newValue.rawValue, forKey: Keys.questionSound) }
+    }
+
+    /// Briefly open the notch with a "Finished" banner when an agent finishes.
+    static var showFinishedBanner: Bool {
+        get { defaults.object(forKey: Keys.showFinishedBanner) as? Bool ?? true }
+        set { defaults.set(newValue, forKey: Keys.showFinishedBanner) }
+    }
+
+    /// Plays a sound if sounds are on and the user picked one.
+    @MainActor static func play(_ sound: NotificationSound) {
+        guard playSounds, let name = sound.soundName else { return }
+        NSSound(named: name)?.play()
     }
 
     // MARK: - Notifications
