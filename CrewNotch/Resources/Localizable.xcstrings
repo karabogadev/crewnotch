@@ -11568,6 +11568,64 @@
         }
       }
     },
+    "In the Dock, CrewNotch has a menu with Settings and Quit. Hidden, it lives only in the notch: open Settings from the gear there.": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在程序坞中时，CrewNotch 有包含“设置”和“退出”的菜单。隐藏后它只存在于刘海中：可通过那里的齿轮打开设置。"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dockにあるときは、設定と終了を含むメニューが使えます。非表示にするとノッチの中だけで動き、設定はノッチの歯車から開けます。"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dock में रहने पर CrewNotch में सेटिंग्स और Quit वाला मेनू होता है। छिपाने पर यह सिर्फ़ नॉच में रहता है: सेटिंग्स वहाँ के गियर से खोलें।"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En el Dock, CrewNotch tiene un menú con Ajustes y Salir. Oculto, vive solo en el notch: abre los ajustes desde el engranaje que hay allí."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dans le Dock, CrewNotch a un menu avec Réglages et Quitter. Masqué, il ne vit que dans l’encoche : ouvrez les réglages depuis la roue dentée qui s’y trouve."
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No Dock, o CrewNotch tem um menu com Ajustes e Sair. Oculto, ele fica só no notch: abra os ajustes pela engrenagem de lá."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dock'tayken CrewNotch'un Ayarlar ve Çık içeren bir menüsü olur. Gizliyken sadece notch'ta yaşar: ayarları oradaki dişliden açabilirsin."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "В Dock у CrewNotch есть меню с настройками и выходом. Если скрыть его, он живёт только в вырезе: настройки открываются шестерёнкой там."
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "في Dock يملك CrewNotch قائمة فيها الإعدادات والإنهاء. وعند إخفائه يعيش في الشق فقط: افتح الإعدادات من الترس هناك."
+          }
+        }
+      }
+    },
     "In the notch": {
       "localizations": {
         "ar": {
@@ -20943,6 +21001,64 @@
         }
       }
     },
+    "Settings…": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "设置…"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "設定…"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "सेटिंग्स…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustes…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réglages…"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ajustes…"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ayarlar…"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Настройки…"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الإعدادات…"
+          }
+        }
+      }
+    },
     "Share as image": {
       "localizations": {
         "ar": {
@@ -21171,6 +21287,64 @@
           "stringUnit": {
             "state": "translated",
             "value": "在刘海中显示命令"
+          }
+        }
+      }
+    },
+    "Show in Dock": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在程序坞中显示"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dockに表示"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dock में दिखाएँ"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar en el Dock"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher dans le Dock"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar no Dock"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dock'ta göster"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показывать в Dock"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إظهار في Dock"
           }
         }
       }
