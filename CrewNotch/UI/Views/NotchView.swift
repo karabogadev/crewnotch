@@ -54,6 +54,41 @@ struct NotchView: View {
         }
     }
 
+    /// Overall crew state for the closed notch: needs you > working > just finished
+    private var crewActivity: CrewActivity? {
+        if hasPendingPermission { return .needsYou }
+        if isAnyProcessing { return .working }
+        if hasWaitingForInput { return .finished }
+        return nil
+    }
+
+    /// The session whose agent the closed notch shows: the one that matters most right now
+    private var leadSession: SessionState? {
+        let sessions = sessionMonitor.instances
+        return sessions.first { $0.phase.isWaitingForApproval }
+            ?? sessions.filter { $0.phase.isActive }.max { $0.lastActivity < $1.lastActivity }
+            ?? sessions.filter { $0.phase == .waitingForInput }.max { $0.lastActivity < $1.lastActivity }
+    }
+
+    /// Agents that are working or need you, shown as a count next to the lead agent
+    private var busyCount: Int {
+        sessionMonitor.instances.filter { $0.phase.isActive || $0.phase.isWaitingForApproval }.count
+    }
+
+    /// One-line summary for the opened header, e.g. "2 working · 1 needs you"
+    private var crewSummary: String {
+        let sessions = sessionMonitor.instances
+        let needsYou = sessions.filter { $0.phase.isWaitingForApproval }.count
+        let working = sessions.filter { $0.phase.isActive }.count
+        let done = sessions.filter { $0.phase == .waitingForInput }.count
+        var parts: [String] = []
+        if needsYou > 0 { parts.append("\(needsYou) needs you") }
+        if working > 0 { parts.append("\(working) working") }
+        if done > 0 { parts.append("\(done) done") }
+        if parts.isEmpty { return sessions.isEmpty ? "No agents running" : "All quiet" }
+        return parts.joined(separator: " · ")
+    }
+
     // MARK: - Sizing
 
     private var closedNotchSize: CGSize {
