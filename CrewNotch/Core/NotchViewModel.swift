@@ -26,11 +26,14 @@ enum NotchOpenReason {
 enum NotchContentType: Equatable {
     case instances
     case chat(SessionState)
+    /// Short "Finished" notice for a session that just completed
+    case banner(SessionState)
 
     var id: String {
         switch self {
         case .instances: return "instances"
         case .chat(let session): return "chat-\(session.sessionId)"
+        case .banner(let session): return "banner-\(session.sessionId)"
         }
     }
 }
@@ -67,6 +70,11 @@ class NotchViewModel: ObservableObject {
             return CGSize(
                 width: min(screenRect.width * 0.4, 480),
                 height: 320
+            )
+        case .banner:
+            return CGSize(
+                width: min(screenRect.width * 0.32, 400),
+                height: deviceNotchRect.height + 64
             )
         }
     }
@@ -230,6 +238,19 @@ class NotchViewModel: ObservableObject {
         }
         status = .closed
         contentType = .instances
+    }
+
+    /// Drops the notch open with a "Finished" notice, then closes it again
+    /// unless the pointer is over it.
+    func showBanner(for session: SessionState, duration: TimeInterval = 4) {
+        guard status == .closed else { return }
+        contentType = .banner(session)
+        openReason = .notification
+        status = .opened
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self] in
+            guard let self, case .banner = self.contentType, !self.isHovering else { return }
+            self.notchClose()
+        }
     }
 
     func notchPop() {
