@@ -15,9 +15,8 @@ struct UsagePane: View {
     @AppStorage("usagePercentMode") private var percentMode: UsagePercentMode = .used
     @AppStorage("usageLimit") private var usageLimit: UsageLimitChoice = .mostUsed
     @AppStorage("usageOnlyWhileWorking") private var onlyWhileWorking = false
-    @AppStorage("claudeUsageAllowed") private var claudeUsageAllowed = false
     @AppStorage(UsagePreferences.orderKey) private var orderStorage = ""
-    @AppStorage(UsagePreferences.hiddenProvidersKey) private var hiddenStorage = ""
+    @State private var available: [AgentKind: Bool] = [:]
     @AppStorage(UsagePreferences.hiddenMetricsKey) private var metricsStorage = ""
 
     private var order: [AgentKind] {
@@ -51,7 +50,8 @@ struct UsagePane: View {
 
                 Section {
                     ForEach(order) { agent in
-                        ProviderRow(agent: agent, usage: monitor.providers.first { $0.agent == agent }, hiddenStorage: $hiddenStorage)
+                        ProviderRow(agent: agent, usage: monitor.providers.first { $0.agent == agent },
+                                    isAvailable: available[agent] ?? true, monitor: monitor)
                     }
                     .onMove { source, destination in
                         var reordered = order
@@ -65,34 +65,23 @@ struct UsagePane: View {
                         Spacer()
                         Button("Reset") {
                             UsagePreferences.reset()
-                            orderStorage = ""; hiddenStorage = ""; metricsStorage = ""
+                            orderStorage = ""; metricsStorage = ""
                         }
                         .buttonStyle(.link)
                     }
                 } footer: {
-                    Text("Drag to reorder. Turn a provider off to hide it, or open it to choose its metrics.")
+                    Text("Turn on the providers you use. Drag to reorder, or open one to choose its metrics.")
                         .foregroundStyle(.secondary)
                 }
 
-                Section {
-                    Toggle(isOn: Binding(
-                        get: { claudeUsageAllowed },
-                        set: { UsageMonitor.shared.setClaudeAllowed($0); claudeUsageAllowed = $0 }
-                    )) {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Read Claude usage")
-                            Text("Uses Claude Code's sign-in from the keychain. macOS asks once: choose Always Allow.")
-                                .font(.caption).foregroundStyle(.secondary)
-                        }
-                    }
-                } header: {
-                    Text("Access")
-                } footer: {
-                    Text("Codex usage comes from its local session files. Nothing leaves your Mac except Claude's own usage request to Anthropic.")
-                        .foregroundStyle(.secondary)
-                }
             }
             .formStyle(.grouped)
+            .task {
+                // Checking for sign-ins runs tools (security, sqlite3), so do it off the main thread
+                available = await Task.detached {
+                    Dictionary(uniqueKeysWithValues: UsageSources.all.map { ($0.agent, $0.isAvailable()) })
+                }.value
+            }
         }
     }
 
@@ -108,9 +97,11 @@ struct UsagePane: View {
 private struct ProviderRow: View {
     let agent: AgentKind
     let usage: ProviderUsage?
-    @Binding var hiddenStorage: String
+    let isAvailable: Bool
+    @ObservedObject var monitor: UsageMonitor
 
     private var metricCount: Int { UsagePreferences.metrics(for: agent, live: usage).count }
+    private var isOn: Bool { monitor.isEnabled(agent) }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -122,23 +113,33 @@ private struct ProviderRow: View {
             } label: {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(agent.displayName)
-                    HStack(spacing: 4) {
-                        Text("^[\(metricCount) metric](inflect: true)")
-                        if let plan = usage?.plan { Text("· \(plan)") }
-                    }
-                    .font(.caption).foregroundStyle(.secondary)
+                    subtitle
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
-            Toggle("", isOn: Binding(
-                get: { _ = hiddenStorage; return UsagePreferences.isProviderShown(agent) },
-                set: {
-                    UsagePreferences.setProvider(agent, shown: $0)
-                    hiddenStorage = UserDefaults.standard.string(forKey: UsagePreferences.hiddenProvidersKey) ?? ""
-                }
-            ))
-            .labelsHidden()
+            .disabled(!isOn)
+            Toggle("", isOn: Binding(get: { isOn }, set: { monitor.setEnabled(agent, $0) }))
+                .labelsHidden()
+                .disabled(!isAvailable && !isOn)
         }
-        .opacity(UsagePreferences.isProviderShown(agent) ? 1 : 0.55)
+        .opacity(isOn || isAvailable ? 1 : 0.5)
+    }
+
+    @ViewBuilder
+    private var subtitle: some View {
+        if !isAvailable && !isOn {
+            Text("Not signed in on this Mac")
+        } else if !isOn {
+            Text(UsageSources.source(for: agent)?.accessNote ?? "")
+        } else if let error = usage?.error, usage?.limits.isEmpty ?? true {
+            Text(error).foregroundStyle(.orange)
+        } else {
+            HStack(spacing: 4) {
+                Text("^[\(metricCount) metric](inflect: true)")
+                if let plan = usage?.plan { Text("· \(plan)") }
+            }
+        }
     }
 }
 

@@ -19,24 +19,18 @@ struct UsageFooter: View {
     @AppStorage("usageStyle") private var style: UsageStyle = .line
     @AppStorage("usageOnlyWhileWorking") private var onlyWhileWorking = false
     // Observed so the footer refreshes when Settings → Usage changes
-    @AppStorage(UsagePreferences.hiddenProvidersKey) private var hiddenProviders = ""
     @AppStorage(UsagePreferences.hiddenMetricsKey) private var hiddenMetrics = ""
     @AppStorage(UsagePreferences.orderKey) private var providerOrder = ""
-    @AppStorage("claudeUsageAllowed") private var claudeUsageAllowed = false
 
     private var visibleProviders: [ProviderUsage] {
-        _ = (hiddenProviders, hiddenMetrics, providerOrder)
+        _ = (hiddenMetrics, providerOrder)
         // Providers with nothing to show (e.g. an expired sign-in) stay out of
         // the notch; Settings → Usage shows why.
         return UsagePreferences.apply(to: monitor.providers).filter { !$0.limits.isEmpty }
     }
 
-    private var offerClaude: Bool {
-        !claudeUsageAllowed && AppSettings.connectedAgents.contains(.claude)
-    }
-
     private var isVisible: Bool {
-        showPlanUsage && (!onlyWhileWorking || isAnyAgentBusy) && (!visibleProviders.isEmpty || offerClaude)
+        showPlanUsage && (!onlyWhileWorking || isAnyAgentBusy) && !visibleProviders.isEmpty
     }
 
     var body: some View {
@@ -56,19 +50,6 @@ struct UsageFooter: View {
                     UsageCompactRow(providers: visibleProviders)
                 }
 
-                if offerClaude {
-                    HStack(spacing: 6) {
-                        AgentIcon(agent: .claude, size: 12)
-                        Text("Claude Code").foregroundColor(.white.opacity(0.6))
-                        Spacer()
-                        Button("Show usage") { monitor.setClaudeAllowed(true) }
-                            .buttonStyle(.plain)
-                            .foregroundColor(.white.opacity(0.8))
-                            .help("Reads Claude Code's sign-in from the keychain. macOS asks once: choose Always Allow.")
-                    }
-                    .font(.system(size: 11 * textScale.factor, weight: .medium))
-                    .padding(.horizontal, 10)
-                }
             }
             .padding(.bottom, 6)
         }
