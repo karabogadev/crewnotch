@@ -146,7 +146,9 @@ actor SessionStore {
 
         let newPhase = event.determinePhase()
 
-        if session.phase.canTransition(to: newPhase) {
+        if event.status == "metadata" {
+            // Title or other details only; the phase stays as it is.
+        } else if session.phase.canTransition(to: newPhase) {
             session.phase = newPhase
         } else {
             Self.logger.debug("Invalid transition: \(String(describing: session.phase), privacy: .public) -> \(String(describing: newPhase), privacy: .public), ignoring")
