@@ -35,11 +35,7 @@ struct UsageFooter: View {
 
     var body: some View {
         if isVisible {
-            VStack(spacing: 4) {
-                Rectangle()
-                    .fill(Color.white.opacity(0.08))
-                    .frame(height: 1)
-                    .padding(.bottom, 2)
+            VStack(spacing: 6) {
 
                 switch style {
                 case .line:
@@ -51,7 +47,11 @@ struct UsageFooter: View {
                 }
 
             }
-            .padding(.bottom, 6)
+            .padding(.vertical, 10)
+            .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.white.opacity(0.03)))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Color.white.opacity(0.05), lineWidth: 0.5))
+            .padding(.top, 2)
+            .padding(.bottom, 4)
         }
     }
 }
@@ -219,9 +219,9 @@ private struct UsageCompactRow: View {
 
 private func usageColor(_ usedPercent: Double) -> Color {
     switch usedPercent {
-    case ..<70: return .white.opacity(0.75)
-    case ..<90: return TerminalColors.amber
-    default: return Color(red: 0.95, green: 0.35, blue: 0.3)
+    case ..<70: return .white.opacity(0.55)
+    case ..<90: return TerminalColors.amber.opacity(0.85)
+    default: return Color(red: 0.95, green: 0.45, blue: 0.4)
     }
 }
 
@@ -232,7 +232,7 @@ private struct UsageBar: View {
     var body: some View {
         GeometryReader { geometry in
             ZStack(alignment: .leading) {
-                Capsule().fill(Color.white.opacity(0.12))
+                Capsule().fill(Color.white.opacity(0.08))
                 Capsule().fill(usageColor(usedPercent))
                     .frame(width: geometry.size.width * min(max(fraction, 0), 1))
             }
