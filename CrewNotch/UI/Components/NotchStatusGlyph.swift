@@ -25,32 +25,27 @@ struct NotchStatusGlyph: View {
         case .needsYou:
             AttentionPulse(size: size, color: accent.attentionColor)
         case .finished:
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: size, weight: .semibold))
-                .foregroundStyle(.black, accent.finishedColor)
+            Image(systemName: "checkmark")
+                .font(.system(size: size * 0.82, weight: .bold))
+                .foregroundStyle(accent.finishedColor)
+                .frame(width: size, height: size)
         }
     }
 }
 
-/// Needs you: an amber dot that sends out a soft ring, like a ping.
+/// Needs you: a small square lamp that breathes.
 struct AttentionPulse: View {
     var size: CGFloat = 14
     var color: Color = TerminalColors.amber
 
     var body: some View {
         TimelineView(.animation) { context in
-            let progress = context.date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 1.4) / 1.4
-            ZStack {
-                Circle()
-                    .stroke(color, lineWidth: 1.2)
-                    .frame(width: size * 0.45, height: size * 0.45)
-                    .scaleEffect(1 + progress * 1.4)
-                    .opacity(1 - progress)
-                Circle()
-                    .fill(color)
-                    .frame(width: size * 0.45, height: size * 0.45)
-            }
-            .frame(width: size, height: size)
+            let wave = (sin(context.date.timeIntervalSinceReferenceDate * 4.2) + 1) / 2
+            RoundedRectangle(cornerRadius: size * 0.16, style: .continuous)
+                .fill(color)
+                .frame(width: size * 0.6, height: size * 0.6)
+                .opacity(0.45 + 0.55 * wave)
+                .frame(width: size, height: size)
         }
     }
 }

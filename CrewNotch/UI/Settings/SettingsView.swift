@@ -522,7 +522,7 @@ private struct AnimationMomentRow: View {
 // MARK: - Working indicator
 
 private struct WorkingIndicatorSection: View {
-    @AppStorage("workingIndicatorStyle") private var style: WorkingIndicatorStyle = .crewDots
+    @AppStorage("workingIndicatorStyle") private var style: WorkingIndicatorStyle = .scanner
     @AppStorage("workingIndicatorColor") private var color: WorkingIndicatorColor = .crew
 
     private let columns = [GridItem(.adaptive(minimum: 92), spacing: 10)]

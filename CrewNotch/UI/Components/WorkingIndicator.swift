@@ -9,12 +9,13 @@
 import SwiftUI
 
 enum WorkingIndicatorStyle: String, CaseIterable, Identifiable {
-    case crewDots, ring, spark, equalizer, orbit, pulse
+    case scanner, crewDots, ring, spark, equalizer, orbit, pulse
 
     var id: String { rawValue }
 
     var title: String {
         switch self {
+        case .scanner: return String(localized: "Scanner")
         case .crewDots: return String(localized: "Crew dots")
         case .ring: return String(localized: "Ring")
         case .spark: return String(localized: "Spark")
@@ -35,7 +36,7 @@ enum WorkingIndicatorColor: String, CaseIterable, Identifiable {
 /// The working indicator as configured in Settings.
 struct WorkingIndicator: View {
     var size: CGFloat = 14
-    @AppStorage("workingIndicatorStyle") private var style: WorkingIndicatorStyle = .crewDots
+    @AppStorage("workingIndicatorStyle") private var style: WorkingIndicatorStyle = .scanner
     @AppStorage("workingIndicatorColor") private var color: WorkingIndicatorColor = .crew
 
     var body: some View {
@@ -70,6 +71,19 @@ struct WorkingIndicatorView: View {
     @ViewBuilder
     private func content(time: Double) -> some View {
         switch style {
+        case .scanner:
+            // Three bars lit one after another, like a level meter settling
+            HStack(spacing: size * 0.2) {
+                ForEach(0..<3, id: \.self) { index in
+                    let phase = (time / 1.2 - Double(index) * 0.13).truncatingRemainder(dividingBy: 1)
+                    let wave = (sin((phase < 0 ? phase + 1 : phase) * 2 * .pi - .pi / 2) + 1) / 2
+                    RoundedRectangle(cornerRadius: size * 0.07)
+                        .fill(color == .crew ? tint(index) : Color.ink)
+                        .frame(width: size * 0.2, height: size)
+                        .opacity(0.2 + 0.8 * wave)
+                }
+            }
+
         case .crewDots:
             HStack(spacing: size * 0.14) {
                 ForEach(0..<3, id: \.self) { index in
