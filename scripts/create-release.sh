@@ -1,6 +1,5 @@
 #!/bin/bash
-# Package the exported app as a DMG (notarized when Developer ID signed)
-# and publish a GitHub release. SKIP_PUBLISH=1 stops after the DMG.
+# Package the exported (notarized) app as a DMG and publish a GitHub release. SKIP_PUBLISH=1 stops after the DMG.
 # Run ./scripts/build.sh first.
 set -e
 
@@ -23,31 +22,17 @@ DMG_PATH="$RELEASE_DIR/CrewNotch-$VERSION.dmg"
 mkdir -p "$RELEASE_DIR"
 echo "=== CrewNotch v$VERSION ==="
 
-# Notarize only when the app is Developer ID signed and credentials exist
-NOTARIZE=no
-if codesign -dv "$APP_PATH" 2>&1 | grep -q "Authority=Developer ID Application"; then
-    if xcrun notarytool history --keychain-profile "$KEYCHAIN_PROFILE" &>/dev/null; then
-        NOTARIZE=yes
-    else
-        echo "No notarization credentials. Store them once with:"
-        echo "  xcrun notarytool store-credentials \"$KEYCHAIN_PROFILE\" --apple-id <you@example.com> --team-id $TEAM_ID --password <app-specific-password>"
-        exit 1
-    fi
+# build.sh already notarized and stapled a Developer ID build. The DMG is
+# notarized too when notarytool credentials are stored (optional).
+if xcrun stapler validate "$APP_PATH" &>/dev/null; then
+    echo "App is notarized and stapled."
 else
-    echo "Ad-hoc signed build: skipping notarization."
+    echo "Warning: the app isn't notarized; macOS will ask users to allow it once."
 fi
-
-notarize() {
-    xcrun notarytool submit "$1" --keychain-profile "$KEYCHAIN_PROFILE" --wait
-    xcrun stapler staple "$2"
-}
-
-if [ "$NOTARIZE" = yes ]; then
-    echo "--- Notarizing app"
-    ZIP_PATH="$BUILD_DIR/CrewNotch-$VERSION.zip"
-    ditto -c -k --keepParent "$APP_PATH" "$ZIP_PATH"
-    notarize "$ZIP_PATH" "$APP_PATH"
-    rm "$ZIP_PATH"
+NOTARIZE_DMG=no
+if codesign -dvv "$APP_PATH" 2>&1 | grep -q "Authority=Developer ID Application" \
+    && xcrun notarytool history --keychain-profile "$KEYCHAIN_PROFILE" &>/dev/null; then
+    NOTARIZE_DMG=yes
 fi
 
 echo "--- Creating DMG"
@@ -59,9 +44,10 @@ ln -s /Applications "$STAGING/Applications"
 hdiutil create -volname "CrewNotch" -srcfolder "$STAGING" -ov -format UDZO "$DMG_PATH"
 rm -rf "$STAGING"
 
-if [ "$NOTARIZE" = yes ]; then
+if [ "$NOTARIZE_DMG" = yes ]; then
     echo "--- Notarizing DMG"
-    notarize "$DMG_PATH" "$DMG_PATH"
+    xcrun notarytool submit "$DMG_PATH" --keychain-profile "$KEYCHAIN_PROFILE" --wait
+    xcrun stapler staple "$DMG_PATH"
 fi
 
 if [ "${SKIP_PUBLISH:-0}" = 1 ]; then

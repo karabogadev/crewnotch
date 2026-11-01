@@ -17,13 +17,14 @@ mkdir -p "$BUILD_DIR"
 
 cd "$PROJECT_DIR"
 
-# Sign with Developer ID when one is installed; otherwise fall back to an
-# ad-hoc signature (the app then has to be allowed once in Privacy & Security).
-if security find-identity -v -p codesigning | grep -q "Developer ID Application"; then
-    SIGNING=developer-id
-else
+# Sign with Developer ID (Xcode creates the certificate on first use through
+# the account signed in to Xcode). ADHOC=1 builds an ad-hoc signed app instead,
+# which users then have to allow once in Privacy & Security.
+if [ "${ADHOC:-0}" = 1 ]; then
     SIGNING=adhoc
-    echo "No Developer ID certificate found: building an ad-hoc signed app."
+    echo "Building an ad-hoc signed app (ADHOC=1)."
+else
+    SIGNING=developer-id
 fi
 
 pretty() { if command -v xcpretty &>/dev/null; then xcpretty; else cat; fi; }
@@ -32,7 +33,8 @@ echo "Archiving..."
 set +e
 if [ "$SIGNING" = developer-id ]; then
     xcodebuild archive -scheme CrewNotch -configuration Release -archivePath "$ARCHIVE_PATH" \
-        -destination "generic/platform=macOS" ENABLE_HARDENED_RUNTIME=YES CODE_SIGN_STYLE=Automatic 2>&1 | pretty
+        -destination "generic/platform=macOS" -allowProvisioningUpdates \
+        ENABLE_HARDENED_RUNTIME=YES CODE_SIGN_STYLE=Automatic 2>&1 | pretty
 else
     xcodebuild archive -scheme CrewNotch -configuration Release -archivePath "$ARCHIVE_PATH" \
         -destination "generic/platform=macOS" ENABLE_HARDENED_RUNTIME=YES \
@@ -56,6 +58,8 @@ if [ "$SIGNING" = adhoc ]; then
     exit 0
 fi
 
+# Upload to Apple's notary service through the Xcode account, then export the
+# notarized, stapled app. No app-specific password needed.
 EXPORT_OPTIONS="$BUILD_DIR/ExportOptions.plist"
 cat > "$EXPORT_OPTIONS" << 'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
@@ -65,7 +69,7 @@ cat > "$EXPORT_OPTIONS" << 'EOF'
     <key>method</key>
     <string>developer-id</string>
     <key>destination</key>
-    <string>export</string>
+    <string>upload</string>
     <key>signingStyle</key>
     <string>automatic</string>
 </dict>
@@ -73,19 +77,28 @@ cat > "$EXPORT_OPTIONS" << 'EOF'
 EOF
 
 echo ""
-echo "Exporting..."
-set +e
-xcodebuild -exportArchive -archivePath "$ARCHIVE_PATH" -exportPath "$EXPORT_PATH" \
-    -exportOptionsPlist "$EXPORT_OPTIONS" 2>&1 | pretty
-EXPORT_EXIT=${PIPESTATUS[0]}
-set -e
-if [ "$EXPORT_EXIT" -ne 0 ]; then
-    echo "ERROR: Export failed."
+echo "Uploading for notarization..."
+if ! xcodebuild -exportArchive -archivePath "$ARCHIVE_PATH" -exportPath "$BUILD_DIR/upload" \
+    -exportOptionsPlist "$EXPORT_OPTIONS" -allowProvisioningUpdates 2>&1 | grep -E "error|EXPORT"; then
+    echo "ERROR: Upload failed. Sign in to Xcode with your Developer Program account,"
+    echo "or build an ad-hoc signed app with ADHOC=1 ./scripts/build.sh"
     exit 1
 fi
 
+echo "Waiting for Apple to notarize..."
+for _ in $(seq 1 60); do
+    if xcodebuild -exportNotarizedApp -archivePath "$ARCHIVE_PATH" -exportPath "$EXPORT_PATH" &>/dev/null; then
+        break
+    fi
+    sleep 15
+done
+if ! xcrun stapler validate "$EXPORT_PATH/CrewNotch.app" &>/dev/null; then
+    echo "ERROR: The notarized app didn't come back in time. Check Xcode's Organizer."
+    exit 1
+fi
+spctl -a -t exec "$EXPORT_PATH/CrewNotch.app"
+
 echo ""
-echo "=== Build Complete ==="
-echo "App exported to: $EXPORT_PATH/CrewNotch.app"
-echo ""
-echo "Next: Run ./scripts/create-release.sh to notarize and create DMG"
+echo "=== Build Complete (Developer ID, notarized) ==="
+echo "App: $EXPORT_PATH/CrewNotch.app"
+echo "Next: ./scripts/create-release.sh"
