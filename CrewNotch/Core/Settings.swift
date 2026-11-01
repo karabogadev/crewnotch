@@ -31,7 +31,7 @@ enum NotificationSound: String, CaseIterable {
     }
 }
 
-enum AppSettings {
+nonisolated enum AppSettings {
     private static let defaults = UserDefaults.standard
 
     // MARK: - Keys
@@ -39,11 +39,21 @@ enum AppSettings {
     private enum Keys {
         static let notificationSound = "notificationSound"
         static let claudeDirectoryName = "claudeDirectoryName"
+        static let approveFromNotch = "approveFromNotch"
+    }
+
+    // MARK: - Approvals
+
+    /// Answer approval requests (Claude Code, Codex) from the notch.
+    /// When off, the notch still shows that an agent needs you.
+    static var approveFromNotch: Bool {
+        get { defaults.object(forKey: Keys.approveFromNotch) as? Bool ?? true }
+        set { defaults.set(newValue, forKey: Keys.approveFromNotch) }
     }
 
     // MARK: - Notification Sound
 
-    /// The sound to play when Claude finishes and is ready for input
+    /// The sound to play when an agent finishes and is ready for input
     static var notificationSound: NotificationSound {
         get {
             guard let rawValue = defaults.string(forKey: Keys.notificationSound),
