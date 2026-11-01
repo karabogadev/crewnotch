@@ -21,7 +21,10 @@ struct SessionListView: View {
             } else {
                 instancesList
             }
-            UsageFooter(monitor: usageMonitor)
+            UsageFooter(
+                monitor: usageMonitor,
+                isAnyAgentBusy: sessionMonitor.instances.contains { $0.phase.isActive || $0.phase.isWaitingForApproval }
+            )
         }
     }
 
