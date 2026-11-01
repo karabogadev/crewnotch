@@ -12,7 +12,7 @@ import os.log
 /// Logger for hook socket server
 private let logger = Logger(subsystem: "com.karabogadev.crewnotch", category: "Hooks")
 
-/// Event received from Claude Code hooks
+/// Normalized event sent by `crewnotch-hook.py` (or a built-in watcher) for any agent.
 struct HookEvent: Codable, Sendable {
     let sessionId: String
     let cwd: String
@@ -22,9 +22,22 @@ struct HookEvent: Codable, Sendable {
     let tty: String?
     let tool: String?
     let toolInput: [String: AnyCodable]?
-    let toolUseId: String?
+    var toolUseId: String?
     let notificationType: String?
     let message: String?
+
+    /// Which agent produced the event. Missing means Claude Code (older hook scripts).
+    let agent: AgentKind
+    /// Whether the hook is waiting for a decision CrewNotch can answer.
+    var canRespond: Bool
+    /// Prompt the user just submitted (UserPromptSubmit), for agents without a parsed transcript.
+    let prompt: String?
+    /// Final assistant reply of the turn, when the agent reports it.
+    let assistantMessage: String?
+    /// Conversation title, when the agent reports it.
+    let title: String?
+    /// Front end of a multi-app agent (e.g. Antigravity "app" vs "ide").
+    let sourceApp: String?
 
     enum CodingKeys: String, CodingKey {
         case sessionId = "session_id"
@@ -32,11 +45,20 @@ struct HookEvent: Codable, Sendable {
         case toolInput = "tool_input"
         case toolUseId = "tool_use_id"
         case notificationType = "notification_type"
-        case message
+        case message, agent, prompt, title
+        case canRespond = "can_respond"
+        case assistantMessage = "assistant_message"
+        case sourceApp = "source_app"
     }
 
-    /// Create a copy with updated toolUseId
-    init(sessionId: String, cwd: String, event: String, status: String, pid: Int?, tty: String?, tool: String?, toolInput: [String: AnyCodable]?, toolUseId: String?, notificationType: String?, message: String?) {
+    init(
+        sessionId: String, cwd: String, event: String, status: String,
+        pid: Int? = nil, tty: String? = nil, tool: String? = nil,
+        toolInput: [String: AnyCodable]? = nil, toolUseId: String? = nil,
+        notificationType: String? = nil, message: String? = nil,
+        agent: AgentKind, canRespond: Bool = false, prompt: String? = nil,
+        assistantMessage: String? = nil, title: String? = nil, sourceApp: String? = nil
+    ) {
         self.sessionId = sessionId
         self.cwd = cwd
         self.event = event
@@ -48,37 +70,47 @@ struct HookEvent: Codable, Sendable {
         self.toolUseId = toolUseId
         self.notificationType = notificationType
         self.message = message
+        self.agent = agent
+        self.canRespond = canRespond
+        self.prompt = prompt
+        self.assistantMessage = assistantMessage
+        self.title = title
+        self.sourceApp = sourceApp
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        sessionId = try c.decode(String.self, forKey: .sessionId)
+        cwd = try c.decodeIfPresent(String.self, forKey: .cwd) ?? ""
+        event = try c.decode(String.self, forKey: .event)
+        status = try c.decode(String.self, forKey: .status)
+        pid = try c.decodeIfPresent(Int.self, forKey: .pid)
+        tty = try c.decodeIfPresent(String.self, forKey: .tty)
+        tool = try c.decodeIfPresent(String.self, forKey: .tool)
+        toolInput = try? c.decodeIfPresent([String: AnyCodable].self, forKey: .toolInput)
+        toolUseId = try c.decodeIfPresent(String.self, forKey: .toolUseId)
+        notificationType = try c.decodeIfPresent(String.self, forKey: .notificationType)
+        message = try c.decodeIfPresent(String.self, forKey: .message)
+        agent = (try? c.decodeIfPresent(AgentKind.self, forKey: .agent)) ?? .claude
+        canRespond = try c.decodeIfPresent(Bool.self, forKey: .canRespond) ?? agent.supportsApproval
+        prompt = try c.decodeIfPresent(String.self, forKey: .prompt)
+        assistantMessage = try c.decodeIfPresent(String.self, forKey: .assistantMessage)
+        title = try c.decodeIfPresent(String.self, forKey: .title)
+        sourceApp = try c.decodeIfPresent(String.self, forKey: .sourceApp)
     }
 
     var sessionPhase: SessionPhase {
-        if event == "PreCompact" {
-            return .compacting
-        }
-
-        switch status {
-        case "waiting_for_approval":
-            // Note: Full PermissionContext is constructed by SessionStore, not here
-            // This is just for quick phase checks
-            return .waitingForApproval(PermissionContext(
-                toolUseId: toolUseId ?? "",
-                toolName: tool ?? "unknown",
-                toolInput: toolInput,
-                receivedAt: Date()
-            ))
-        case "waiting_for_input":
-            return .waitingForInput
-        case "running_tool", "processing", "starting":
-            return .processing
-        case "compacting":
-            return .compacting
-        default:
-            return .idle
-        }
+        determinePhase()
     }
 
-    /// Whether this event expects a response (permission request)
-    nonisolated var expectsResponse: Bool {
+    /// An approval request, whether or not CrewNotch can answer it.
+    nonisolated var isPermissionRequest: Bool {
         event == "PermissionRequest" && status == "waiting_for_approval"
+    }
+
+    /// Whether the hook is blocked waiting for a decision from the app.
+    nonisolated var expectsResponse: Bool {
+        isPermissionRequest && canRespond
     }
 }
 
@@ -421,6 +453,15 @@ class HookSocketServer {
             cleanupCache(sessionId: event.sessionId)
         }
 
+        if event.expectsResponse && !AppSettings.approveFromNotch {
+            // Let the agent show its own prompt; the notch still shows "needs you".
+            close(clientSocket)
+            var observedOnly = event
+            observedOnly.canRespond = false
+            eventHandler?(observedOnly)
+            return
+        }
+
         if event.expectsResponse {
             let toolUseId: String
             if let eventToolUseId = event.toolUseId {
@@ -430,25 +471,16 @@ class HookSocketServer {
             } else {
                 logger.warning("Permission request missing tool_use_id for \(event.sessionId.prefix(8), privacy: .public) - no cache hit")
                 close(clientSocket)
-                eventHandler?(event)
+                var observedOnly = event
+                observedOnly.canRespond = false
+                eventHandler?(observedOnly)
                 return
             }
 
             logger.debug("Permission request - keeping socket open for \(event.sessionId.prefix(8), privacy: .public) tool:\(toolUseId.prefix(12), privacy: .public)")
 
-            let updatedEvent = HookEvent(
-                sessionId: event.sessionId,
-                cwd: event.cwd,
-                event: event.event,
-                status: event.status,
-                pid: event.pid,
-                tty: event.tty,
-                tool: event.tool,
-                toolInput: event.toolInput,
-                toolUseId: toolUseId,  // Use resolved toolUseId
-                notificationType: event.notificationType,
-                message: event.message
-            )
+            var updatedEvent = event
+            updatedEvent.toolUseId = toolUseId
 
             let pending = PendingPermission(
                 sessionId: event.sessionId,
