@@ -143,7 +143,7 @@ nonisolated enum AppSettings {
 
     /// List sessions under their project.
     static var groupByProject: Bool {
-        get { defaults.object(forKey: Keys.groupByProject) as? Bool ?? true }
+        get { defaults.object(forKey: Keys.groupByProject) as? Bool ?? false }
         set { defaults.set(newValue, forKey: Keys.groupByProject) }
     }
 

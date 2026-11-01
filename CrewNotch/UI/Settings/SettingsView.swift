@@ -151,7 +151,7 @@ private struct GeneralPane: View {
 
 private struct AppearancePane: View {
     @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
-    @AppStorage("groupByProject") private var groupByProject = true
+    @AppStorage("groupByProject") private var groupByProject = false
     @AppStorage(AppearanceKeys.titleOrder) private var titleOrder: TitleOrder = .conversation
     @AppStorage(AppearanceKeys.material) private var material: PanelMaterial = .solid
     @AppStorage(AppearanceKeys.tint) private var tint: PanelTint = .black

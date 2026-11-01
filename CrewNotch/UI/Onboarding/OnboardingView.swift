@@ -162,7 +162,7 @@ private struct ConnectAgentsStep: View {
 
 private struct PreferencesStep: View {
     @AppStorage("approveFromNotch") private var approveFromNotch = true
-    @AppStorage("groupByProject") private var groupByProject = true
+    @AppStorage("groupByProject") private var groupByProject = false
     @AppStorage("showPlanUsage") private var showPlanUsage = true
     @AppStorage("claudeUsageAllowed") private var claudeUsageAllowed = false
     @ObservedObject private var keepAwake = KeepAwakeController.shared

@@ -79,7 +79,7 @@ struct SessionListView: View {
         }
     }
 
-    @AppStorage("groupByProject") private var groupByProject = true
+    @AppStorage("groupByProject") private var groupByProject = false
 
     /// Sessions grouped by project, groups ordered by their most urgent session
     /// (a single group when grouping is off)
