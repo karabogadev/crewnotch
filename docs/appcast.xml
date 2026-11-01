@@ -1,0 +1,22 @@
+<?xml version="1.0" standalone="yes"?>
+<rss xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle" version="2.0">
+    <channel>
+        <title>CrewNotch</title>
+        <item>
+            <title>1.1.5</title>
+            <pubDate>Sun, 01 Nov 2026 07:54:47 +0300</pubDate>
+            <link>https://karabogadev.github.io/crewnotch/</link>
+            <sparkle:fullReleaseNotesLink>https://github.com/karabogadev/crewnotch/releases</sparkle:fullReleaseNotesLink>
+            <sparkle:version>7</sparkle:version>
+            <sparkle:shortVersionString>1.1.5</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.6</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[## What's new
+
+- **CrewNotch now updates itself.** It checks for new versions once a day and offers to install them in one click. Turn on "Download and install updates automatically" in Settings → General to skip even that, or check any time with **Check for Updates…**.
+- Every update is signed and verified before it's installed, and only comes from this project's releases.
+
+]]></description>
+            <enclosure url="https://github.com/karabogadev/crewnotch/releases/download/v1.1.5/CrewNotch-1.1.5.dmg" length="5404637" type="application/octet-stream" sparkle:edSignature="0vj7WKISDTJ1GpKjVl3H5rk1umgksxJcEz32WVQf8TGlNM4iJHwLlJiKMX949DvSM21HWA8ozWlcizFNLNmoCw=="/>
+        </item>
+    </channel>
+</rss>
