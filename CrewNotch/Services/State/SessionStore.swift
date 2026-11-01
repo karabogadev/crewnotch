@@ -218,9 +218,15 @@ actor SessionStore {
         if event.event == "UserPromptSubmit", session.taskProgress?.isFinished == true {
             session.taskProgress = nil
         }
-        guard event.event == "PreToolUse" || event.event == "PostToolUse",
-              let progress = TaskProgress(toolName: event.tool, input: event.toolInput?.mapValues(\.value)) else { return }
-        session.taskProgress = progress
+        guard event.event == "PreToolUse" || event.event == "PostToolUse" else { return }
+        let input = event.toolInput?.mapValues(\.value)
+        if let progress = TaskProgress(toolName: event.tool, input: input) {
+            session.taskProgress = progress
+        } else if event.event == "PostToolUse", let tool = event.tool, TaskProgress.taskToolNames.contains(tool) {
+            // Task tools: one change per call, applied after it succeeded
+            session.taskProgress = TaskProgress.applying(
+                toolName: tool, input: input, response: event.toolResponse?.mapValues(\.value), to: session.taskProgress)
+        }
     }
 
     private func createSession(from event: HookEvent) -> SessionState {

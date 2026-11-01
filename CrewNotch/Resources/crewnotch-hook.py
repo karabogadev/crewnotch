@@ -149,7 +149,12 @@ def map_claude_like(event, data):
     if event == "PreToolUse":
         return event_state(event, "running_tool", **tool_fields(data))
     if event in ("PostToolUse", "PostToolUseFailure", "PermissionDenied"):
-        return event_state("PostToolUse" if event != "PermissionDenied" else event, "processing", **tool_fields(data))
+        fields = tool_fields(data)
+        # TaskCreate's result holds the new task's id, needed to follow its progress
+        response = data.get("tool_response")
+        if event == "PostToolUse" and fields["tool"] == "TaskCreate" and isinstance(response, dict):
+            fields["tool_response"] = {"task": response.get("task")} if isinstance(response.get("task"), dict) else None
+        return event_state("PostToolUse" if event != "PermissionDenied" else event, "processing", **fields)
     if event == "PermissionRequest":
         suggestions = data.get("permission_suggestions")
         return event_state(

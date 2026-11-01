@@ -42,6 +42,8 @@ struct HookEvent: Codable, Sendable {
     let transcriptPath: String?
     /// Permission rules Claude Code offers as "always allow" for this request
     let permissionSuggestions: [AnyCodable]?
+    /// Result of a TaskCreate call (carries the new task's id)
+    let toolResponse: [String: AnyCodable]?
     /// `crewnotch run`: how the command ended
     let exitCode: Int?
     let signal: Int?
@@ -60,6 +62,7 @@ struct HookEvent: Codable, Sendable {
         case transcriptPath = "transcript_path"
         case permissionSuggestions = "permission_suggestions"
         case exitCode = "exit_code"
+        case toolResponse = "tool_response"
         case signal
         case durationSeconds = "duration_seconds"
     }
@@ -93,6 +96,7 @@ struct HookEvent: Codable, Sendable {
         self.transcriptPath = transcriptPath
         self.permissionSuggestions = permissionSuggestions
         self.exitCode = nil
+        self.toolResponse = nil
         self.signal = nil
         self.durationSeconds = nil
     }
@@ -119,6 +123,7 @@ struct HookEvent: Codable, Sendable {
         transcriptPath = try c.decodeIfPresent(String.self, forKey: .transcriptPath)
         permissionSuggestions = try? c.decodeIfPresent([AnyCodable].self, forKey: .permissionSuggestions)
         exitCode = try? c.decodeIfPresent(Int.self, forKey: .exitCode)
+        toolResponse = try? c.decodeIfPresent([String: AnyCodable].self, forKey: .toolResponse)
         signal = try? c.decodeIfPresent(Int.self, forKey: .signal)
         durationSeconds = try? c.decodeIfPresent(Double.self, forKey: .durationSeconds)
     }
