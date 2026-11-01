@@ -30,6 +30,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         windowManager = WindowManager()
         _ = windowManager?.setupNotchWindow()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            NotchEffects.shared.play(.launch)
+        }
 
         screenObserver = ScreenObserver { [weak self] in
             self?.handleScreenChange()
