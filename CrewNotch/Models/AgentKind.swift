@@ -42,9 +42,10 @@ nonisolated enum AgentKind: String, CaseIterable, Codable, Sendable, Identifiabl
         self == .claude
     }
 
-    /// Whether an approval prompt can be answered from the notch.
+    /// Whether an approval prompt can be answered from the notch: the agent
+    /// asks CrewNotch only when it would prompt, and takes the answer.
     var supportsApproval: Bool {
-        self == .claude || self == .codex
+        self == .claude || self == .codex || self == .opencode
     }
 
     /// Agents that live in a terminal (focus goes to the terminal/tmux pane)

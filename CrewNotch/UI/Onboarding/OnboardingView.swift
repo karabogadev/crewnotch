@@ -188,7 +188,7 @@ private struct PreferencesStep: View {
                         AppSettings.notificationSound = on ? .pop : .none
                         AppSettings.attentionSound = on ? .glass : .none
                     }
-                Toggle("Approve from the notch (Claude Code, Codex)", isOn: $approveFromNotch)
+                Toggle("Approve from the notch (Claude Code, Codex, OpenCode)", isOn: $approveFromNotch)
                 Toggle("Group sessions by project", isOn: $groupByProject)
                 Toggle(isOn: Binding(get: { keepAwake.isEnabled }, set: { keepAwake.setEnabled($0) })) {
                     VStack(alignment: .leading, spacing: 2) {

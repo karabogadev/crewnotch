@@ -37,6 +37,8 @@ extension PermissionContext {
                 parts.append(mode == "acceptEdits" ? String(localized: "Accept edits for this session") : mode)
             } else if let directories = suggestion["directories"] as? [String] {
                 parts.append(contentsOf: directories)
+            } else if let patterns = suggestion["patterns"] as? [String] {
+                parts.append(contentsOf: patterns)  // OpenCode's "always" patterns
             }
         }
         return parts.isEmpty ? nil : parts.joined(separator: ", ")

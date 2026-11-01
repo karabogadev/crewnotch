@@ -209,7 +209,7 @@ nonisolated enum AppSettings {
 
     // MARK: - Approvals
 
-    /// Answer approval requests (Claude Code, Codex) from the notch.
+    /// Answer approval requests (Claude Code, Codex, OpenCode) from the notch.
     /// When off, the notch still shows that an agent needs you.
     static var approveFromNotch: Bool {
         get { defaults.object(forKey: Keys.approveFromNotch) as? Bool ?? true }

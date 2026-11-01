@@ -48,7 +48,7 @@ struct NotificationsPane: View {
                     SettingLabel("Show requests", "Open the notch for questions and approvals from connected agents.")
                 }
                 Toggle(isOn: $approveFromNotch) {
-                    SettingLabel("Reply from the notch", "Allow or deny tool calls for agents that support it (Claude Code, Codex).")
+                    SettingLabel("Reply from the notch", "Allow or deny tool calls for agents that support it (Claude Code, Codex, OpenCode).")
                 }
                 Toggle(isOn: $showFinishedBanner) {
                     SettingLabel("Finished banner", "Drop the notch down for a moment when an agent finishes.")

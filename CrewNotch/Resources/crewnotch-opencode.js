@@ -21,28 +21,101 @@ const socketIsTrusted = () => {
   }
 }
 
-export const CrewNotch = async ({ directory, worktree }) => {
+export const CrewNotch = async ({ client, directory, worktree, serverUrl }) => {
   const cwd = worktree || directory || process.cwd()
   const childSessions = new Set()
 
+  const stateFor = (sessionID, event, status, fields) => ({
+    agent: "opencode",
+    session_id: `opencode:${sessionID}`,
+    cwd,
+    event,
+    status,
+    pid: process.pid,
+    can_respond: false,
+    ...fields,
+  })
+
   const send = (sessionID, event, status, fields = {}) => {
     if (!sessionID || childSessions.has(sessionID)) return
-    const state = {
-      agent: "opencode",
-      session_id: `opencode:${sessionID}`,
-      cwd,
-      event,
-      status,
-      pid: process.pid,
-      can_respond: false,
-      ...fields,
-    }
     if (!socketIsTrusted()) return
     try {
       const socket = createConnection(SOCKET_PATH)
       socket.on("error", () => {})
-      socket.on("connect", () => socket.end(JSON.stringify(state)))
+      socket.on("connect", () => socket.end(JSON.stringify(stateFor(sessionID, event, status, fields))))
     } catch {}
+  }
+
+  // Sends a request and waits for the app's answer: {decision, updated_permissions}.
+  // Resolves null if the app isn't running, is set not to answer, or the socket closes.
+  const ask = (sessionID, fields) =>
+    new Promise((resolve) => {
+      if (!sessionID || childSessions.has(sessionID) || !socketIsTrusted()) return resolve(null)
+      const chunks = []
+      try {
+        const socket = createConnection(SOCKET_PATH)
+        socket.on("error", () => resolve(null))
+        socket.on("connect", () => {
+          socket.write(JSON.stringify(stateFor(sessionID, "PermissionRequest", "waiting_for_approval", { ...fields, can_respond: true })))
+          socket.end()
+        })
+        socket.on("data", (chunk) => chunks.push(chunk))
+        socket.on("close", () => {
+          try {
+            resolve(chunks.length ? JSON.parse(Buffer.concat(chunks).toString()) : null)
+          } catch {
+            resolve(null)
+          }
+        })
+      } catch {
+        resolve(null)
+      }
+    })
+
+  // Answers OpenCode's permission prompt. Whoever answers first wins, so the
+  // prompt in the terminal keeps working while the notch waits.
+  const reply = async (sessionID, requestID, response) => {
+    const query = { directory }
+    try {
+      const result = await client.postSessionIdPermissionsPermissionId({
+        path: { id: sessionID, permissionID: requestID },
+        body: { response },
+        query,
+      })
+      if (!result || !result.error) return
+    } catch {}
+    try {
+      const url = new URL(`/permission/${encodeURIComponent(requestID)}/reply`, serverUrl)
+      if (directory) url.searchParams.set("directory", directory)
+      await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ reply: response }) })
+    } catch {}
+  }
+
+  const answerFromNotch = async (props) => {
+    const always = [].concat(props.always || []).filter((p) => typeof p === "string")
+    const answer = await ask(props.sessionID, {
+      tool: props.permission || props.type || "Permission",
+      tool_input: requestInput(props),
+      tool_use_id: props.id,
+      permission_suggestions: always.length ? [{ type: "opencodeAlways", patterns: always }] : undefined,
+    })
+    if (!answer || (answer.decision !== "allow" && answer.decision !== "deny")) return
+    const savesRule = Array.isArray(answer.updated_permissions) && answer.updated_permissions.length > 0
+    await reply(props.sessionID, props.id, answer.decision === "deny" ? "reject" : savesRule ? "always" : "once")
+  }
+
+  // What the request would do, in the shape CrewNotch shows for other agents
+  const requestInput = (props) => {
+    const patterns = [].concat(props.patterns || props.pattern || []).filter((p) => typeof p === "string")
+    const input = {}
+    const meta = props.metadata || {}
+    for (const [key, value] of Object.entries(meta)) {
+      if (typeof value === "string" && value.length < 4000) input[key] = value
+    }
+    if ((props.permission || props.type) === "bash" && patterns.length) input.command = patterns.join(" && ")
+    else if (patterns.length) input.pattern = patterns.join(", ")
+    if (input.filepath && !input.file_path) input.file_path = input.filepath
+    return input
   }
 
   const textOf = (parts) =>
@@ -87,14 +160,11 @@ export const CrewNotch = async ({ directory, worktree }) => {
           return
         case "permission.asked":
         case "permission.updated":
-          send(props.sessionID, "PermissionRequest", "waiting_for_approval", {
-            tool: props.permission || props.type || "Permission",
-            tool_input: { pattern: (props.patterns || props.pattern || []).toString() },
-            tool_use_id: props.id,
-          })
+          // Don't hold up OpenCode's other events while the notch waits for an answer
+          answerFromNotch(props)
           return
         case "permission.replied":
-          send(props.sessionID, "PostToolUse", "processing")
+          send(props.sessionID, "PostToolUse", "processing", { tool_use_id: props.requestID || props.permissionID })
           return
         case "session.deleted": {
           const info = props.info || {}
