@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		FDA49F7D2EE11E3C00F9612E /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = FD33FD722EDF32D7002A6548 /* Markdown */; };
 		FDC0A5D10000000000000003 /* libzstd in Frameworks */ = {isa = PBXBuildFile; productRef = FDC0A5D10000000000000002 /* libzstd */; };
+		FDC0A5D10000000000000006 /* Sparkle in Frameworks */ = {isa = PBXBuildFile; productRef = FDC0A5D10000000000000005 /* Sparkle */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,6 +44,7 @@
 			files = (
 				FDC0A5D10000000000000003 /* libzstd in Frameworks */,
 				FDA49F7D2EE11E3C00F9612E /* Markdown in Frameworks */,
+				FDC0A5D10000000000000006 /* Sparkle in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -87,6 +89,7 @@
 			packageProductDependencies = (
 				FDC0A5D10000000000000002 /* libzstd */,
 				FD33FD722EDF32D7002A6548 /* Markdown */,
+				FDC0A5D10000000000000005 /* Sparkle */,
 			);
 			productName = CrewNotch;
 			productReference = FD33FD5D2EDF32D7002A6548 /* CrewNotch.app */;
@@ -128,6 +131,7 @@
 			packageReferences = (
 				FDC0A5D10000000000000001 /* XCRemoteSwiftPackageReference "zstd" */,
 				FD33FD712EDF32D7002A6548 /* XCRemoteSwiftPackageReference "swift-markdown" */,
+				FDC0A5D10000000000000004 /* XCRemoteSwiftPackageReference "Sparkle" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = FD33FD5E2EDF32D7002A6548 /* Products */;
@@ -390,6 +394,14 @@
 				minimumVersion = 1.5.7;
 			};
 		};
+		FDC0A5D10000000000000004 /* XCRemoteSwiftPackageReference "Sparkle" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/sparkle-project/Sparkle";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.6.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -402,6 +414,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = FDC0A5D10000000000000001 /* XCRemoteSwiftPackageReference "zstd" */;
 			productName = libzstd;
+		};
+		FDC0A5D10000000000000005 /* Sparkle */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = FDC0A5D10000000000000004 /* XCRemoteSwiftPackageReference "Sparkle" */;
+			productName = Sparkle;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
