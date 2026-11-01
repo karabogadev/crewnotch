@@ -124,7 +124,7 @@ struct SessionListView: View {
 
     private var instancesList: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            VStack(alignment: .leading, spacing: 6) {
+            VStack(alignment: .leading, spacing: 0) {
                 ForEach(projectGroups, id: \.project) { group in
                     if groupByProject {
                         ProjectHeader(name: group.project, count: group.sessions.count)
@@ -148,10 +148,11 @@ struct SessionListView: View {
 
                 if showsRecents {
                     RecentSessionsSection(recents: recents, onResumed: { viewModel.notchClose() })
+                        .padding(.vertical, 8)
+                        .overlay(alignment: .top) { Hairline() }
                 }
             }
-            .padding(.top, 2)
-            .padding(.bottom, 6)
+            .padding(.bottom, 4)
             .reportHeight()
         }
         .scrollBounceBehavior(.basedOnSize)
@@ -191,8 +192,9 @@ struct SessionListView: View {
 
 // MARK: - Instance Row
 
-/// One session as a soft card: the agent's logo with a status dot, the title,
-/// one quiet meta line, and actions that appear on hover.
+/// One session as a row of an instrument: a status lamp, the agent's logo, the
+/// title over one monospaced meta line, and the turn's time. Rows are divided
+/// by hairlines; a request opens a plate under the row with the way to answer it.
 struct InstanceRow: View {
     @ObservedObject private var replyHosts = ReplyHostCache.shared
     @AppStorage("groupByProject") private var groupByProject = false
@@ -221,6 +223,9 @@ struct InstanceRow: View {
 
     @State private var isHovered = false
     @State private var subagentsExpanded = false
+
+    /// Lamp, gap, logo, gap: where the title starts, so plates line up with it
+    private static let contentInset: CGFloat = 7 + 12 + 18 + 12
 
     private var isWaitingForApproval: Bool { session.phase.isWaitingForApproval }
 
@@ -259,7 +264,8 @@ struct InstanceRow: View {
     private var statusColor: Color {
         switch session.phase {
         case .waitingForApproval: return accent.attentionColor
-        case .waitingForInput: return accent == .full ? TerminalColors.green.opacity(0.9) : .ink.opacity(0.6)
+        case .waitingForInput: return accent.finishedColor
+        case .processing, .compacting: return .ink.opacity(0.85)
         default: return .ink.opacity(0.5)
         }
     }
@@ -281,65 +287,63 @@ struct InstanceRow: View {
         return session.subagentState.activeTasks.values.sorted { $0.startTime < $1.startTime }
     }
 
-    private var cardFill: Color {
-        if isWaitingForApproval { return accent.attentionColor.opacity(0.10) }
-        return .ink.opacity(isHovered ? 0.075 : 0.04)
-    }
-
-    private var cardStroke: Color {
-        if isWaitingForApproval && !riskWarnings.isEmpty { return TerminalColors.red.opacity(0.45) }
-        return isWaitingForApproval ? accent.attentionColor.opacity(0.22) : .ink.opacity(0.05)
-    }
-
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(spacing: 11) {
-                AgentAvatar(agent: session.agent, phase: session.phase, accent: accent)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                // Lamp and logo sit on the title's line, however many lines follow
+                StatusLamp(phase: session.phase, accent: accent)
+                    .frame(height: 16 * textScale.factor)
+                AgentIcon(agent: session.agent, size: 18)
+                    .frame(height: 16 * textScale.factor)
+                    .help(session.agent.displayName)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(title)
-                        .font(.system(size: 13 * textScale.factor, weight: .medium))
-                        .foregroundColor(.ink.opacity(0.92))
+                        .font(.system(size: 13 * textScale.factor, weight: .semibold))
+                        .foregroundColor(.ink.opacity(0.94))
                         .lineLimit(1)
                     TimelineView(.periodic(from: .now, by: 30)) { timeline in
                         metaLine(now: timeline.date)
                     }
                     if let progress = visibleProgress {
                         TaskProgressLine(progress: progress)
-                            .padding(.top, 2)
+                            .padding(.top, 4)
                     }
                 }
 
                 Spacer(minLength: 8)
 
                 trailing
+                    .frame(height: 16 * textScale.factor)
             }
 
             if isWaitingForApproval {
-                if let questions = answerableQuestions {
-                    QuestionCard(
-                        questions: questions,
-                        showsShortcuts: isKeyboardTarget,
-                        onSubmit: onAnswer,
-                        onOpenAgent: SessionFocuser.canFocus(session) ? onFocus : nil
-                    )
-                    .padding(.leading, 41)
-                    .id(session.activePermission?.toolUseId)
-                } else {
-                    approvalStrip
+                Group {
+                    if let questions = answerableQuestions {
+                        QuestionCard(
+                            questions: questions,
+                            showsShortcuts: isKeyboardTarget,
+                            onSubmit: onAnswer,
+                            onOpenAgent: SessionFocuser.canFocus(session) ? onFocus : nil
+                        )
+                        .id(session.activePermission?.toolUseId)
+                    } else {
+                        approvalPlate
+                    }
                 }
+                .padding(.leading, Self.contentInset)
             }
 
             if subagentsExpanded && !activeSubagents.isEmpty {
                 SubagentList(tasks: activeSubagents)
-                    .padding(.leading, 41)
+                    .padding(.leading, Self.contentInset)
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(cardFill))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(cardStroke, lineWidth: 0.5))
-        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 13)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color.ink.opacity(isHovered ? 0.045 : 0)))
+        .overlay(alignment: .top) { Hairline() }
+        .contentShape(Rectangle())
         .onTapGesture(count: 2) {
             // Double-click jumps to the agent's window; without one, open the chat
             if SessionFocuser.canFocus(session) { onFocus() } else { onChat() }
@@ -382,33 +386,34 @@ struct InstanceRow: View {
 
     private func metaLine(now: Date) -> some View {
         let stalled = isStalled(now: now)
-        return HStack(spacing: 5) {
-            if stalled {
-                Text("Quiet for \(RelativeTime.short(since: session.lastActivity, now: now))")
-                    .foregroundColor(TerminalColors.amber)
-                    .help("No activity for a while. If the agent is stuck, clear the session.")
-            } else {
-                Text(statusWord).foregroundColor(statusColor)
+        return HStack(spacing: 8) {
+            Group {
+                if stalled {
+                    Text("Quiet for \(RelativeTime.short(since: session.lastActivity, now: now))")
+                        .foregroundColor(TerminalColors.amber)
+                        .help("No activity for a while. If the agent is stuck, clear the session.")
+                } else {
+                    Text(statusWord).foregroundColor(statusColor)
+                }
             }
+            .textCase(.uppercase)
+            .kerning(0.6)
+
             if showsProject {
-                Text("·").foregroundColor(.ink.opacity(0.25))
-                Text(session.projectName).foregroundColor(.ink.opacity(0.45))
+                Text(session.projectName).foregroundColor(.ink.opacity(0.5))
             }
             if let branch {
-                Text("·").foregroundColor(.ink.opacity(0.25))
-                HStack(spacing: 2) {
+                HStack(spacing: 3) {
                     Image(systemName: "arrow.triangle.branch")
                         .font(.system(size: 8.5 * textScale.factor, weight: .semibold))
                     Text(branch)
                 }
-                .foregroundColor(.ink.opacity(0.45))
+                .foregroundColor(.ink.opacity(0.5))
             }
             if let context = visibleContext {
-                Text("·").foregroundColor(.ink.opacity(0.25))
                 ContextFillBadge(usage: context)
             }
             if !activeSubagents.isEmpty {
-                Text("·").foregroundColor(.ink.opacity(0.25))
                 Button {
                     subagentsExpanded.toggle()
                 } label: {
@@ -417,16 +422,17 @@ struct InstanceRow: View {
                         Image(systemName: subagentsExpanded ? "chevron.up" : "chevron.down")
                             .font(.system(size: 7 * textScale.factor, weight: .bold))
                     }
-                    .foregroundColor(.ink.opacity(0.6))
+                    .foregroundColor(.ink.opacity(0.65))
                 }
                 .buttonStyle(.plain)
             }
         }
-        .font(.system(size: 11 * textScale.factor))
+        .font(.system(size: 10.5 * textScale.factor, design: .monospaced))
         .lineLimit(1)
     }
 
-    /// Time since the last activity; hover swaps it for actions.
+    /// A stopwatch while the agent works, otherwise the time since it last did
+    /// anything; hover swaps it for actions.
     @ViewBuilder
     private var trailing: some View {
         if isHovered && !isWaitingForApproval {
@@ -443,38 +449,93 @@ struct InstanceRow: View {
                 }
             }
             .transition(.opacity)
+        } else if (session.phase.isActive || isWaitingForApproval), let started = session.turnStartedAt {
+            TimelineView(.periodic(from: .now, by: 1)) { timeline in
+                Text(Stopwatch.format(timeline.date.timeIntervalSince(started)))
+                    .font(.system(size: 11 * textScale.factor, design: .monospaced))
+                    .foregroundColor(.ink.opacity(0.8))
+            }
+            .help("Time in this turn")
+            .transition(.opacity)
         } else {
             Text(RelativeTime.short(since: session.lastActivity))
-                .font(.system(size: 11 * textScale.factor, weight: .regular, design: .rounded))
-                .foregroundColor(.ink.opacity(0.3))
-                .monospacedDigit()
+                .font(.system(size: 11 * textScale.factor, design: .monospaced))
+                .foregroundColor(.ink.opacity(0.5))
                 .transition(.opacity)
         }
     }
 
-    /// What the agent wants to run, with the way to answer it.
-    private var approvalStrip: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                if let toolName = session.pendingToolName {
-                    Text(MCPToolFormatter.formatToolName(toolName))
-                        .font(.system(size: 11 * textScale.factor, weight: .semibold, design: .monospaced))
-                        .foregroundColor(accent.attentionColor)
-                    if let input = session.pendingToolInput, toolName != "AskUserQuestion", !showsDetailBlock {
-                        Text(input)
-                            .font(.system(size: 11 * textScale.factor, design: .monospaced))
-                            .foregroundColor(.ink.opacity(0.55))
+    // MARK: - Request plate
+
+    private var riskWarnings: [String] {
+        guard warnRiskyCommands, let permission = session.activePermission else { return [] }
+        return permission.riskWarnings(cwd: session.cwd)
+    }
+
+    /// The full request replaces the one-line summary
+    private var showsDetailBlock: Bool {
+        showApprovalDetails && session.activePermission?.toolInput?.isEmpty == false
+    }
+
+    /// The working folder, shortened to ~ for the plate's corner
+    private var shortCwd: String {
+        let home = FileManager.default.homeDirectoryForCurrentUser.path
+        return session.cwd.hasPrefix(home) ? "~" + session.cwd.dropFirst(home.count) : session.cwd
+    }
+
+    /// What the agent wants to run, then the keys to answer it.
+    private var approvalPlate: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 8) {
+                HStack(spacing: 8) {
+                    if let toolName = session.pendingToolName {
+                        Text(MCPToolFormatter.formatToolName(toolName))
+                            .font(.system(size: 10 * textScale.factor, weight: .semibold, design: .monospaced))
+                            .textCase(.uppercase)
+                            .kerning(0.6)
+                            .foregroundColor(accent.attentionColor)
                             .lineLimit(1)
-                            .truncationMode(.middle)
                     }
+                    Spacer(minLength: 8)
+                    Text(shortCwd)
+                        .font(.system(size: 10 * textScale.factor, design: .monospaced))
+                        .foregroundColor(.ink.opacity(0.5))
+                        .lineLimit(1)
+                        .truncationMode(.head)
                 }
-                Spacer(minLength: 8)
+
+                if let permission = session.activePermission, permission.toolName != "AskUserQuestion",
+                   showApprovalDetails || (warnRiskyCommands && !riskWarnings.isEmpty) {
+                    ApprovalDetailView(
+                        context: permission,
+                        cwd: session.cwd,
+                        showsDetails: showApprovalDetails,
+                        showsWarnings: warnRiskyCommands,
+                        alwaysRule: ApprovalActions.offersAlways(permission, cwd: session.cwd) ? permission.suggestionSummary : nil,
+                        inPlate: true
+                    )
+                }
+                if let input = session.pendingToolInput, session.pendingToolName != "AskUserQuestion", !showsDetailBlock {
+                    Text(input)
+                        .font(.system(size: 12 * textScale.factor, design: .monospaced))
+                        .foregroundColor(.ink.opacity(0.9))
+                        .lineLimit(2)
+                        .truncationMode(.middle)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 10)
+            .padding(.bottom, 11)
+
+            HStack(spacing: 6) {
                 if isInteractiveTool {
+                    Spacer(minLength: 0)
                     if SessionFocuser.canFocus(session) {
                         SoftPill(title: session.agent.isTerminalAgent ? "Terminal" : "Open", prominent: true, action: onFocus)
                     }
                 } else {
                     SoftPill(title: "Deny", prominent: false, hint: isKeyboardTarget ? "⌘⌫" : nil, action: onReject)
+                    Spacer(minLength: 0)
                     if let permission = session.activePermission, ApprovalActions.offersAlways(permission, cwd: session.cwd),
                        let rule = permission.suggestionSummary {
                         SoftPill(title: "Always", prominent: false, hint: isKeyboardTarget ? "⌘⇧↩" : nil, action: onApproveAlways)
@@ -483,60 +544,63 @@ struct InstanceRow: View {
                     SoftPill(title: "Allow", prominent: true, hint: isKeyboardTarget ? "⌘↩" : nil, action: onApprove)
                 }
             }
-
-            if let permission = session.activePermission, permission.toolName != "AskUserQuestion",
-               showApprovalDetails || (warnRiskyCommands && !riskWarnings.isEmpty) {
-                ApprovalDetailView(
-                    context: permission,
-                    cwd: session.cwd,
-                    showsDetails: showApprovalDetails,
-                    showsWarnings: warnRiskyCommands,
-                    alwaysRule: ApprovalActions.offersAlways(permission, cwd: session.cwd) ? permission.suggestionSummary : nil
-                )
-            }
+            .padding(8)
+            .background(Color.ink.opacity(0.025))
+            .overlay(alignment: .top) { Hairline() }
         }
-        .padding(.leading, 41)
-    }
-
-    /// The full request replaces the one-line summary
-    private var showsDetailBlock: Bool {
-        showApprovalDetails && session.activePermission?.toolInput?.isEmpty == false
-    }
-
-    private var riskWarnings: [String] {
-        guard warnRiskyCommands, let permission = session.activePermission else { return [] }
-        return permission.riskWarnings(cwd: session.cwd)
+        .background(Color.recess)
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(riskWarnings.isEmpty ? Color.ink.opacity(0.12) : TerminalColors.red.opacity(0.5), lineWidth: 1)
+        )
     }
 }
 
-/// "3/7 · Writing tests" with a thin bar, from the agent's to-do list.
+/// "3/7 · Writing tests" behind one segment per task.
 private struct TaskProgressLine: View {
     let progress: TaskProgress
     @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
 
     var body: some View {
-        HStack(spacing: 6) {
-            Capsule()
-                .fill(Color.ink.opacity(0.12))
-                .frame(width: 42, height: 3)
-                .overlay(alignment: .leading) {
-                    Capsule()
-                        .fill(TerminalColors.green.opacity(0.85))
-                        .frame(width: max(3, 42 * progress.fraction), height: 3)
+        HStack(spacing: 10) {
+            if progress.total <= 12 {
+                HStack(spacing: 2) {
+                    ForEach(0..<progress.total, id: \.self) { index in
+                        RoundedRectangle(cornerRadius: 1)
+                            .fill(segmentColor(index))
+                            .frame(width: progress.total > 8 ? 9 : 13, height: 4)
+                    }
                 }
-            Text("\(progress.completed)/\(progress.total)")
-                .monospacedDigit()
-                .foregroundColor(.ink.opacity(0.55))
-            if let current = progress.currentTitle, !progress.isFinished {
-                Text("·").foregroundColor(.ink.opacity(0.25))
-                Text(current)
-                    .foregroundColor(.ink.opacity(0.55))
-                    .lineLimit(1)
-                    .truncationMode(.tail)
+            } else {
+                Capsule()
+                    .fill(Color.ink.opacity(0.12))
+                    .frame(width: 84, height: 4)
+                    .overlay(alignment: .leading) {
+                        Capsule()
+                            .fill(Color.ink.opacity(0.85))
+                            .frame(width: max(4, 84 * progress.fraction), height: 4)
+                    }
             }
+            HStack(spacing: 6) {
+                Text("\(progress.completed)/\(progress.total)")
+                    .foregroundColor(.ink.opacity(0.85))
+                if let current = progress.currentTitle, !progress.isFinished {
+                    Text(current)
+                        .foregroundColor(.ink.opacity(0.5))
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                }
+            }
+            .font(.system(size: 10.5 * textScale.factor, design: .monospaced))
         }
-        .font(.system(size: 10.5 * textScale.factor))
         .animation(.easeOut(duration: 0.25), value: progress.completed)
+    }
+
+    private func segmentColor(_ index: Int) -> Color {
+        if index < progress.completed { return .ink.opacity(0.85) }
+        if index == progress.completed && !progress.isFinished { return .ink.opacity(0.4) }
+        return .ink.opacity(0.12)
     }
 }
 
@@ -548,7 +612,7 @@ private struct ContextFillBadge: View {
     private var color: Color {
         if usage.fraction >= 0.9 { return TerminalColors.red }
         if usage.fraction >= 0.8 { return TerminalColors.amber }
-        return .ink.opacity(0.45)
+        return .ink.opacity(0.5)
     }
 
     var body: some View {
@@ -562,7 +626,6 @@ private struct ContextFillBadge: View {
             }
             .frame(width: 8 * textScale.factor, height: 8 * textScale.factor)
             Text("\(Int((usage.fraction * 100).rounded()))%")
-                .monospacedDigit()
         }
         .foregroundColor(color)
         .help(String(localized: "Context: \(Self.tokens(usage.usedTokens)) of \(Self.tokens(usage.windowTokens)) tokens"))
@@ -574,56 +637,39 @@ private struct ContextFillBadge: View {
     }
 }
 
-/// The agent's logo on a soft tile, with a small status dot in the corner.
-private struct AgentAvatar: View {
-    let agent: AgentKind
-    let phase: SessionPhase
-    let accent: AccentMode
-
-    var body: some View {
-        ZStack(alignment: .bottomTrailing) {
-            RoundedRectangle(cornerRadius: 9, style: .continuous)
-                .fill(Color.ink.opacity(0.07))
-                .frame(width: 30, height: 30)
-                .overlay(AgentIcon(agent: agent, size: 17))
-            StatusDot(phase: phase, accent: accent)
-                .offset(x: 3, y: 3)
-        }
-        .help(agent.displayName)
-    }
-}
-
-/// Working breathes, needing you pulses, finished and idle stay still.
-private struct StatusDot: View {
+/// A small square lamp: working breathes, needing you is lit, finished is
+/// green, idle is an empty outline.
+private struct StatusLamp: View {
     let phase: SessionPhase
     let accent: AccentMode
 
     private var color: Color {
         switch phase {
-        case .processing, .compacting: return Color(red: 1.0, green: 0.62, blue: 0.25)
+        case .processing, .compacting: return .ink
         case .waitingForApproval: return accent.attentionColor
         case .waitingForInput: return accent.finishedColor
-        case .idle, .ended: return .ink.opacity(0.3)
+        case .idle, .ended: return .ink.opacity(0.45)
         }
     }
 
-    private var isAnimated: Bool {
-        phase.isActive || phase.isWaitingForApproval
-    }
-
     var body: some View {
-        TimelineView(.animation(paused: !isAnimated)) { context in
-            let wave = isAnimated ? (sin(context.date.timeIntervalSinceReferenceDate * (phase.isWaitingForApproval ? 5 : 3)) + 1) / 2 : 1
-            Circle()
-                .fill(color)
-                .frame(width: 9, height: 9)
-                .opacity(isAnimated ? 0.55 + 0.45 * wave : 1)
-                .background(Circle().stroke(Color.canvas, lineWidth: 2.5))
+        let shape = RoundedRectangle(cornerRadius: 2, style: .continuous)
+        TimelineView(.animation(paused: !phase.isActive)) { context in
+            let wave = (sin(context.date.timeIntervalSinceReferenceDate * 3.4) + 1) / 2
+            Group {
+                if phase == .idle || phase == .ended {
+                    shape.strokeBorder(color, lineWidth: 1)
+                } else {
+                    shape.fill(color)
+                }
+            }
+            .frame(width: 7, height: 7)
+            .opacity(phase.isActive ? 0.3 + 0.7 * wave : 1)
         }
     }
 }
 
-/// A rounded, low-contrast button used in cards.
+/// A key you press: a low-contrast cap with a lip, the shortcut beside the label.
 struct SoftPill: View {
     let title: LocalizedStringKey
     let prominent: Bool
@@ -636,22 +682,42 @@ struct SoftPill: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 4) {
+            HStack(spacing: 7) {
                 Text(title)
                 if let hint {
                     Text(hint)
-                        .font(.system(size: 9.5 * textScale.factor, weight: .medium))
+                        .font(.system(size: 10 * textScale.factor, weight: .medium, design: .monospaced))
                         .opacity(0.55)
                 }
             }
-                .font(.system(size: 11 * textScale.factor, weight: .semibold))
-                .foregroundColor(prominent ? .canvas : .ink.opacity(0.75))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 5)
-                .background(Capsule().fill(prominent ? Color.ink.opacity(isHovered ? 1 : 0.88) : Color.ink.opacity(isHovered ? 0.16 : 0.1)))
+            .font(.system(size: 11.5 * textScale.factor, weight: .semibold))
+            .foregroundColor(prominent ? .canvas : .ink.opacity(0.85))
+            .padding(.horizontal, prominent ? 12 : 10)
+            .frame(height: 28 * textScale.factor)
+            .background(
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(prominent ? Color.ink.opacity(isHovered ? 1 : 0.92) : Color.ink.opacity(isHovered ? 0.14 : 0.08))
+                    // The lip under the cap
+                    .shadow(color: .ink.opacity(prominent ? 0.35 : 0.14), radius: 0, x: 0, y: 1.5)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .strokeBorder(Color.ink.opacity(prominent ? 0 : 0.1), lineWidth: 1)
+            )
         }
         .buttonStyle(.plain)
         .onHover { isHovered = $0 }
+    }
+}
+
+/// "4:12", "1:04:12": time in the current turn.
+enum Stopwatch {
+    static func format(_ interval: TimeInterval) -> String {
+        let seconds = max(0, Int(interval))
+        let hours = seconds / 3600, minutes = (seconds % 3600) / 60, rest = seconds % 60
+        return hours > 0
+            ? String(format: "%d:%02d:%02d", hours, minutes, rest)
+            : String(format: "%d:%02d", minutes, rest)
     }
 }
 
@@ -688,9 +754,9 @@ private struct ProjectHeader: View {
                 .font(.system(size: 10 * textScale.factor, weight: .medium, design: .rounded))
                 .foregroundColor(.ink.opacity(0.3))
         }
-        .padding(.leading, 10)
-        .padding(.top, 8)
-        .padding(.bottom, 2)
+        .padding(.leading, 8)
+        .padding(.top, 12)
+        .padding(.bottom, 6)
     }
 }
 

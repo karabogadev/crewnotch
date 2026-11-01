@@ -52,6 +52,8 @@ struct ApprovalDetailView: View {
     var showsWarnings = true
     /// The rule "Always" would save, shown in the open rather than only in a tooltip
     var alwaysRule: String? = nil
+    /// Inside the row's request plate: text sits on the plate instead of its own tile
+    var inPlate = false
 
     @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
 
@@ -93,7 +95,7 @@ struct ApprovalDetailView: View {
                     .foregroundColor(.ink.opacity(0.6))
                     .fixedSize(horizontal: false, vertical: true)
             }
-            CodeBox(text: command, monospaced: true)
+            CodeBox(text: command, monospaced: true, tile: !inPlate)
         } else if let old = string("old_string", allowEmpty: true), let new = string("new_string", allowEmpty: true) {
             SimpleDiffView(oldString: old, newString: new, filename: displayPath)
         } else if let edits = input["edits"] as? [[String: Any]], let first = edits.first {
@@ -111,9 +113,9 @@ struct ApprovalDetailView: View {
             if let path = displayPath {
                 pathLabel(path)
             }
-            CodeBox(text: Self.firstLines(of: content, count: 8), monospaced: true, footer: Self.moreLinesNote(content, shown: 8))
+            CodeBox(text: Self.firstLines(of: content, count: 8), monospaced: true, footer: Self.moreLinesNote(content, shown: 8), tile: !inPlate)
         } else if let plan = string("plan") {
-            CodeBox(text: String(plan.prefix(1200)), monospaced: false)
+            CodeBox(text: String(plan.prefix(1200)), monospaced: false, tile: !inPlate)
         } else {
             fieldList
         }
@@ -196,6 +198,8 @@ struct CodeBox: View {
     let text: String
     var monospaced = true
     var footer: String? = nil
+    /// On its own soft tile; off when the surrounding plate already is one
+    var tile = true
 
     @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
 
@@ -213,7 +217,7 @@ struct CodeBox: View {
                     content
                 }
             }
-            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.ink.opacity(0.06)))
+            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Color.ink.opacity(tile ? 0.06 : 0)))
 
             if let footer {
                 Text(footer)
@@ -225,12 +229,13 @@ struct CodeBox: View {
 
     private var content: some View {
         Text(text)
-            .font(.system(size: 10.5 * textScale.factor, design: monospaced ? .monospaced : .default))
-            .foregroundColor(.ink.opacity(0.8))
+            .font(.system(size: (tile ? 10.5 : 12) * textScale.factor, design: monospaced ? .monospaced : .default))
+            .lineSpacing(tile ? 0 : 2)
+            .foregroundColor(.ink.opacity(tile ? 0.8 : 0.92))
             .textSelection(.enabled)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 6)
+            .padding(.horizontal, tile ? 8 : 0)
+            .padding(.vertical, tile ? 6 : 0)
     }
 }
