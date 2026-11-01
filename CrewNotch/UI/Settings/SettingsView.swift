@@ -162,6 +162,8 @@ private struct AppearancePane: View {
     @AppStorage(AppearanceKeys.idleAfterMinutes) private var idleAfterMinutes = 30
     @AppStorage(AppearanceKeys.hideIdleSessions) private var hideIdleSessions = false
     @AppStorage(AppearanceKeys.rowsAtOnce) private var rowsAtOnce = 5
+    @AppStorage(AppearanceKeys.accentMode) private var accent: AccentMode = .full
+    @AppStorage(AppearanceKeys.showSubagents) private var showSubagents = true
 
     var body: some View {
         Form {
@@ -173,6 +175,9 @@ private struct AppearancePane: View {
                     ForEach(PanelMaterial.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
+                Picker("Accent colors", selection: $accent) {
+                    ForEach(AccentMode.allCases) { Text($0.title).tag($0) }
+                }
                 LabeledContent("Color") {
                     HStack(spacing: 10) {
                         ForEach(PanelTint.allCases) { option in
@@ -215,6 +220,13 @@ private struct AppearancePane: View {
 
             Section("Session list") {
                 Toggle("Group by project", isOn: $groupByProject)
+                Toggle(isOn: $showSubagents) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Show subagents")
+                        Text("Delegating sessions get a badge; click it to see what each subagent is doing.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                }
                 Picker("First line", selection: $titleOrder) {
                     ForEach(TitleOrder.allCases) { Text($0.title).tag($0) }
                 }
