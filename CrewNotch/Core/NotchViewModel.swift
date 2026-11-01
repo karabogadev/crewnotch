@@ -46,6 +46,8 @@ class NotchViewModel: ObservableObject {
     @Published var openReason: NotchOpenReason = .unknown
     @Published var contentType: NotchContentType = .instances
     @Published var isHovering: Bool = false
+    /// Measured height of the session list and usage footer
+    @Published var listContentHeight: CGFloat = 0
 
     // MARK: - Geometry
 
@@ -67,11 +69,13 @@ class NotchViewModel: ObservableObject {
                 height: 580
             )
         case .instances:
-            // Room for the chosen number of rows, plus header and usage footer
+            // Fit the content, up to the chosen number of rows (the list scrolls past that)
             let rows = min(max(AppearanceKeys.rowsAtOnceValue, 3), 10)
+            let maxHeight = CGFloat(rows) * 52 + 110
+            let fitted = deviceNotchRect.height + listContentHeight + 26
             return CGSize(
                 width: min(screenRect.width * 0.4, 480),
-                height: CGFloat(rows) * 50 + 110
+                height: listContentHeight > 0 ? min(maxHeight, max(150, fitted)) : maxHeight
             )
         case .banner:
             return CGSize(

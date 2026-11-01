@@ -26,6 +26,13 @@ struct SessionListView: View {
                 monitor: usageMonitor,
                 isAnyAgentBusy: sessionMonitor.instances.contains { $0.phase.isActive || $0.phase.isWaitingForApproval }
             )
+            .reportHeight()
+        }
+        // Size the panel to its content instead of a fixed height
+        .onPreferenceChange(ContentHeightKey.self) { height in
+            if abs(viewModel.listContentHeight - height) > 1 {
+                viewModel.listContentHeight = height
+            }
         }
     }
 
@@ -41,7 +48,9 @@ struct SessionListView: View {
                 .font(.system(size: 11 * textScale.factor))
                 .foregroundColor(.white.opacity(0.25))
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
+        .frame(height: 96)
+        .reportHeight()
     }
 
     // MARK: - Instances List
@@ -96,7 +105,7 @@ struct SessionListView: View {
 
     private var instancesList: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            LazyVStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 2) {
                 ForEach(projectGroups, id: \.project) { group in
                     if groupByProject {
                         ProjectHeader(name: group.project, count: group.sessions.count)
@@ -116,6 +125,7 @@ struct SessionListView: View {
                 }
             }
             .padding(.vertical, 4)
+            .reportHeight()
         }
         .scrollBounceBehavior(.basedOnSize)
     }
@@ -147,6 +157,7 @@ struct SessionListView: View {
 // MARK: - Instance Row
 
 struct InstanceRow: View {
+    @AppStorage("groupByProject") private var groupByProject = false
     @AppStorage(AppearanceKeys.accentMode) private var accent: AccentMode = .full
     @AppStorage(AppearanceKeys.showSubagents) private var showSubagents = true
     @State private var subagentsExpanded = false
@@ -193,6 +204,11 @@ struct InstanceRow: View {
         case .waitingForInput: return accent == .full ? TerminalColors.green : .white.opacity(0.6)
         default: return .white.opacity(0.45)
         }
+    }
+
+    /// The project goes on the meta line unless a group header or the title already shows it
+    private var showsProject: Bool {
+        !groupByProject && titleOrder == .conversation && session.displayTitle != session.projectName
     }
 
     /// Subagents the session is currently delegating to (Claude Code)
@@ -257,11 +273,6 @@ struct InstanceRow: View {
                         .foregroundColor(.white)
                         .lineLimit(1)
 
-                    if session.usage.totalTokens > 0 {
-                        Text(session.usage.formattedTotal)
-                            .font(.system(size: 10 * textScale.factor, weight: .medium, design: .monospaced))
-                            .foregroundColor(.white.opacity(0.3))
-                    }
                 }
 
                 HStack(spacing: 5) {
@@ -269,6 +280,11 @@ struct InstanceRow: View {
                         .help(session.agent.displayName)
                     Text(statusWord)
                         .foregroundColor(statusColor)
+                    if showsProject {
+                        Text("·").foregroundColor(.white.opacity(0.25))
+                        Text(session.projectName)
+                            .foregroundColor(.white.opacity(0.55))
+                    }
                     if let branch = GitBranch.name(for: session.cwd) {
                         Text("·").foregroundColor(.white.opacity(0.25))
                         Image(systemName: "arrow.triangle.branch")
@@ -565,5 +581,19 @@ private struct SubagentList: View {
                 .font(.system(size: 10.5 * textScale.factor))
             }
         }
+    }
+}
+
+// MARK: - Content height
+
+/// Sums the heights of the list's parts so the panel can fit its content.
+struct ContentHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value += nextValue() }
+}
+
+private extension View {
+    func reportHeight() -> some View {
+        background(GeometryReader { Color.clear.preference(key: ContentHeightKey.self, value: $0.size.height) })
     }
 }
