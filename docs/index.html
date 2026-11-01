@@ -394,13 +394,13 @@ footer .legal { flex-basis: 100%; font-size: 12.5px; }
     <h1>Your whole AI crew, in the notch<span class="dots" aria-hidden="true"><i style="background:var(--orange)"></i><i style="background:var(--green)"></i><i style="background:var(--blue)"></i></span></h1>
     <p class="lead">Know which agent is working, which one is done and which one needs you, without leaving what you're doing.</p>
     <div class="ctas">
-      <a class="btn primary" href="#install">
+      <a class="btn primary" href="https://github.com/karabogadev/crewnotch/releases/latest/download/CrewNotch.dmg">
         <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.37 12.6c-.02-2.3 1.88-3.4 1.96-3.46-1.07-1.56-2.73-1.77-3.32-1.8-1.41-.14-2.76.83-3.47.83-.72 0-1.82-.81-2.99-.79-1.54.02-2.96.9-3.75 2.27-1.6 2.78-.41 6.9 1.15 9.15.76 1.1 1.67 2.34 2.86 2.3 1.15-.05 1.58-.74 2.97-.74 1.38 0 1.78.74 2.99.72 1.24-.02 2.02-1.12 2.77-2.23.87-1.28 1.23-2.52 1.25-2.58-.03-.01-2.4-.92-2.42-3.67zM14.1 5.86c.63-.77 1.06-1.83.94-2.89-.91.04-2.02.61-2.67 1.37-.58.67-1.1 1.76-.96 2.8 1.02.08 2.06-.52 2.69-1.28z"/></svg>
-        Get CrewNotch
+        Download for Mac
       </a>
       <a class="btn ghost" href="https://github.com/karabogadev/crewnotch">View source</a>
     </div>
-    <p class="fine">Free and open source · macOS 15.6+ · Apple silicon and Intel</p>
+    <p class="fine">Version 1.0.0 · Free and open source · macOS 15.6+ · Apple silicon and Intel · <a href="#install" style="text-decoration:underline">First launch help</a></p>
   </div>
   <div class="device" aria-hidden="true">
     <div class="menubar">
@@ -582,11 +582,25 @@ footer .legal { flex-basis: 100%; font-size: 12.5px; }
 <section class="alt" id="install">
   <div class="wrap">
     <h2>Get CrewNotch.</h2>
-    <p class="sub">Signed downloads are on the way. Until then, it builds in about a minute with Xcode.</p>
+    <p class="sub">Download the app, drag it to Applications and open it. It takes a minute.</p>
     <div class="install">
       <div class="box">
+        <h3>Download</h3>
+        <p>Version 1.0.0 for macOS 15.6 or later, universal for Apple silicon and Intel.</p>
+        <div class="ctas" style="justify-content:flex-start">
+          <a class="btn primary" href="https://github.com/karabogadev/crewnotch/releases/latest/download/CrewNotch.dmg">Download CrewNotch.dmg</a>
+          <a class="btn ghost" href="https://github.com/karabogadev/crewnotch/releases">All releases</a>
+        </div>
+        <h3 style="margin-top:28px">First launch</h3>
+        <p>This build isn't notarized by Apple yet, so macOS blocks the first launch. Open <strong>System Settings → Privacy &amp; Security</strong> and click <strong>Open Anyway</strong> next to CrewNotch, or run this once:</p>
+        <div class="code">
+          <button class="copy" data-copy="xattr -dr com.apple.quarantine /Applications/CrewNotch.app">Copy</button>
+<pre>xattr -dr com.apple.quarantine /Applications/CrewNotch.app</pre>
+        </div>
+      </div>
+      <div class="box">
         <h3>Build from source</h3>
-        <p>Clone the repo and build with Xcode 26 or later.</p>
+        <p>Prefer to build it yourself? Clone the repo and build with Xcode 26 or later.</p>
         <div class="code">
           <button class="copy" data-copy="git clone https://github.com/karabogadev/crewnotch.git&#10;cd crewnotch&#10;xcodebuild -scheme CrewNotch -configuration Release build">Copy</button>
 <pre>git clone https://github.com/karabogadev/crewnotch.git
@@ -594,14 +608,6 @@ cd crewnotch
 xcodebuild -scheme CrewNotch -configuration Release build</pre>
         </div>
         <div class="reqs"><span>macOS 15.6+</span><span>MacBook with a notch, or any display</span><span>Xcode 26+</span></div>
-      </div>
-      <div class="box">
-        <h3>Download</h3>
-        <p>Releases will appear on GitHub as a signed, notarized <code>.dmg</code>. Watch the repo to hear when the first one lands.</p>
-        <div class="ctas" style="justify-content:flex-start">
-          <a class="btn primary" href="https://github.com/karabogadev/crewnotch/releases">Releases</a>
-          <a class="btn ghost" href="https://github.com/karabogadev/crewnotch/subscription">Watch on GitHub</a>
-        </div>
       </div>
     </div>
   </div>
@@ -611,6 +617,10 @@ xcodebuild -scheme CrewNotch -configuration Release build</pre>
   <div class="wrap">
     <h2 class="center" style="margin-bottom:36px">Questions</h2>
     <div class="faq">
+      <details>
+        <summary>macOS says CrewNotch can't be opened.</summary>
+        <p>This version isn't notarized by Apple yet. Open System Settings → Privacy &amp; Security and click Open Anyway next to CrewNotch, or run <code>xattr -dr com.apple.quarantine /Applications/CrewNotch.app</code> once.</p>
+      </details>
       <details>
         <summary>Does it work without a notch?</summary>
         <p>Yes. On Macs and displays without a notch, CrewNotch draws the same island at the top center of the screen. You can pick which display shows it in Settings → General.</p>
