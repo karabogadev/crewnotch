@@ -150,12 +150,87 @@ private struct GeneralPane: View {
 // MARK: - Appearance
 
 private struct AppearancePane: View {
+    @AppStorage(AppearanceKeys.textScale) private var textScale: TextScale = .standard
     @AppStorage("groupByProject") private var groupByProject = true
+    @AppStorage(AppearanceKeys.titleOrder) private var titleOrder: TitleOrder = .conversation
+    @AppStorage(AppearanceKeys.material) private var material: PanelMaterial = .solid
+    @AppStorage(AppearanceKeys.tint) private var tint: PanelTint = .black
+    @AppStorage(AppearanceKeys.closedShowsWorking) private var closedShowsWorking = true
+    @AppStorage(AppearanceKeys.closedShowsNotifications) private var closedShowsNotifications = true
+    @AppStorage(AppearanceKeys.closedShowsUsage) private var closedShowsUsage = false
+    @AppStorage(AppearanceKeys.idleNotch) private var idleNotch: IdleNotchBehavior = .hide
+    @AppStorage(AppearanceKeys.idleAfterMinutes) private var idleAfterMinutes = 30
+    @AppStorage(AppearanceKeys.hideIdleSessions) private var hideIdleSessions = false
+    @AppStorage(AppearanceKeys.rowsAtOnce) private var rowsAtOnce = 5
 
     var body: some View {
         Form {
+            Section {
+                Picker("Text size", selection: $textScale) {
+                    ForEach(TextScale.allCases) { Text($0.title).tag($0) }
+                }
+                Picker("Material", selection: $material) {
+                    ForEach(PanelMaterial.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                LabeledContent("Color") {
+                    HStack(spacing: 10) {
+                        ForEach(PanelTint.allCases) { option in
+                            Button {
+                                tint = option
+                            } label: {
+                                Circle()
+                                    .fill(option.color)
+                                    .frame(width: 24, height: 24)
+                                    .overlay(Circle().stroke(Color.white.opacity(0.25), lineWidth: 1))
+                                    .overlay(
+                                        Image(systemName: "checkmark")
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundColor(.white)
+                                            .opacity(tint == option ? 1 : 0)
+                                    )
+                                    .padding(2)
+                                    .overlay(Circle().stroke(tint == option ? Color.white : .clear, lineWidth: 1.5))
+                            }
+                            .buttonStyle(.plain)
+                            .help(option.title)
+                        }
+                    }
+                }
+            } header: {
+                Text("Panel")
+            } footer: {
+                Text("The closed notch always stays black so it blends with the camera housing.")
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("While closed") {
+                Toggle("Working agents", isOn: $closedShowsWorking)
+                Toggle("Notifications (finished, needs you)", isOn: $closedShowsNotifications)
+                Toggle("Plan usage", isOn: $closedShowsUsage)
+                Picker("When idle", selection: $idleNotch) {
+                    ForEach(IdleNotchBehavior.allCases) { Text($0.title).tag($0) }
+                }
+            }
+
             Section("Session list") {
                 Toggle("Group by project", isOn: $groupByProject)
+                Picker("First line", selection: $titleOrder) {
+                    ForEach(TitleOrder.allCases) { Text($0.title).tag($0) }
+                }
+                Stepper("Rows at once: \(rowsAtOnce)", value: $rowsAtOnce, in: 3...10)
+                Picker("Mark a session idle after", selection: $idleAfterMinutes) {
+                    Text("15 minutes").tag(15)
+                    Text("30 minutes").tag(30)
+                    Text("1 hour").tag(60)
+                    Text("4 hours").tag(240)
+                    Text("Never").tag(0)
+                }
+                Picker("Idle sessions", selection: $hideIdleSessions) {
+                    Text("Dim").tag(false)
+                    Text("Hide").tag(true)
+                }
+                .pickerStyle(.segmented)
             }
 
             WorkingIndicatorSection()
