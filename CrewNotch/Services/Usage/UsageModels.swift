@@ -24,7 +24,15 @@ nonisolated struct UsageLimit: Identifiable, Equatable, Sendable {
         case "Session": return String(localized: "Session")
         case "Weekly": return String(localized: "Weekly")
         case "Extra usage": return String(localized: "Extra usage")
-        default: return label  // model names like Sonnet or Fable
+        case "Monthly": return String(localized: "Monthly")
+        case "Total usage": return String(localized: "Total usage")
+        case "Auto usage": return String(localized: "Auto usage")
+        case "API usage": return String(localized: "API usage")
+        case "Premium requests": return String(localized: "Premium requests")
+        case "Chat": return String(localized: "Chat")
+        case "Completions": return String(localized: "Completions")
+        case "Credits": return String(localized: "Credits")
+        default: return label  // model names like Sonnet, Fable or Gemini Pro
         }
     }
 }

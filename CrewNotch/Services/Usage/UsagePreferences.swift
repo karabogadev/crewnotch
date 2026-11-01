@@ -9,12 +9,11 @@
 import Foundation
 
 nonisolated enum UsagePreferences {
-    /// Providers that have a usage source today
-    static let providers: [AgentKind] = [.claude, .codex]
+    /// Providers that have a usage source
+    static var providers: [AgentKind] { UsageSources.all.map(\.agent) }
 
     private static let defaults = UserDefaults.standard
     static let orderKey = "usageProviderOrder"
-    static let hiddenProvidersKey = "hiddenUsageProviders"
     static let hiddenMetricsKey = "hiddenUsageMetrics"
 
     // MARK: Order
@@ -29,14 +28,6 @@ nonisolated enum UsagePreferences {
 
     // MARK: Visibility
 
-    static func isProviderShown(_ agent: AgentKind) -> Bool {
-        !set(for: hiddenProvidersKey).contains(agent.rawValue)
-    }
-
-    static func setProvider(_ agent: AgentKind, shown: Bool) {
-        update(hiddenProvidersKey, agent.rawValue, hidden: !shown)
-    }
-
     static func isMetricShown(_ metric: String, of agent: AgentKind) -> Bool {
         !set(for: hiddenMetricsKey).contains("\(agent.rawValue).\(metric)")
     }
@@ -45,9 +36,9 @@ nonisolated enum UsagePreferences {
         update(hiddenMetricsKey, "\(agent.rawValue).\(metric)", hidden: !shown)
     }
 
-    /// Restores every provider and metric and the default order.
+    /// Restores every metric and the default order.
     static func reset() {
-        [orderKey, hiddenProvidersKey, hiddenMetricsKey].forEach(defaults.removeObject(forKey:))
+        [orderKey, hiddenMetricsKey].forEach(defaults.removeObject(forKey:))
     }
 
     // MARK: Metrics
@@ -58,16 +49,22 @@ nonisolated enum UsagePreferences {
         switch agent {
         case .claude: known = ["Session", "Weekly", "Sonnet", "Extra usage"]
         case .codex: known = ["Session", "Weekly"]
+        case .antigravity: known = []  // one metric per model the account offers
+        case .cursor: known = ["Total usage", "Auto usage", "API usage"]
+        case .copilot: known = ["Premium requests", "Chat", "Completions"]
+        case .grok: known = ["Weekly"]
+        case .opencode: known = ["Session", "Weekly", "Monthly"]
+        case .kiro: known = ["Credits"]
         default: known = []
         }
         let extra = (live?.limits.map(\.label) ?? []).filter { !known.contains($0) }
         return known + extra
     }
 
-    /// Visible providers in the user's order, each with only its visible metrics.
+    /// Turned-on providers in the user's order, each with only its visible metrics.
     static func apply(to providers: [ProviderUsage]) -> [ProviderUsage] {
         order.compactMap { agent in
-            guard isProviderShown(agent), var usage = providers.first(where: { $0.agent == agent }) else { return nil }
+            guard var usage = providers.first(where: { $0.agent == agent }) else { return nil }
             usage.limits = usage.limits.filter { isMetricShown($0.label, of: agent) }
             return usage
         }
