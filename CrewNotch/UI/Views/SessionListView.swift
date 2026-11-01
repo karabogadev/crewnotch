@@ -12,11 +12,16 @@ struct SessionListView: View {
     @ObservedObject var sessionMonitor: SessionMonitor
     @ObservedObject var viewModel: NotchViewModel
 
+    @ObservedObject private var usageMonitor = UsageMonitor.shared
+
     var body: some View {
-        if sessionMonitor.instances.isEmpty {
-            emptyState
-        } else {
-            instancesList
+        VStack(spacing: 0) {
+            if sessionMonitor.instances.isEmpty {
+                emptyState
+            } else {
+                instancesList
+            }
+            UsageFooter(monitor: usageMonitor)
         }
     }
 
