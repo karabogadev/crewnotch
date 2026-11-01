@@ -42,6 +42,24 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         if !AppSettings.hasCompletedOnboarding {
             AppWindows.showOnboarding()
         }
+
+        GlobalHotkey.shared.onPress = { [weak self] in self?.toggleNotchFromKeyboard() }
+        GlobalHotkey.shared.registerSaved()
+    }
+
+    /// The global shortcut opens the notch with focus, focuses a panel that
+    /// popped open by itself, or closes it.
+    func toggleNotchFromKeyboard() {
+        guard let controller = windowController else { return }
+        let viewModel = controller.viewModel
+        switch viewModel.status {
+        case .opened where !controller.hasFocus:
+            controller.takeFocus()
+        case .opened:
+            viewModel.notchClose()
+        case .closed, .popping:
+            viewModel.notchOpen(reason: .keyboard)
+        }
     }
 
     private func handleScreenChange() {

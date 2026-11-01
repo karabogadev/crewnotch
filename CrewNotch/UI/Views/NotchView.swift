@@ -489,7 +489,7 @@ struct NotchView: View {
         case .opened, .popping:
             isVisible = true
             // Clear waiting-for-input timestamps only when manually opened (user acknowledged)
-            if viewModel.openReason == .click || viewModel.openReason == .hover {
+            if viewModel.openReason == .click || viewModel.openReason == .hover || viewModel.openReason == .keyboard {
                 waitingForInputTimestamps.removeAll()
             }
         case .closed:

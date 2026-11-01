@@ -18,6 +18,8 @@ enum NotchStatus: Equatable {
 enum NotchOpenReason {
     case click
     case hover
+    /// The global shortcut
+    case keyboard
     case notification
     case boot
     case unknown
