@@ -379,6 +379,11 @@ struct NotchView: View {
                     sessionMonitor: sessionMonitor,
                     viewModel: viewModel
                 )
+            case .banner(let session):
+                FinishedBanner(session: session) {
+                    viewModel.notchClose()
+                    Task { await SessionFocuser.focus(session) }
+                }
             case .chat(let session):
                 ChatView(
                     sessionId: session.sessionId,
@@ -452,9 +457,8 @@ struct NotchView: View {
 
         if !newPendingIds.isEmpty {
             effects.play(.needsYou)
-            if let soundName = AppSettings.attentionSound.soundName {
-                NSSound(named: soundName)?.play()
-            }
+            let isQuestion = sessions.contains { newPendingIds.contains($0.stableId) && $0.pendingToolName == "AskUserQuestion" }
+            AppSettings.play(isQuestion ? AppSettings.questionSound : AppSettings.attentionSound)
             if AppSettings.openNotchOnRequest &&
                viewModel.status == .closed &&
                !TerminalVisibilityDetector.isTerminalVisibleOnCurrentSpace() {
@@ -488,16 +492,12 @@ struct NotchView: View {
             // Get the sessions that just entered waitingForInput
             let newlyWaitingSessions = waitingForInputSessions.filter { newWaitingIds.contains($0.stableId) }
 
-            // Play notification sound if the session is not actively focused
-            if let soundName = AppSettings.notificationSound.soundName {
-                // Check if we should play sound (async check for tmux pane focus)
-                Task {
-                    let shouldPlaySound = await shouldPlayNotificationSound(for: newlyWaitingSessions)
-                    if shouldPlaySound {
-                        await MainActor.run {
-                            NSSound(named: soundName)?.play()
-                        }
-                    }
+            // Sound and banner only for sessions the user isn't already looking at
+            Task {
+                guard await shouldPlayNotificationSound(for: newlyWaitingSessions) else { return }
+                AppSettings.play(AppSettings.notificationSound)
+                if AppSettings.showFinishedBanner, let session = newlyWaitingSessions.first {
+                    viewModel.showBanner(for: session)
                 }
             }
 
