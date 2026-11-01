@@ -5,8 +5,21 @@
 // Installed and removed by CrewNotch (Settings -> Agents).
 
 import { createConnection } from "node:net"
+import { lstatSync } from "node:fs"
+import { homedir } from "node:os"
+import { join } from "node:path"
 
-const SOCKET_PATH = "/tmp/crewnotch.sock"
+const SOCKET_PATH = join(homedir(), ".crewnotch", "crewnotch.sock")
+
+// Only talk to a socket owned by this user, so nobody else can pose as CrewNotch.
+const socketIsTrusted = () => {
+  try {
+    const info = lstatSync(SOCKET_PATH)
+    return info.isSocket() && info.uid === process.getuid()
+  } catch {
+    return false
+  }
+}
 
 export const CrewNotch = async ({ directory, worktree }) => {
   const cwd = worktree || directory || process.cwd()
@@ -24,6 +37,7 @@ export const CrewNotch = async ({ directory, worktree }) => {
       can_respond: false,
       ...fields,
     }
+    if (!socketIsTrusted()) return
     try {
       const socket = createConnection(SOCKET_PATH)
       socket.on("error", () => {})
