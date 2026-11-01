@@ -75,7 +75,9 @@ if [ -f "$PROJECT_DIR/releases/notes-$VERSION.md" ]; then
 fi
 
 echo "--- Publishing GitHub release"
-gh release create "v$VERSION" "$DMG_PATH" --repo "$GITHUB_REPO" \
+# A version-less copy keeps releases/latest/download/CrewNotch.dmg stable
+cp "$DMG_PATH" "$BUILD_DIR/CrewNotch.dmg"
+gh release create "v$VERSION" "$DMG_PATH" "$BUILD_DIR/CrewNotch.dmg" --repo "$GITHUB_REPO" \
     --title "CrewNotch v$VERSION" "${NOTES_ARGS[@]}"
 
 echo "Done: https://github.com/$GITHUB_REPO/releases/tag/v$VERSION"
