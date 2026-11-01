@@ -10,6 +10,122 @@
     " ": {
       "shouldTranslate": false
     },
+    " · at this pace it runs out in %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · 按当前速度将在 %@ 后用完"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · このペースだと %@ で上限に達します"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · इस रफ़्तार से %@ में खत्म हो जाएगा"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · a este ritmo se agota en %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · à ce rythme, épuisé dans %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · nesse ritmo acaba em %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · bu hızla %@ sonra biter"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · в таком темпе кончится через %@"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · بهذا المعدل ينفد خلال %@"
+          }
+        }
+      }
+    },
+    " · at this pace ~%lld%% by the reset": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · 按当前速度重置时约 %lld%%"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · このペースだとリセット時に約 %lld%%"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · इस रफ़्तार से रीसेट तक ~%lld%%"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · a este ritmo, ~%lld%% al reiniciarse"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · à ce rythme, ~%lld%% à la réinitialisation"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · nesse ritmo, ~%lld%% até reiniciar"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · bu hızla sıfırlanırken ~%%%lld"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · в таком темпе ~%lld%% к сбросу"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": " · بهذا المعدل ~%lld%% عند إعادة التعيين"
+          }
+        }
+      }
+    },
     "%@": {
       "shouldTranslate": false
     },
@@ -19783,6 +19899,64 @@
         }
       }
     },
+    "Scanner": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "扫描条"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "スキャナー"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "स्कैनर"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escáner"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanner"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scanner"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tarayıcı"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Сканер"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ماسح"
+          }
+        }
+      }
+    },
     "Screen shares, recordings and screenshots won't show the notch, so prompts and project names stay private. You still see it.": {
       "localizations": {
         "ar": {
@@ -22921,6 +23095,64 @@
         }
       }
     },
+    "Time in this turn": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本轮用时"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このターンの経過時間"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस टर्न में लगा समय"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiempo en este turno"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Durée de ce tour"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tempo neste turno"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu turda geçen süre"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Время этого хода"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الوقت في هذه الجولة"
+          }
+        }
+      }
+    },
     "Today": {
       "localizations": {
         "ar": {
@@ -25487,6 +25719,64 @@
         }
       }
     },
+    "^[%lld agent](inflect: true)": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 个智能体"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld 個のエージェント"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld एजेंट"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "^[%lld agente](inflect: true)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "^[%lld agent](inflect: true)"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "^[%lld agente](inflect: true)"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%lld ajan"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Агенты: %lld"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "الوكلاء: %lld"
+          }
+        }
+      }
+    },
     "^[%lld metric](inflect: true)": {
       "localizations": {
         "ar": {
@@ -26070,6 +26360,64 @@
         }
       }
     },
+    "out in %@": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ 后用完"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "あと %@ で上限"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ में खत्म"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "se agota en %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "épuisé dans %@"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "acaba em %@"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "%@ sonra biter"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "кончится через %@"
+          }
+        },
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ينفد خلال %@"
+          }
+        }
+      }
+    },
     "stderr:": {
       "localizations": {
         "ar": {
@@ -26185,9 +26533,6 @@
           }
         }
       }
-    },
-    "·": {
-      "shouldTranslate": false
     },
     "· %@": {
       "shouldTranslate": false
