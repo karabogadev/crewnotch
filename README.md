@@ -76,7 +76,13 @@ flowchart LR
 
 ## Install
 
-**Download:** grab the latest `.dmg` from [Releases](https://github.com/karabogadev/crewnotch/releases/latest) and drag CrewNotch to Applications.
+**Download:** get [CrewNotch.dmg](https://github.com/karabogadev/crewnotch/releases/latest/download/CrewNotch.dmg) (version 1.0.0, universal), open it and drag CrewNotch to Applications. Every version is on the [Releases](https://github.com/karabogadev/crewnotch/releases) page.
+
+**First launch:** this build isn't notarized by Apple yet, so macOS blocks it the first time. Open **System Settings → Privacy & Security** and click **Open Anyway** next to CrewNotch, or run once:
+
+```bash
+xattr -dr com.apple.quarantine /Applications/CrewNotch.app
+```
 
 **Build from source** (macOS 15.6+, Xcode 26 or later):
 
@@ -154,6 +160,7 @@ Open **Settings → Agents** and press **Disconnect** for each agent; this remov
 ## Roadmap
 
 - Light panel themes
+- Notarized builds signed with a Developer ID
 - An agent detail page with diagnostics
 - A Homebrew cask
 
