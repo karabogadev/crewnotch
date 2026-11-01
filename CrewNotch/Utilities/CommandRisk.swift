@@ -14,7 +14,9 @@ nonisolated enum CommandRisk {
     static func warnings(toolName: String, input: [String: Any], cwd: String?) -> [String] {
         let command = shellCommand(from: input)
         let path = editedPath(toolName: toolName, input: input)
-        let key = "\(toolName)\u{1}\(cwd ?? "")\u{1}\(command ?? "")\u{1}\(path ?? "")" as NSString
+        // Length-prefixed parts: no two different requests can share a key
+        let key = [toolName, cwd ?? "", command ?? "", path ?? ""]
+            .map { "\($0.utf8.count):\($0)" }.joined() as NSString
         if let cached = cache.object(forKey: key) as? [String] { return cached }
 
         var found: [String] = []
@@ -107,17 +109,25 @@ nonisolated enum CommandRisk {
     /// Sensitive locations a command writes to, deletes or prints.
     private static func sensitivePathsTouched(by command: String) -> [String] {
         var names: [String] = []
-        let range = NSRange(command.startIndex..., in: command)
-        for (regex, name) in sensitiveCommandRegexes where regex.firstMatch(in: command, range: range) != nil {
-            names.append(name)
+        // Each simple command on its own: a verb and a sensitive target in the
+        // same segment, however far apart (line continuations count as spaces)
+        let joined = command.replacingOccurrences(of: "\\\n", with: " ")
+        let segments = joined.components(separatedBy: CharacterSet(charactersIn: ";&|\n"))
+        for segment in segments {
+            let range = NSRange(segment.startIndex..., in: segment)
+            guard sensitiveVerb.firstMatch(in: segment, range: range) != nil else { continue }
+            for (regex, name) in sensitiveTargetRegexes where !names.contains(name) && regex.firstMatch(in: segment, range: range) != nil {
+                names.append(name)
+            }
         }
         if names.contains("~/.ssh") { names.removeAll { $0 == "SSH keys" } }
         return names
     }
 
-    private static let sensitiveCommandRegexes: [(NSRegularExpression, String)] = sensitiveCommandTargets.compactMap { pattern, name in
-        let full = #"(?:rm|mv|cp|cat|tee|chmod|chown|truncate|>|>>)[^;&|\n]{0,400}"# + pattern
-        return (try? NSRegularExpression(pattern: full)).map { ($0, name) }
+    private static let sensitiveVerb = try! NSRegularExpression(pattern: #"\b(?:rm|mv|cp|cat|tee|chmod|chown|truncate|less|head|tail)\b|>"#)
+
+    private static let sensitiveTargetRegexes: [(NSRegularExpression, String)] = sensitiveCommandTargets.compactMap { pattern, name in
+        (try? NSRegularExpression(pattern: pattern)).map { ($0, name) }
     }
 
     private static let sensitiveCommandTargets: [(String, String)] = [
