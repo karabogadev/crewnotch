@@ -53,6 +53,8 @@ class NotchViewModel: ObservableObject {
     @Published var isHovering: Bool = false
     /// Measured height of the session list and usage footer
     @Published var listContentHeight: CGFloat = 0
+    /// A request is waiting: its card (command, diff, question) gets room beyond the row limit
+    @Published var showsRequest = false
 
     // MARK: - Geometry
 
@@ -76,7 +78,7 @@ class NotchViewModel: ObservableObject {
         case .instances:
             // Fit the content, up to the chosen number of rows (the list scrolls past that)
             let rows = min(max(AppearanceKeys.rowsAtOnceValue, 3), 10)
-            let maxHeight = CGFloat(rows) * 52 + 110
+            let maxHeight = CGFloat(rows) * 52 + 110 + (showsRequest ? 260 : 0)
             let fitted = deviceNotchRect.height + listContentHeight + 26
             return CGSize(
                 width: min(screenRect.width * 0.4, 480),

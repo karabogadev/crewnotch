@@ -19,6 +19,8 @@ struct SessionListView: View {
 
     private var showsRecents: Bool { showRecentSessions && !recents.items.isEmpty }
 
+    private var hasRequest: Bool { sessionMonitor.instances.contains { $0.phase.isWaitingForApproval } }
+
     var body: some View {
         VStack(spacing: 0) {
             if sessionMonitor.instances.isEmpty {
@@ -36,6 +38,9 @@ struct SessionListView: View {
                 isAnyAgentBusy: sessionMonitor.instances.contains { $0.phase.isActive || $0.phase.isWaitingForApproval }
             )
             .reportHeight()
+        }
+        .onChange(of: hasRequest, initial: true) { _, value in
+            if viewModel.showsRequest != value { viewModel.showsRequest = value }
         }
         // Size the panel to its content instead of a fixed height
         .onPreferenceChange(ContentHeightKey.self) { height in
