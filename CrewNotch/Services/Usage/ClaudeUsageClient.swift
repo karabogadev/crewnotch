@@ -125,7 +125,11 @@ nonisolated enum ClaudeUsageClient {
     /// Reads Claude Code's sign-in from the keychain in-process; macOS asks the
     /// user once to let CrewNotch (and only CrewNotch) read it.
     private static func readCredentials() throws -> Credentials {
-        guard var raw = LocalData.keychainPassword("Claude Code-credentials")?
+        // Claude Code files its sign-in under the user's name. Running it with
+        // sudo once leaves a second item for "root" that is never refreshed, and
+        // a lookup by service alone may return that stale one.
+        let service = "Claude Code-credentials"
+        guard var raw = (LocalData.keychainPassword(service, account: NSUserName()) ?? LocalData.keychainPassword(service))?
             .trimmingCharacters(in: .whitespacesAndNewlines) else { throw Failure.notSignedIn }
         if !raw.hasPrefix("{"), let decoded = hexDecoded(raw) { raw = decoded }
 

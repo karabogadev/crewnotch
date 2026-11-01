@@ -354,11 +354,14 @@ nonisolated enum LocalData {
     /// Reads a keychain item in-process, so macOS asks on behalf of CrewNotch
     /// and an "Always Allow" applies to CrewNotch only, not to a shared tool
     /// like /usr/bin/security that any program could run.
-    static func keychainPassword(_ service: String) -> String? {
-        let query: [CFString: Any] = [
+    /// `account` picks one item when several share a service (e.g. a stale
+    /// copy left by running the agent with sudo).
+    static func keychainPassword(_ service: String, account: String? = nil) -> String? {
+        var query: [CFString: Any] = [
             kSecClass: kSecClassGenericPassword, kSecAttrService: service,
             kSecReturnData: true, kSecMatchLimit: kSecMatchLimitOne,
         ]
+        if let account { query[kSecAttrAccount] = account }
         var result: CFTypeRef?
         guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
               let data = result as? Data, let text = String(data: data, encoding: .utf8), !text.isEmpty else { return nil }
