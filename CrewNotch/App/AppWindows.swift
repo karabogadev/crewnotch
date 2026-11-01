@@ -34,6 +34,15 @@ enum AppWindows {
         }
     }
 
+    /// Brings back a CrewNotch window that is already open; false when none is.
+    @discardableResult
+    static func showOpenWindow() -> Bool {
+        guard let window = [settings, onboarding, tokenHistory].compactMap({ $0 }).first(where: \.isVisible) else { return false }
+        NSApp.activate(ignoringOtherApps: true)
+        window.makeKeyAndOrderFront(nil)
+        return true
+    }
+
     static func closeOnboarding() {
         onboarding?.close()
         onboarding = nil

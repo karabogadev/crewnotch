@@ -16,5 +16,18 @@ struct CrewNotchApp: App {
         Settings {
             EmptyView()
         }
+        .commands {
+            // The menu bar shows while CrewNotch is in the Dock and in front;
+            // its items open CrewNotch's own windows, not the empty scene above
+            CommandGroup(after: .appInfo) {
+                Button("Check for Updates…") { UpdateController.shared.checkForUpdates() }
+            }
+            CommandGroup(replacing: .appSettings) {
+                Button("Settings…") { AppWindows.showSettings() }
+                    .keyboardShortcut(",")
+                Button("Token history") { AppWindows.showTokenHistory() }
+            }
+            CommandGroup(replacing: .newItem) {}
+        }
     }
 }

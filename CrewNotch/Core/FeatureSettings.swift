@@ -22,6 +22,9 @@ nonisolated enum FeatureKeys {
     static let panelShortcuts = "panelShortcuts"
     static let shortcutsExpanded = "shortcutsExpanded"
 
+    // App
+    static let showInDock = "showInDock"
+
     // Privacy
     static let hideFromScreenSharing = "hideFromScreenSharing"
 
@@ -132,6 +135,7 @@ extension AppSettings {
     // MARK: Keyboard
 
     static var panelShortcuts: Bool { bool(FeatureKeys.panelShortcuts, default: true) }
+    static var showInDock: Bool { bool(FeatureKeys.showInDock, default: true) }
 
     // MARK: Privacy
 

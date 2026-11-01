@@ -91,6 +91,7 @@ private struct GeneralPane: View {
     @AppStorage("keepAwakeRequiresAdapter") private var requiresAdapter = true
     @AppStorage(FeatureKeys.panelShortcuts) private var panelShortcuts = true
     @AppStorage(FeatureKeys.hideFromScreenSharing) private var hideFromSharing = false
+    @AppStorage(FeatureKeys.showInDock) private var showInDock = true
 
     private var keepAwakeStatus: String {
         switch keepAwake.state {
@@ -222,7 +223,12 @@ private struct GeneralPane: View {
             CommandLineSection()
 
             Section {
+                Toggle("Show in Dock", isOn: $showInDock)
+                    .onChange(of: showInDock) { DockPresence.apply() }
                 Button("Quit CrewNotch", role: .destructive) { NSApp.terminate(nil) }
+            } footer: {
+                Text("In the Dock, CrewNotch has a menu with Settings and Quit. Hidden, it lives only in the notch: open Settings from the gear there.")
+                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)

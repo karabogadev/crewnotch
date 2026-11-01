@@ -34,7 +34,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         RecentSessions.shared.start()
         UpdateController.shared.start()
         DeepSeekMonitor.start()
-        NSApplication.shared.setActivationPolicy(.accessory)
+        DockPresence.apply()
 
         windowManager = WindowManager()
         _ = windowManager?.setupNotchWindow()
@@ -72,6 +72,28 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             viewModel.notchOpen(reason: .keyboard)
         }
     }
+
+    // MARK: - Dock
+
+    /// Clicking the Dock icon brings back an open window, or opens Settings.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        // The notch panel always counts as visible, so `flag` can't tell
+        if !AppWindows.showOpenWindow() { AppWindows.showSettings() }
+        return false
+    }
+
+    func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
+        let menu = NSMenu()
+        menu.addItem(withTitle: String(localized: "Settings…"), action: #selector(openSettings), keyEquivalent: "")
+        menu.addItem(withTitle: String(localized: "Token history"), action: #selector(openTokenHistory), keyEquivalent: "")
+        menu.addItem(withTitle: String(localized: "Check for Updates…"), action: #selector(checkForUpdates), keyEquivalent: "")
+        menu.items.forEach { $0.target = self }
+        return menu
+    }
+
+    @objc private func openSettings() { AppWindows.showSettings() }
+    @objc private func openTokenHistory() { AppWindows.showTokenHistory() }
+    @objc private func checkForUpdates() { UpdateController.shared.checkForUpdates() }
 
     private func handleScreenChange() {
         _ = windowManager?.setupNotchWindow()
