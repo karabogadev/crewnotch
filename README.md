@@ -29,6 +29,8 @@ xcodebuild -scheme CrewNotch -configuration Release build
 
 CrewNotch started as a fork of [Vibe Notch](https://github.com/farouqaldori/vibe-notch) (formerly Claude Island) by Farouq Aldori and builds on its notch UI and Claude Code integration. Thank you!
 
+Agent logos come from [LobeHub Icons](https://github.com/lobehub/lobe-icons) (MIT). Each logo is a trademark of its owner and is shown only to identify the integration. Usage endpoints follow the documentation in [OpenUsage](https://github.com/robinebers/openusage) (MIT).
+
 ## License
 
 Apache License 2.0. See [LICENSE.md](LICENSE.md). Portions © Farouq Aldori.
