@@ -65,7 +65,8 @@ enum TerminalLauncher {
         let shell = Foundation.ProcessInfo.processInfo.environment["SHELL"] ?? "/bin/zsh"
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
-        process.arguments = ["-na", "Ghostty", "--args", "-e", shell, "-lc", "\(command); exec \(HookScript.shellQuote(shell)) -l"]
+        // Interactive login shell, so PATH additions from .zshrc (nvm, bun, …) are there
+        process.arguments = ["-na", "Ghostty", "--args", "-e", shell, "-lic", "\(command); exec \(HookScript.shellQuote(shell)) -l"]
         do {
             try process.run()
             return true

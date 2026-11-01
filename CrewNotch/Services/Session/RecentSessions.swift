@@ -30,6 +30,10 @@ nonisolated struct RecentSession: Codable, Identifiable, Equatable, Sendable {
 
     /// The command that reopens the conversation, run from its project folder.
     var resumeCommand: String? {
+        // Control characters would act as keystrokes when typed into a terminal
+        let unsafe = CharacterSet.controlCharacters
+        guard cwd.unicodeScalars.allSatisfy({ !unsafe.contains($0) }),
+              agentSessionId.unicodeScalars.allSatisfy({ !unsafe.contains($0) }) else { return nil }
         let id = HookScript.shellQuote(agentSessionId)
         let resume: String
         switch agent {
@@ -40,7 +44,7 @@ nonisolated struct RecentSession: Codable, Identifiable, Equatable, Sendable {
         case .copilot: resume = "copilot --resume=\(id)"
         default: return nil
         }
-        return "cd \(HookScript.shellQuote(cwd)) && \(resume)"
+        return "cd -- \(HookScript.shellQuote(cwd)) && \(resume)"
     }
 
     static func canResume(_ agent: AgentKind) -> Bool {
