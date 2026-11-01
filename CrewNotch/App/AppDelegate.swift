@@ -23,7 +23,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return
         }
 
-        HookInstaller.installIfNeeded()
+        AgentRegistry.shared.start()
         NSApplication.shared.setActivationPolicy(.accessory)
 
         windowManager = WindowManager()
