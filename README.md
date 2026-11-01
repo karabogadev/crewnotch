@@ -1,59 +1,34 @@
 <div align="center">
-  <img src="ClaudeIsland/Assets.xcassets/AppIcon.appiconset/icon_128x128.png" alt="Logo" width="100" height="100">
-  <h3 align="center">Vibe Notch (previously Claude Island)</h3>
-  <p align="center">
-    A macOS menu bar app that brings Dynamic Island-style notifications to Claude Code CLI sessions.
-    <br />
-    <br />
-    <a href="https://github.com/farouqaldori/vibe-notch/releases/latest" target="_blank" rel="noopener noreferrer">
-      <img src="https://img.shields.io/github/v/release/farouqaldori/vibe-notch?style=rounded&color=white&labelColor=000000&label=release" alt="Release Version" />
-    </a>
-    <a href="#" target="_blank" rel="noopener noreferrer">
-      <img alt="GitHub Downloads" src="https://img.shields.io/github/downloads/farouqaldori/vibe-notch/total?style=rounded&color=white&labelColor=000000">
-    </a>
-  </p>
+  <h1>CrewNotch</h1>
+  <p><strong>Every AI coding agent, live in your MacBook notch.</strong></p>
+  <p>Claude Code · Codex · Cursor · Gemini CLI · Antigravity · DeepSeek Harness · OpenCode · Copilot CLI · Grok · Kiro</p>
 </div>
 
-> **🟢 Actively maintained**
->
-> Launched v1.2 in December 2025, then took a 4-month break. v1.3 (April 2026) works through the backlog of contributor PRs and bug reports and kicks off a regular cadence again. Open PRs and issues are being reviewed — thanks for your patience.
+> 🚧 **In active development.** The first release is on its way. Watch the repo to get notified.
 
-## Features
+CrewNotch shows what each of your AI coding agents is doing (working, finished or waiting for you) in a Dynamic Island-style panel that grows out of the MacBook notch. You can approve tool calls without switching windows, and you'll hear a sound when a long task is done.
 
-- **Notch UI** — Animated overlay that expands from the MacBook notch
-- **Live Session Monitoring** — Track multiple Claude Code sessions in real-time
-- **Permission Approvals** — Approve or deny tool executions directly from the notch
-- **Chat History** — View full conversation history with markdown rendering
-- **Auto-Setup** — Hooks install automatically on first launch
+## Planned for v1
 
-## Requirements
+- **Every agent in one place.** Live status for Claude Code, Codex, Cursor, Gemini CLI, Antigravity, DeepSeek Harness, OpenCode, Copilot CLI, Grok and Kiro.
+- **Know when an agent needs you.** Finished turns, questions and approval requests surface in the notch, with sounds.
+- **Approve from the notch.** Allow or deny tool calls for Claude Code, Codex and Copilot CLI.
+- **Keep Awake.** Agents keep working when the display sleeps or the screen locks, with battery and time limits.
+- **Plan usage.** See how much of your Claude and Codex limits you've used.
+- **Private by design.** No accounts, no analytics. Everything stays on your Mac.
 
-- macOS 15.6+
-- Claude Code CLI
+## Build from source
 
-## Install
-
-Download the latest release or build from source:
+Requires macOS 15.6+ and Xcode 26+.
 
 ```bash
-xcodebuild -scheme ClaudeIsland -configuration Release build
+xcodebuild -scheme CrewNotch -configuration Release build
 ```
 
-## How It Works
+## Credits
 
-Vibe Notch installs hooks into `~/.claude/hooks/` that communicate session state via a Unix socket. The app listens for events and displays them in the notch overlay.
-
-When Claude needs permission to run a tool, the notch expands with approve/deny buttons—no need to switch to the terminal.
-
-## Analytics
-
-Vibe Notch uses Mixpanel to collect anonymous usage data:
-
-- **App Launched** — App version, build number, macOS version
-- **Session Started** — When a new Claude Code session is detected
-
-No personal data or conversation content is collected.
+CrewNotch started as a fork of [Vibe Notch](https://github.com/farouqaldori/vibe-notch) (formerly Claude Island) by Farouq Aldori and builds on its notch UI and Claude Code integration. Thank you!
 
 ## License
 
-Apache 2.0
+Apache License 2.0. See [LICENSE.md](LICENSE.md). Portions © Farouq Aldori.
