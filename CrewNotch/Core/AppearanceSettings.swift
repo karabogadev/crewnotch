@@ -64,6 +64,24 @@ nonisolated enum TitleOrder: String, CaseIterable, Identifiable {
     var title: String { rawValue.capitalized }
 }
 
+/// How much color status marks use.
+enum AccentMode: String, CaseIterable, Identifiable {
+    case full, warnings, off
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .full: return "Full"
+        case .warnings: return "Warnings only"
+        case .off: return "Off"
+        }
+    }
+
+    var finishedColor: Color { self == .full ? TerminalColors.green : .white.opacity(0.85) }
+    var attentionColor: Color { self == .off ? .white.opacity(0.9) : TerminalColors.amber }
+}
+
 nonisolated enum AppearanceKeys {
     static let textScale = "textScale"
     static let material = "panelMaterial"
@@ -77,6 +95,8 @@ nonisolated enum AppearanceKeys {
     static let idleAfterMinutes = "idleAfterMinutes"
     static let hideIdleSessions = "hideIdleSessions"
     static let rowsAtOnce = "rowsAtOnce"
+    static let accentMode = "accentMode"
+    static let showSubagents = "showSubagents"
 
     static var rowsAtOnceValue: Int {
         UserDefaults.standard.object(forKey: rowsAtOnce) as? Int ?? 5
