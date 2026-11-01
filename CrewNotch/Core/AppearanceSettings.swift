@@ -12,7 +12,14 @@ nonisolated enum TextScale: String, CaseIterable, Identifiable {
     case small, standard, large
 
     var id: String { rawValue }
-    var title: String { rawValue.capitalized }
+
+    var title: String {
+        switch self {
+        case .small: return String(localized: "Small")
+        case .standard: return String(localized: "Standard")
+        case .large: return String(localized: "Large")
+        }
+    }
 
     var factor: CGFloat {
         switch self {
@@ -29,14 +36,31 @@ nonisolated enum PanelMaterial: String, CaseIterable, Identifiable {
     case solid, smoked, glassy
 
     var id: String { rawValue }
-    var title: String { rawValue.capitalized }
+
+    var title: String {
+        switch self {
+        case .solid: return String(localized: "Solid")
+        case .smoked: return String(localized: "Smoked")
+        case .glassy: return String(localized: "Glassy")
+        }
+    }
 }
 
 nonisolated enum PanelTint: String, CaseIterable, Identifiable {
     case black, graphite, midnight, ocean, forest, plum
 
     var id: String { rawValue }
-    var title: String { rawValue.capitalized }
+
+    var title: String {
+        switch self {
+        case .black: return String(localized: "Black")
+        case .graphite: return String(localized: "Graphite")
+        case .midnight: return String(localized: "Midnight")
+        case .ocean: return String(localized: "Ocean")
+        case .forest: return String(localized: "Forest")
+        case .plum: return String(localized: "Plum")
+        }
+    }
 
     var color: Color {
         switch self {
@@ -54,14 +78,14 @@ nonisolated enum IdleNotchBehavior: String, CaseIterable, Identifiable {
     case hide, showUsage
 
     var id: String { rawValue }
-    var title: String { self == .hide ? "Hide the notch" : "Show plan usage" }
+    var title: String { self == .hide ? String(localized: "Hide the notch") : String(localized: "Show plan usage") }
 }
 
 nonisolated enum TitleOrder: String, CaseIterable, Identifiable {
     case conversation, project
 
     var id: String { rawValue }
-    var title: String { rawValue.capitalized }
+    var title: String { self == .conversation ? String(localized: "Conversation") : String(localized: "Project") }
 }
 
 /// How much color status marks use.
@@ -72,9 +96,9 @@ enum AccentMode: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .full: return "Full"
-        case .warnings: return "Warnings only"
-        case .off: return "Off"
+        case .full: return String(localized: "Full")
+        case .warnings: return String(localized: "Warnings only")
+        case .off: return String(localized: "Off")
         }
     }
 

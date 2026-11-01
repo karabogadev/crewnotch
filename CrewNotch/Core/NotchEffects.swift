@@ -17,10 +17,10 @@ enum NotchMoment: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .launch: return "App launch"
-        case .open: return "Notch opens"
-        case .finished: return "Agent finished"
-        case .needsYou: return "Agent needs you"
+        case .launch: return String(localized: "App launch")
+        case .open: return String(localized: "Notch opens")
+        case .finished: return String(localized: "Agent finished")
+        case .needsYou: return String(localized: "Agent needs you")
         }
     }
 
@@ -51,11 +51,11 @@ enum NotchEffectStyle: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .none: return "None"
-        case .glow: return "Glow sweep"
-        case .confetti: return "Confetti"
-        case .ripple: return "Ripple"
-        case .bounce: return "Bounce"
+        case .none: return String(localized: "None")
+        case .glow: return String(localized: "Glow sweep")
+        case .confetti: return String(localized: "Confetti")
+        case .ripple: return String(localized: "Ripple")
+        case .bounce: return String(localized: "Bounce")
         }
     }
 
@@ -75,7 +75,13 @@ enum NotchEffectSpeed: String, CaseIterable, Identifiable {
     case slow, normal, fast
 
     var id: String { rawValue }
-    var title: String { rawValue.capitalized }
+    var title: String {
+        switch self {
+        case .slow: return String(localized: "Slow")
+        case .normal: return String(localized: "Normal")
+        case .fast: return String(localized: "Fast")
+        }
+    }
 
     var multiplier: Double {
         switch self {

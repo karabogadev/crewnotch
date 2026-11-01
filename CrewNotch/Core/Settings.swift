@@ -38,9 +38,9 @@ nonisolated enum UsageStyle: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .line: return "Line"
-        case .bars: return "Bars"
-        case .compact: return "Compact"
+        case .line: return String(localized: "Line")
+        case .bars: return String(localized: "Bars")
+        case .compact: return String(localized: "Compact")
         }
     }
 }
@@ -49,7 +49,7 @@ nonisolated enum UsageStyle: String, CaseIterable {
 nonisolated enum UsagePercentMode: String, CaseIterable {
     case used, left
 
-    var title: String { self == .used ? "Used" : "Left" }
+    var title: String { self == .used ? String(localized: "Used") : String(localized: "Left") }
 }
 
 /// Which limit represents a provider when only one is shown.
@@ -58,9 +58,9 @@ nonisolated enum UsageLimitChoice: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .mostUsed: return "Closest to the limit"
-        case .session: return "Session"
-        case .weekly: return "Weekly"
+        case .mostUsed: return String(localized: "Closest to the limit")
+        case .session: return String(localized: "Session")
+        case .weekly: return String(localized: "Weekly")
         }
     }
 }

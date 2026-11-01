@@ -15,12 +15,12 @@ enum WorkingIndicatorStyle: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .crewDots: return "Crew dots"
-        case .ring: return "Ring"
-        case .spark: return "Spark"
-        case .equalizer: return "Equalizer"
-        case .orbit: return "Orbit"
-        case .pulse: return "Pulse"
+        case .crewDots: return String(localized: "Crew dots")
+        case .ring: return String(localized: "Ring")
+        case .spark: return String(localized: "Spark")
+        case .equalizer: return String(localized: "Equalizer")
+        case .orbit: return String(localized: "Orbit")
+        case .pulse: return String(localized: "Pulse")
         }
     }
 }
@@ -29,7 +29,7 @@ enum WorkingIndicatorColor: String, CaseIterable, Identifiable {
     case crew, white
 
     var id: String { rawValue }
-    var title: String { self == .crew ? "Crew colors" : "White" }
+    var title: String { self == .crew ? String(localized: "Crew colors") : String(localized: "White") }
 }
 
 /// The working indicator as configured in Settings.
