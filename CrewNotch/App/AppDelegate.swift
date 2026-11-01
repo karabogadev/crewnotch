@@ -17,6 +17,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        // As a test host the app stays inert: no socket, no hook installs, no
+        // window, and no quitting because the real CrewNotch is running.
+        if Foundation.ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil { return }
         if !ensureSingleInstance() {
             NSApplication.shared.terminate(nil)
             return

@@ -32,13 +32,14 @@ class SessionMonitor: ObservableObject {
 
     // MARK: - Monitoring Lifecycle
 
-    func startMonitoring() {
+    func startMonitoring(socketPath: String = HookSocketServer.defaultSocketPath) {
         // Start periodic status rechecking
         Task {
             await SessionStore.shared.startPeriodicStatusCheck()
         }
 
         HookSocketServer.shared.start(
+            socketPath: socketPath,
             onEvent: { event in
                 Task {
                     await SessionStore.shared.process(.hookReceived(event))

@@ -194,8 +194,11 @@ class HookSocketServer {
     static let shared = HookSocketServer()
     /// Lives in ~/.crewnotch (mode 0700) rather than /tmp so other local users
     /// can't impersonate the app and answer approval requests.
-    static let socketDirectory = FileManager.default.homeDirectoryForCurrentUser.appendingPathComponent(".crewnotch")
-    static let socketPath = socketDirectory.appendingPathComponent("crewnotch.sock").path
+    static let defaultSocketPath = FileManager.default.homeDirectoryForCurrentUser
+        .appendingPathComponent(".crewnotch/crewnotch.sock").path
+
+    /// Where the server listens; set once by `start` (tests pass their own).
+    private var socketPath = HookSocketServer.defaultSocketPath
 
     private var serverSocket: Int32 = -1
     private var acceptSource: DispatchSourceRead?
@@ -218,31 +221,37 @@ class HookSocketServer {
     private init() {}
 
     /// Start the socket server
-    func start(onEvent: @escaping HookEventHandler, onPermissionFailure: PermissionFailureHandler? = nil) {
+    func start(
+        socketPath: String = HookSocketServer.defaultSocketPath,
+        onEvent: @escaping HookEventHandler,
+        onPermissionFailure: PermissionFailureHandler? = nil
+    ) {
         queue.async { [weak self] in
-            self?.startServer(onEvent: onEvent, onPermissionFailure: onPermissionFailure)
+            self?.startServer(socketPath: socketPath, onEvent: onEvent, onPermissionFailure: onPermissionFailure)
         }
     }
 
-    private func startServer(onEvent: @escaping HookEventHandler, onPermissionFailure: PermissionFailureHandler?) {
+    private func startServer(socketPath: String, onEvent: @escaping HookEventHandler, onPermissionFailure: PermissionFailureHandler?) {
         guard serverSocket < 0 else { return }
 
+        self.socketPath = socketPath
         eventHandler = onEvent
         permissionFailureHandler = onPermissionFailure
 
+        let socketDirectory = (socketPath as NSString).deletingLastPathComponent
         do {
-            try FileManager.default.createDirectory(at: Self.socketDirectory, withIntermediateDirectories: true)
-            try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: Self.socketDirectory.path)
+            try FileManager.default.createDirectory(atPath: socketDirectory, withIntermediateDirectories: true)
+            try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: socketDirectory)
         } catch {
             logger.error("Failed to prepare socket directory: \(error.localizedDescription, privacy: .public)")
             return
         }
-        guard Self.socketPath.utf8.count < MemoryLayout.size(ofValue: sockaddr_un().sun_path) else {
-            logger.error("Socket path too long: \(Self.socketPath, privacy: .public)")
+        guard socketPath.utf8.count < MemoryLayout.size(ofValue: sockaddr_un().sun_path) else {
+            logger.error("Socket path too long: \(socketPath, privacy: .public)")
             return
         }
 
-        unlink(Self.socketPath)
+        unlink(socketPath)
 
         serverSocket = socket(AF_UNIX, SOCK_STREAM, 0)
         guard serverSocket >= 0 else {
@@ -255,7 +264,7 @@ class HookSocketServer {
 
         var addr = sockaddr_un()
         addr.sun_family = sa_family_t(AF_UNIX)
-        Self.socketPath.withCString { ptr in
+        socketPath.withCString { ptr in
             withUnsafeMutablePointer(to: &addr.sun_path) { pathPtr in
                 let pathBufferPtr = UnsafeMutableRawPointer(pathPtr)
                     .assumingMemoryBound(to: CChar.self)
@@ -276,7 +285,7 @@ class HookSocketServer {
             return
         }
 
-        chmod(Self.socketPath, 0o600)
+        chmod(socketPath, 0o600)
 
         guard listen(serverSocket, 10) == 0 else {
             logger.error("Failed to listen: \(errno)")
@@ -285,7 +294,7 @@ class HookSocketServer {
             return
         }
 
-        logger.info("Listening on \(Self.socketPath, privacy: .public)")
+        logger.info("Listening on \(socketPath, privacy: .public)")
 
         acceptSource = DispatchSource.makeReadSource(fileDescriptor: serverSocket, queue: queue)
         acceptSource?.setEventHandler { [weak self] in
@@ -304,7 +313,7 @@ class HookSocketServer {
     func stop() {
         acceptSource?.cancel()
         acceptSource = nil
-        unlink(Self.socketPath)
+        unlink(socketPath)
 
         permissionsLock.lock()
         for (_, pending) in pendingPermissions {
