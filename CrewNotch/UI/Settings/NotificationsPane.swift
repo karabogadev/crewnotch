@@ -230,7 +230,7 @@ struct NotchPreview: View {
             AgentIcon(agent: .claude, size: 13)
             Spacer()
             switch state {
-            case .working: CrewDots(size: 13)
+            case .working: WorkingIndicator(size: 13)
             case .needsYou: AttentionPulse(size: 13)
             case .finished: NotchStatusGlyph(status: .finished, size: 12)
             case .openPanel: Image(systemName: "gearshape").font(.system(size: 10)).foregroundColor(.white.opacity(0.4))
