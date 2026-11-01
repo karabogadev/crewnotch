@@ -269,7 +269,7 @@ struct NotchView: View {
                     AgentIcon(agent: lead.agent, size: 14)
                         .matchedGeometryEffect(id: "lead-agent", in: activityNamespace, isSource: showClosedActivity)
 
-                    if busyCount > 1 {
+                    if busyCount > 1 && viewModel.status != .opened {
                         Text("+\(busyCount - 1)")
                             .font(.system(size: 9, weight: .semibold, design: .rounded))
                             .foregroundColor(.white.opacity(0.6))

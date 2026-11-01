@@ -136,7 +136,30 @@ struct SessionState: Equatable, Identifiable, Sendable {
 
     /// Display title: summary > first user message > project name
     var displayTitle: String {
-        conversationInfo.summary ?? conversationInfo.firstUserMessage ?? projectName
+        let raw = conversationInfo.summary ?? conversationInfo.firstUserMessage
+        return raw.flatMap(Self.readableTitle) ?? projectName
+    }
+
+    /// Turns a raw first message into a title: slash-command markup like
+    /// `<command-name>/review</command-name><command-args>fix login</command-args>`
+    /// becomes "/review fix login", other tags are dropped.
+    nonisolated static func readableTitle(_ text: String) -> String? {
+        func tag(_ name: String) -> String? {
+            guard let open = text.range(of: "<\(name)>"),
+                  let close = text.range(of: "</\(name)>", range: open.upperBound..<text.endIndex) else { return nil }
+            let value = text[open.upperBound..<close.lowerBound].trimmingCharacters(in: .whitespacesAndNewlines)
+            return value.isEmpty ? nil : value
+        }
+
+        var title: String
+        if let command = tag("command-name") ?? tag("command-message") {
+            title = [command, tag("command-args")].compactMap { $0 }.joined(separator: " ")
+        } else {
+            title = text.replacingOccurrences(of: "<[^>]+>", with: " ", options: .regularExpression)
+        }
+        title = title.replacingOccurrences(of: "\\s+", with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return title.isEmpty ? nil : title
     }
 
     /// Best hint for matching window title

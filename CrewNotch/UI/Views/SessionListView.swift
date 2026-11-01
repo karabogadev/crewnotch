@@ -65,19 +65,34 @@ struct SessionListView: View {
         }
     }
 
+    /// Sessions grouped by project, groups ordered by their most urgent session
+    private var projectGroups: [(project: String, sessions: [SessionState])] {
+        var order: [String] = []
+        var groups: [String: [SessionState]] = [:]
+        for session in sortedInstances {
+            if groups[session.projectName] == nil { order.append(session.projectName) }
+            groups[session.projectName, default: []].append(session)
+        }
+        return order.map { ($0, groups[$0] ?? []) }
+    }
+
     private var instancesList: some View {
         ScrollView(.vertical, showsIndicators: false) {
-            LazyVStack(spacing: 2) {
-                ForEach(sortedInstances) { session in
-                    InstanceRow(
-                        session: session,
-                        onFocus: { focusSession(session) },
-                        onChat: { openChat(session) },
-                        onArchive: { archiveSession(session) },
-                        onApprove: { approveSession(session) },
-                        onReject: { rejectSession(session) }
-                    )
-                    .id(session.stableId)
+            LazyVStack(alignment: .leading, spacing: 2) {
+                ForEach(projectGroups, id: \.project) { group in
+                    ProjectHeader(name: group.project, count: group.sessions.count)
+
+                    ForEach(group.sessions) { session in
+                        InstanceRow(
+                            session: session,
+                            onFocus: { focusSession(session) },
+                            onChat: { openChat(session) },
+                            onArchive: { archiveSession(session) },
+                            onApprove: { approveSession(session) },
+                            onReject: { rejectSession(session) }
+                        )
+                        .id(session.stableId)
+                    }
                 }
             }
             .padding(.vertical, 4)
@@ -120,11 +135,7 @@ struct InstanceRow: View {
     let onReject: () -> Void
 
     @State private var isHovered = false
-    @State private var spinnerPhase = 0
 
-    private let claudeOrange = Color(red: 0.85, green: 0.47, blue: 0.34)
-    private let spinnerSymbols = ["·", "✢", "✳", "∗", "✻", "✽"]
-    private let spinnerTimer = Timer.publish(every: 0.15, on: .main, in: .common).autoconnect()
 
     /// Whether we're showing the approval UI
     private var isWaitingForApproval: Bool {
@@ -138,42 +149,53 @@ struct InstanceRow: View {
         return permission.toolName == "AskUserQuestion" || !permission.canRespond
     }
 
-    /// Status text based on session phase (fallback when no other content)
-    private var phaseStatusText: String {
+    /// Short status word shown on the meta line
+    private var statusWord: String {
         switch session.phase {
-        case .processing:
-            return "Processing..."
-        case .compacting:
-            return "Compacting..."
-        case .waitingForInput:
-            return "Ready"
-        case .waitingForApproval:
-            return "Waiting for approval"
-        case .idle:
-            return "Idle"
-        case .ended:
-            return "Ended"
+        case .processing: return "Working"
+        case .compacting: return "Compacting"
+        case .waitingForInput: return "Done"
+        case .waitingForApproval: return "Needs you"
+        case .idle: return "Idle"
+        case .ended: return "Ended"
+        }
+    }
+
+    private var statusColor: Color {
+        switch session.phase {
+        case .waitingForApproval: return TerminalColors.amber
+        case .waitingForInput: return TerminalColors.green
+        default: return .white.opacity(0.45)
+        }
+    }
+
+    /// One-line preview: the pending request, else the latest message
+    private var preview: String? {
+        if isWaitingForApproval, let toolName = session.pendingToolName {
+            let name = MCPToolFormatter.formatToolName(toolName)
+            if toolName == "AskUserQuestion" { return "\(name): needs your input" }
+            return [name, session.pendingToolInput].compactMap { $0 }.joined(separator: " ")
+        }
+        guard let message = session.lastMessage else { return nil }
+        switch session.lastMessageRole {
+        case "user": return "You: \(message)"
+        case "tool": return [session.lastToolName.map(MCPToolFormatter.formatToolName), message].compactMap { $0 }.joined(separator: " ")
+        default: return message
         }
     }
 
     var body: some View {
         HStack(alignment: .center, spacing: 10) {
-            // State indicator on left
             stateIndicator
-                .frame(width: 14)
+                .frame(width: 16)
 
-            // Text content
-            VStack(alignment: .leading, spacing: 2) {
+            VStack(alignment: .leading, spacing: 3) {
                 HStack(spacing: 6) {
-                    AgentIcon(agent: session.agent, size: 13)
-                        .help(session.agent.displayName)
-
                     Text(session.displayTitle)
                         .font(.system(size: 13, weight: .medium))
                         .foregroundColor(.white)
                         .lineLimit(1)
 
-                    // Token usage indicator
                     if session.usage.totalTokens > 0 {
                         Text(session.usage.formattedTotal)
                             .font(.system(size: 10, weight: .medium, design: .monospaced))
@@ -181,131 +203,37 @@ struct InstanceRow: View {
                     }
                 }
 
-                // Show tool call when waiting for approval, otherwise last activity
-                if isWaitingForApproval, let toolName = session.pendingToolName {
-                    // Show tool name in amber + input on same line
-                    HStack(spacing: 4) {
-                        Text(MCPToolFormatter.formatToolName(toolName))
-                            .font(.system(size: 11, weight: .medium, design: .monospaced))
-                            .foregroundColor(TerminalColors.amber.opacity(0.9))
-                        if toolName == "AskUserQuestion" {
-                            Text("Needs your input")
-                                .font(.system(size: 11))
-                                .foregroundColor(.white.opacity(0.5))
-                                .lineLimit(1)
-                        } else if let input = session.pendingToolInput {
-                            Text(input)
-                                .font(.system(size: 11))
-                                .foregroundColor(.white.opacity(0.5))
-                                .lineLimit(1)
-                        }
+                HStack(spacing: 5) {
+                    AgentIcon(agent: session.agent, size: 11)
+                        .help(session.agent.displayName)
+                    Text(statusWord)
+                        .foregroundColor(statusColor)
+                    if let branch = GitBranch.name(for: session.cwd) {
+                        Text("·").foregroundColor(.white.opacity(0.25))
+                        Image(systemName: "arrow.triangle.branch")
+                            .font(.system(size: 9))
+                            .foregroundColor(.white.opacity(0.35))
+                        Text(branch)
+                            .foregroundColor(.white.opacity(0.45))
                     }
-                } else if let role = session.lastMessageRole {
-                    switch role {
-                    case "tool":
-                        // Tool call - show tool name + input
-                        HStack(spacing: 4) {
-                            if let toolName = session.lastToolName {
-                                Text(MCPToolFormatter.formatToolName(toolName))
-                                    .font(.system(size: 11, weight: .medium, design: .monospaced))
-                                    .foregroundColor(.white.opacity(0.5))
-                            }
-                            if let input = session.lastMessage {
-                                Text(input)
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.white.opacity(0.4))
-                                    .lineLimit(1)
-                            }
-                        }
-                    case "user":
-                        // User message - prefix with "You:"
-                        HStack(spacing: 4) {
-                            Text("You:")
-                                .font(.system(size: 11, weight: .medium))
-                                .foregroundColor(.white.opacity(0.5))
-                            if let msg = session.lastMessage {
-                                Text(msg)
-                                    .font(.system(size: 11))
-                                    .foregroundColor(.white.opacity(0.4))
-                                    .lineLimit(1)
-                            }
-                        }
-                    default:
-                        // Assistant message - just show text
-                        if let msg = session.lastMessage {
-                            Text(msg)
-                                .font(.system(size: 11))
-                                .foregroundColor(.white.opacity(0.4))
-                                .lineLimit(1)
-                        }
+                    if let preview {
+                        Text("·").foregroundColor(.white.opacity(0.25))
+                        Text(preview)
+                            .foregroundColor(.white.opacity(0.4))
+                            .lineLimit(1)
                     }
-                } else if let lastMsg = session.lastMessage {
-                    Text(lastMsg)
-                        .font(.system(size: 11))
-                        .foregroundColor(.white.opacity(0.4))
-                        .lineLimit(1)
-                } else {
-                    // Fallback: show phase-based status when no other content
-                    Text(phaseStatusText)
-                        .font(.system(size: 11))
-                        .foregroundColor(.white.opacity(0.4))
-                        .lineLimit(1)
                 }
+                .font(.system(size: 11))
+                .lineLimit(1)
             }
 
             Spacer(minLength: 0)
 
-            // Action icons or approval buttons
-            if isWaitingForApproval && isInteractiveTool {
-                // Questions, or approvals only the agent can answer: jump to it
-                HStack(spacing: 8) {
-                    IconButton(icon: "bubble.left") {
-                        onChat()
-                    }
-
-                    if SessionFocuser.canFocus(session) {
-                        TerminalButton(
-                            label: session.agent.isTerminalAgent ? "Terminal" : "Open",
-                            icon: session.agent.isTerminalAgent ? "terminal" : "arrow.up.forward.app",
-                            isEnabled: true,
-                            onTap: { onFocus() }
-                        )
-                    }
-                }
-                .transition(.opacity.combined(with: .scale(scale: 0.9)))
-            } else if isWaitingForApproval {
-                InlineApprovalButtons(
-                    onChat: onChat,
-                    onApprove: onApprove,
-                    onReject: onReject
-                )
-                .transition(.opacity.combined(with: .scale(scale: 0.9)))
-            } else {
-                HStack(spacing: 8) {
-                    // Chat icon - always show
-                    IconButton(icon: "bubble.left") {
-                        onChat()
-                    }
-
-                    if SessionFocuser.canFocus(session) {
-                        IconButton(icon: "eye") {
-                            onFocus()
-                        }
-                    }
-
-                    // Archive button - only for idle or completed sessions
-                    if session.phase == .idle || session.phase == .waitingForInput {
-                        IconButton(icon: "archivebox") {
-                            onArchive()
-                        }
-                    }
-                }
-                .transition(.opacity.combined(with: .scale(scale: 0.9)))
-            }
+            actions
         }
         .padding(.leading, 8)
-        .padding(.trailing, 14)
-        .padding(.vertical, 10)
+        .padding(.trailing, 12)
+        .padding(.vertical, 8)
         .contentShape(Rectangle())
         .onTapGesture(count: 2) {
             // Double-click jumps to the agent's window; chat is one click on the bubble
@@ -324,33 +252,75 @@ struct InstanceRow: View {
     }
 
     @ViewBuilder
+    private var actions: some View {
+        if isWaitingForApproval && isInteractiveTool {
+            // Questions, or approvals only the agent can answer: jump to it
+            if SessionFocuser.canFocus(session) {
+                TerminalButton(
+                    label: session.agent.isTerminalAgent ? "Terminal" : "Open",
+                    icon: session.agent.isTerminalAgent ? "terminal" : "arrow.up.forward.app",
+                    isEnabled: true,
+                    onTap: { onFocus() }
+                )
+                .transition(.opacity.combined(with: .scale(scale: 0.9)))
+            }
+        } else if isWaitingForApproval {
+            InlineApprovalButtons(
+                onChat: onChat,
+                onApprove: onApprove,
+                onReject: onReject
+            )
+            .transition(.opacity.combined(with: .scale(scale: 0.9)))
+        } else if isHovered {
+            HStack(spacing: 4) {
+                IconButton(icon: "bubble.left") { onChat() }
+                if SessionFocuser.canFocus(session) {
+                    IconButton(icon: "arrow.up.forward.app") { onFocus() }
+                }
+                if session.phase == .idle || session.phase == .waitingForInput {
+                    IconButton(icon: "archivebox") { onArchive() }
+                }
+            }
+            .transition(.opacity)
+        }
+    }
+
+    @ViewBuilder
     private var stateIndicator: some View {
         switch session.phase {
         case .processing, .compacting:
-            Text(spinnerSymbols[spinnerPhase % spinnerSymbols.count])
-                .font(.system(size: 12, weight: .bold))
-                .foregroundColor(claudeOrange)
-                .onReceive(spinnerTimer) { _ in
-                    spinnerPhase = (spinnerPhase + 1) % spinnerSymbols.count
-                }
+            NotchStatusGlyph(status: .working, size: 13)
         case .waitingForApproval:
-            Text(spinnerSymbols[spinnerPhase % spinnerSymbols.count])
-                .font(.system(size: 12, weight: .bold))
-                .foregroundColor(TerminalColors.amber)
-                .onReceive(spinnerTimer) { _ in
-                    spinnerPhase = (spinnerPhase + 1) % spinnerSymbols.count
-                }
+            NotchStatusGlyph(status: .needsYou, size: 13)
         case .waitingForInput:
-            Circle()
-                .fill(TerminalColors.green)
-                .frame(width: 6, height: 6)
+            NotchStatusGlyph(status: .finished, size: 13)
         case .idle, .ended:
             Circle()
                 .fill(Color.white.opacity(0.2))
                 .frame(width: 6, height: 6)
         }
     }
+}
 
+// MARK: - Project Header
+
+private struct ProjectHeader: View {
+    let name: String
+    let count: Int
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(name)
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundColor(.white.opacity(0.55))
+            Text("\(count)")
+                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .foregroundColor(.white.opacity(0.3))
+        }
+        .padding(.leading, 10)
+        .padding(.top, 8)
+        .padding(.bottom, 2)
+    }
 }
 
 // MARK: - Inline Approval Buttons
