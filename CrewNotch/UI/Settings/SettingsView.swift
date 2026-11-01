@@ -147,48 +147,6 @@ private struct GeneralPane: View {
     }
 }
 
-// MARK: - Notifications
-
-private struct NotificationsPane: View {
-    @State private var finishedSound = AppSettings.notificationSound
-    @State private var attentionSound = AppSettings.attentionSound
-    @AppStorage("approveFromNotch") private var approveFromNotch = true
-    @AppStorage("openNotchOnRequest") private var openNotchOnRequest = true
-
-    var body: some View {
-        Form {
-            Section("Sounds") {
-                soundPicker("Turn finished", selection: $finishedSound) { AppSettings.notificationSound = $0 }
-                soundPicker("Needs you", selection: $attentionSound) { AppSettings.attentionSound = $0 }
-            }
-
-            Section {
-                Toggle(isOn: $approveFromNotch) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Approve from the notch")
-                        Text("Allow or deny tool calls from Claude Code and Codex without switching windows.")
-                            .font(.caption).foregroundStyle(.secondary)
-                    }
-                }
-                Toggle("Open the notch when an agent needs you", isOn: $openNotchOnRequest)
-            } header: {
-                Text("In the notch")
-            }
-        }
-        .formStyle(.grouped)
-    }
-
-    private func soundPicker(_ title: String, selection: Binding<NotificationSound>, save: @escaping (NotificationSound) -> Void) -> some View {
-        Picker(title, selection: selection) {
-            ForEach(NotificationSound.allCases, id: \.self) { Text($0.rawValue).tag($0) }
-        }
-        .onChange(of: selection.wrappedValue) { _, sound in
-            save(sound)
-            if let name = sound.soundName { NSSound(named: name)?.play() }
-        }
-    }
-}
-
 // MARK: - Appearance
 
 private struct AppearancePane: View {
