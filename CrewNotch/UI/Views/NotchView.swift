@@ -110,10 +110,11 @@ struct NotchView: View {
     }
 
     /// The opened header: how many agents, then what most deserves a look
-    private var crewSummary: (total: String, detail: String?, isRequest: Bool) {
+    private var crewSummary: (total: AttributedString, detail: String?, isRequest: Bool) {
         let sessions = sessionMonitor.instances
-        guard !sessions.isEmpty else { return (String(localized: "No agents running"), nil, false) }
-        let total = String(localized: "^[\(sessions.count) agent](inflect: true)")
+        guard !sessions.isEmpty else { return (AttributedString(localized: "No agents running"), nil, false) }
+        // AttributedString applies the inflection; String(localized:) would show the markup
+        let total = AttributedString(localized: "^[\(sessions.count) agent](inflect: true)")
         let needsYou = sessions.filter { $0.phase.isWaitingForApproval }.count
         if needsYou > 0 { return (total, String(localized: "\(needsYou) needs you"), true) }
         let working = sessions.filter { $0.phase.isActive }.count

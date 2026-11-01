@@ -176,7 +176,7 @@ struct ApprovalDetailView: View {
 
     static func moreLinesNote(_ text: String, shown: Int) -> String? {
         let total = text.split(separator: "\n", omittingEmptySubsequences: false).count
-        return total > shown ? String(localized: "^[+\(total - shown) more line](inflect: true)") : nil
+        return total > shown ? String(AttributedString(localized: "^[+\(total - shown) more line](inflect: true)").characters) : nil
     }
 
     static func describe(_ value: Any?) -> String {
