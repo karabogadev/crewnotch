@@ -134,18 +134,12 @@ struct NotchView: View {
     /// Extra width for expanding activities (like Dynamic Island)
     private var expansionWidth: CGFloat {
         guard showClosedActivity else { return 0 }
-        return 2 * max(0, closedNotchSize.height - 12) + 20 + countBadgeWidth + keepAwakeWidth + usageWidth
+        return 2 * max(0, closedNotchSize.height - 12) + 20 + countBadgeWidth + usageWidth
     }
 
     /// Extra room on the right for the usage percentage
     private var usageWidth: CGFloat {
         showsClosedUsage ? 28 : 0
-    }
-
-    /// Extra room on the right for the Keep Awake hourglass
-    private var keepAwakeWidth: CGFloat {
-        if case .active = keepAwake.state { return 13 }
-        return 0
     }
 
     /// Extra room on the left for the "+N" badge when several agents are busy
@@ -360,11 +354,6 @@ struct NotchView: View {
             // Right side - unified status glyph for crew activity
             if showClosedActivity, viewModel.status != .opened {
                 HStack(spacing: 4) {
-                    if case .active = keepAwake.state, viewModel.status != .opened {
-                        Image(systemName: "hourglass")
-                            .font(.system(size: 9, weight: .semibold))
-                            .foregroundColor(.ink.opacity(0.5))
-                    }
                     if showsClosedUsage && viewModel.status != .opened {
                         Text(headlineUsageText)
                             .font(.system(size: 10, weight: .semibold, design: .monospaced))
@@ -376,7 +365,7 @@ struct NotchView: View {
                     }
                 }
                     .matchedGeometryEffect(id: "status", in: activityNamespace, isSource: showClosedActivity)
-                    .frame(width: viewModel.status == .opened ? 20 : sideWidth + keepAwakeWidth + usageWidth)
+                    .frame(width: viewModel.status == .opened ? 20 : sideWidth + usageWidth)
                     .padding(.trailing, viewModel.status == .opened ? 0 : 4)
             }
         }
