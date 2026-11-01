@@ -70,8 +70,12 @@ struct SessionListView: View {
         }
     }
 
+    @AppStorage("groupByProject") private var groupByProject = true
+
     /// Sessions grouped by project, groups ordered by their most urgent session
+    /// (a single group when grouping is off)
     private var projectGroups: [(project: String, sessions: [SessionState])] {
+        guard groupByProject else { return [("", sortedInstances)] }
         var order: [String] = []
         var groups: [String: [SessionState]] = [:]
         for session in sortedInstances {
@@ -85,7 +89,9 @@ struct SessionListView: View {
         ScrollView(.vertical, showsIndicators: false) {
             LazyVStack(alignment: .leading, spacing: 2) {
                 ForEach(projectGroups, id: \.project) { group in
-                    ProjectHeader(name: group.project, count: group.sessions.count)
+                    if groupByProject {
+                        ProjectHeader(name: group.project, count: group.sessions.count)
+                    }
 
                     ForEach(group.sessions) { session in
                         InstanceRow(
