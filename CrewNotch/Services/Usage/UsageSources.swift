@@ -368,6 +368,17 @@ nonisolated enum LocalData {
         return text
     }
 
+    /// Reads a keychain item through /usr/bin/security. Only for items an agent
+    /// itself writes with that tool (Claude Code does): the tool is already on the
+    /// item's access list, so macOS doesn't ask and nothing new is granted. An
+    /// in-process read would be asked about again after every rewrite, because
+    /// the agent's update drops CrewNotch's grant.
+    static func keychainPasswordViaSecurityTool(_ service: String, account: String? = nil) -> String? {
+        var arguments = ["find-generic-password", "-s", service, "-w"]
+        if let account { arguments += ["-a", account] }
+        return run("/usr/bin/security", arguments).flatMap { $0.isEmpty ? nil : $0 }
+    }
+
     /// A value from a VS Code-style `state.vscdb` (opened read-only).
     static func sqliteValue(_ relativePath: String, key: String) -> String? {
         let path = home.appendingPathComponent(relativePath).path
