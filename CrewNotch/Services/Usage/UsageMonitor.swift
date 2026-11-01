@@ -88,13 +88,12 @@ final class UsageMonitor: ObservableObject {
         }
     }
 
-    /// Codex (local files) is on by default; Claude if the user allowed it before.
+    /// Only Codex (local files, no prompt) is on by default. Providers that read
+    /// a keychain sign-in stay off until the user turns them on.
     private static func loadEnabled() -> Set<AgentKind> {
         if let saved = UserDefaults.standard.array(forKey: enabledKey) as? [String] {
             return Set(saved.compactMap(AgentKind.init(rawValue:)))
         }
-        var defaults: Set<AgentKind> = [.codex]
-        if AppSettings.claudeUsageAllowed { defaults.insert(.claude) }
-        return defaults
+        return [.codex]
     }
 }
