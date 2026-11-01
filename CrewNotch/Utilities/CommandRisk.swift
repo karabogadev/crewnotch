@@ -12,16 +12,36 @@ import Foundation
 nonisolated enum CommandRisk {
     /// Plain-language warnings for a tool call, most serious first.
     static func warnings(toolName: String, input: [String: Any], cwd: String?) -> [String] {
+        let command = shellCommand(from: input)
+        let path = editedPath(toolName: toolName, input: input)
+        let key = "\(toolName)\u{1}\(cwd ?? "")\u{1}\(command ?? "")\u{1}\(path ?? "")" as NSString
+        if let cached = cache.object(forKey: key) as? [String] { return cached }
+
         var found: [String] = []
-        if let command = shellCommand(from: input) {
-            found += commandWarnings(command)
+        if let command {
+            found += commandWarnings(String(command.prefix(maxScannedLength)))
+            if command.count > maxScannedLength {
+                found.append(String(localized: "Too long to check completely"))
+            }
         }
-        if let path = editedPath(toolName: toolName, input: input) {
+        if let path {
             found += pathWarnings(path, cwd: cwd)
         }
         var seen = Set<String>()
-        return found.filter { seen.insert($0).inserted }
+        let result = found.filter { seen.insert($0).inserted }
+        cache.setObject(result as NSArray, forKey: key)
+        return result
     }
+
+    /// Checked many times per render; computed once per request.
+    private static let cache: NSCache<NSString, NSArray> = {
+        let cache = NSCache<NSString, NSArray>()
+        cache.countLimit = 64
+        return cache
+    }()
+
+    /// Longer commands are checked up to here (keeps the patterns fast).
+    private static let maxScannedLength = 20_000
 
     // MARK: - Shell commands
 
@@ -38,11 +58,12 @@ nonisolated enum CommandRisk {
     }
 
     /// Start of a command: the beginning, or after a separator, pipe or subshell.
-    private static let start = #"(?:^|[;&|(`]\s*|\$\(\s*|\bxargs\s+|\bthen\s+|\bdo\s+)"#
+    /// Quotes cover `bash -c "rm -rf …"` and `ssh host 'rm -rf …'`; `-exec` covers find.
+    private static let start = #"(?:^|[;&|(`'"]\s*|\$\(\s*|\bxargs\s+|\bthen\s+|\bdo\s+|-exec(?:dir)?\s+)(?:/usr)?(?:/s?bin/)?"#
 
     private static let rules: [Rule] = [
-        Rule(start + #"(?:sudo\s+)?rm\s+(?:-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)\b"#) { String(localized: "Deletes files and folders recursively") },
-        Rule(start + #"(?:sudo\s+)?rm\s+-[a-zA-Z]*f"#) { String(localized: "Force-deletes files") },
+        Rule(start + #"(?:sudo\s+)?(?:/usr)?(?:/s?bin/)?rm\s+(?:-[a-zA-Z]*[rR][a-zA-Z]*|--recursive)\b"#) { String(localized: "Deletes files and folders recursively") },
+        Rule(start + #"(?:sudo\s+)?(?:/usr)?(?:/s?bin/)?rm\s+-[a-zA-Z]*f"#) { String(localized: "Force-deletes files") },
         Rule(start + #"sudo\s"#) { String(localized: "Runs with administrator rights (sudo)") },
         Rule(#"\bgit\s+push\b[^;&|]*(?:\s--force(?:-with-lease)?\b|\s-[a-zA-Z]*f\b|\s\+[^\s]+)"#) { String(localized: "Force-pushes, which can overwrite the remote history") },
         Rule(#"\bgit\s+reset\b[^;&|]*--hard\b"#) { String(localized: "Discards uncommitted changes (git reset --hard)") },
@@ -85,16 +106,18 @@ nonisolated enum CommandRisk {
 
     /// Sensitive locations a command writes to, deletes or prints.
     private static func sensitivePathsTouched(by command: String) -> [String] {
-        let interesting = #"(?:rm|mv|cp|cat|tee|chmod|chown|truncate|>|>>)"#
         var names: [String] = []
-        for (pattern, name) in sensitiveCommandTargets {
-            let full = interesting + #"[^;&|]*"# + pattern
-            if command.range(of: full, options: .regularExpression) != nil {
-                names.append(name)
-            }
+        let range = NSRange(command.startIndex..., in: command)
+        for (regex, name) in sensitiveCommandRegexes where regex.firstMatch(in: command, range: range) != nil {
+            names.append(name)
         }
         if names.contains("~/.ssh") { names.removeAll { $0 == "SSH keys" } }
         return names
+    }
+
+    private static let sensitiveCommandRegexes: [(NSRegularExpression, String)] = sensitiveCommandTargets.compactMap { pattern, name in
+        let full = #"(?:rm|mv|cp|cat|tee|chmod|chown|truncate|>|>>)[^;&|\n]{0,400}"# + pattern
+        return (try? NSRegularExpression(pattern: full)).map { ($0, name) }
     }
 
     private static let sensitiveCommandTargets: [(String, String)] = [
