@@ -507,13 +507,15 @@ struct NotchView: View {
         }
     }
 
+    /// One sound per new request (keyed by the request, so a second approval
+    /// in the same session is announced too)
     private func handlePendingSessionsChange(_ sessions: [SessionState]) {
-        let currentIds = Set(sessions.map { $0.sessionId })
+        let currentIds = Set(sessions.compactMap { $0.pendingToolId })
         let newPendingIds = currentIds.subtracting(previousPendingIds)
 
         if !newPendingIds.isEmpty {
             effects.play(.needsYou)
-            let isQuestion = sessions.contains { newPendingIds.contains($0.sessionId) && $0.pendingToolName == "AskUserQuestion" }
+            let isQuestion = sessions.contains { $0.pendingToolId.map(newPendingIds.contains) == true && $0.pendingToolName == "AskUserQuestion" }
             AppSettings.play(isQuestion ? AppSettings.questionSound : AppSettings.attentionSound)
             if AppSettings.openNotchOnRequest &&
                viewModel.status == .closed &&

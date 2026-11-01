@@ -13,6 +13,8 @@ import Foundation
 @MainActor
 class SessionMonitor: ObservableObject {
     @Published var instances: [SessionState] = []
+    /// Sessions waiting on an approval or a question. A finished turn is not a
+    /// request: it has its own sound and banner.
     @Published var pendingInstances: [SessionState] = []
 
     private var cancellables = Set<AnyCancellable>()
@@ -108,7 +110,7 @@ class SessionMonitor: ObservableObject {
 
     private func updateFromSessions(_ sessions: [SessionState]) {
         instances = sessions
-        pendingInstances = sessions.filter { $0.needsAttention }
+        pendingInstances = sessions.filter { $0.phase.isWaitingForApproval }
     }
 
     // MARK: - History Loading (for UI)
