@@ -30,12 +30,15 @@ enum NotchContentType: Equatable {
     case chat(SessionState)
     /// Short "Finished" notice for a session that just completed
     case banner(SessionState)
+    /// Short notice not tied to a session (plan limits)
+    case notice(NotchNotice)
 
     var id: String {
         switch self {
         case .instances: return "instances"
         case .chat(let session): return "chat-\(session.sessionId)"
         case .banner(let session): return "banner-\(session.sessionId)"
+        case .notice(let notice): return "notice-\(notice.id)"
         }
     }
 }
@@ -79,7 +82,7 @@ class NotchViewModel: ObservableObject {
                 width: min(screenRect.width * 0.4, 480),
                 height: listContentHeight > 0 ? min(maxHeight, max(150, fitted)) : maxHeight
             )
-        case .banner:
+        case .banner, .notice:
             return CGSize(
                 width: min(screenRect.width * 0.32, 400),
                 height: deviceNotchRect.height + 64
@@ -257,6 +260,18 @@ class NotchViewModel: ObservableObject {
         status = .opened
         DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self] in
             guard let self, case .banner = self.contentType, !self.isHovering else { return }
+            self.notchClose()
+        }
+    }
+
+    /// Drops the notch open with a notice, then closes it again unless the pointer is over it.
+    func showNotice(_ notice: NotchNotice, duration: TimeInterval = 5) {
+        guard status == .closed else { return }
+        contentType = .notice(notice)
+        openReason = .notification
+        status = .opened
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self] in
+            guard let self, case .notice = self.contentType, !self.isHovering else { return }
             self.notchClose()
         }
     }

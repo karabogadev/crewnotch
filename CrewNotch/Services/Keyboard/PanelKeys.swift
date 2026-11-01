@@ -104,7 +104,7 @@ final class PanelKeys {
         switch viewModel.contentType {
         case .instances: return true
         case .chat(let session): return session.sessionId == target.sessionId
-        case .banner: return false
+        case .banner, .notice: return false
         }
     }
 

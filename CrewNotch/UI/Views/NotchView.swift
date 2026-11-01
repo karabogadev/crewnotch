@@ -436,6 +436,10 @@ struct NotchView: View {
                     viewModel.notchClose()
                     Task { await SessionFocuser.focus(session) }
                 }
+            case .notice(let notice):
+                NoticeBanner(notice: notice) {
+                    viewModel.contentType = .instances
+                }
             case .chat(let session):
                 ChatView(
                     sessionId: session.sessionId,

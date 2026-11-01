@@ -25,6 +25,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         AgentRegistry.shared.start()
         KeepAwakeController.shared.start()
         UsageMonitor.shared.start()
+        UsageAlerts.shared.start()
+        AttentionCenter.shared.start()
         UpdateController.shared.start()
         DeepSeekMonitor.start()
         NSApplication.shared.setActivationPolicy(.accessory)
