@@ -64,6 +64,9 @@ struct SessionState: Equatable, Identifiable, Sendable {
     /// Context fill reported outside the Claude transcript (Codex rollouts).
     var reportedContext: ContextUsage? = nil
 
+    /// When the current (or last) turn started, for the row's stopwatch.
+    var turnStartedAt: Date? = nil
+
     /// How full the model's context window is, when known.
     var contextUsage: ContextUsage? {
         agent.hasClaudeTranscript ? ContextUsage.claude(usage: conversationInfo.usage) : reportedContext

@@ -163,6 +163,7 @@ actor SessionStore {
         }
 
         let newPhase = event.determinePhase()
+        let wasInTurn = session.phase.isInTurn
 
         if event.status == "metadata" || isBackground {
             // Details only, or background work after the turn ended: the phase stays.
@@ -170,6 +171,9 @@ actor SessionStore {
             session.phase = newPhase
         } else {
             Self.logger.debug("Invalid transition: \(String(describing: session.phase), privacy: .public) -> \(String(describing: newPhase), privacy: .public), ignoring")
+        }
+        if !wasInTurn && session.phase.isInTurn {
+            session.turnStartedAt = Date()
         }
 
         if event.event == "PermissionRequest", let toolUseId = event.toolUseId {

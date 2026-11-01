@@ -171,7 +171,7 @@ enum SessionPhase: Sendable {
     }
 
     /// Whether this phase indicates active processing
-    var isActive: Bool {
+    nonisolated var isActive: Bool {
         switch self {
         case .processing, .compacting:
             return true
@@ -181,12 +181,15 @@ enum SessionPhase: Sendable {
     }
 
     /// Whether this is a waitingForApproval phase
-    var isWaitingForApproval: Bool {
+    nonisolated var isWaitingForApproval: Bool {
         if case .waitingForApproval = self {
             return true
         }
         return false
     }
+
+    /// Part of a turn: working, or stopped to ask the user
+    nonisolated var isInTurn: Bool { isActive || isWaitingForApproval }
 
     /// Extract tool name if waiting for approval
     var approvalToolName: String? {
