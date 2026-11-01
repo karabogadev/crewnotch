@@ -203,7 +203,7 @@ private struct PreferencesStep: View {
                 )) {
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Include Claude usage")
-                        Text("macOS asks once to read Claude Code's sign-in: choose Always Allow.")
+                        Text("Uses Claude Code's existing sign-in from the keychain. CrewNotch never changes it.")
                             .font(.caption).foregroundStyle(.secondary)
                     }
                 }

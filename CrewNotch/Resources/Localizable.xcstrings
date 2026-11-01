@@ -24783,6 +24783,64 @@
         }
       }
     },
+    "Uses Claude Code's existing sign-in from the keychain. CrewNotch never changes it.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "يستخدم تسجيل دخول Claude Code الموجود في سلسلة المفاتيح. لا يغيّره CrewNotch أبدًا."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa el inicio de sesión que Claude Code ya guarda en el llavero. CrewNotch nunca lo modifica."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilise la connexion de Claude Code déjà enregistrée dans le trousseau. CrewNotch ne la modifie jamais."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "कीचेन में मौजूद Claude Code के साइन-इन का उपयोग करता है। CrewNotch इसे कभी नहीं बदलता।"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "キーチェーンにある Claude Code のサインイン情報を使います。CrewNotch がそれを変更することはありません。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa o login do Claude Code já salvo nas Chaves. O CrewNotch nunca o altera."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Использует вход Claude Code, уже сохранённый в связке ключей. CrewNotch никогда его не изменяет."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Claude Code'un anahtar zincirindeki mevcut oturumunu kullanır. CrewNotch onu asla değiştirmez."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "使用钥匙串中 Claude Code 已有的登录信息。CrewNotch 绝不会修改它。"
+          }
+        }
+      }
+    },
     "Uses Claude Code's sign-in from the keychain. macOS asks once: choose Always Allow.": {
       "extractionState": "stale",
       "localizations": {
@@ -26765,64 +26823,6 @@
     },
     "https://ntfy.sh": {
       "shouldTranslate": false
-    },
-    "macOS asks once to read Claude Code's sign-in: choose Always Allow.": {
-      "localizations": {
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "يطلب macOS مرة واحدة قراءة بيانات تسجيل دخول Claude Code: اختر «السماح دائمًا»."
-          }
-        },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "macOS pide una vez permiso para leer el inicio de sesión de Claude Code: elige “Permitir siempre”."
-          }
-        },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "macOS demande une seule fois l’autorisation de lire la connexion de Claude Code : choisissez « Toujours autoriser »."
-          }
-        },
-        "hi": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "macOS Claude Code का साइन-इन पढ़ने के लिए एक बार पूछता है: “हमेशा अनुमति दें” चुनें।"
-          }
-        },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Claude Code のサインイン情報の読み取りについて macOS で一度だけ確認されます。「常に許可」を選択してください。"
-          }
-        },
-        "pt-BR": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O macOS pede uma vez para ler o início de sessão do Claude Code: escolha “Sempre Permitir”."
-          }
-        },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "macOS один раз запросит доступ к данным входа Claude Code: выберите «Всегда разрешать»."
-          }
-        },
-        "tr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "macOS, Claude Code girişini okumak için bir kez izin ister: Her Zaman İzin Ver'i seç."
-          }
-        },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "macOS 会询问一次是否读取 Claude Code 的登录信息：请选择“始终允许”。"
-          }
-        }
-      }
     },
     "now": {
       "localizations": {
