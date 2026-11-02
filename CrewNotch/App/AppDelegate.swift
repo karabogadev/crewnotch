@@ -99,6 +99,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         _ = windowManager?.setupNotchWindow()
     }
 
+    /// Settings changed where the notch goes: move it there now, without the
+    /// screen-change debounce, and flash it so you can spot it.
+    func showNotchWhereChosen() {
+        _ = windowManager?.setupNotchWindow()
+        // A rebuilt window has to be on screen before the effect starts
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            let tint = NotchMoment.launch.tint
+            NotchEffects.shared.play(.glow, tint: tint)
+            NotchEffects.shared.play(.bounce, tint: tint)
+        }
+    }
+
     func applicationWillTerminate(_ notification: Notification) {
         screenObserver = nil
     }

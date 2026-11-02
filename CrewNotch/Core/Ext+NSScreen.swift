@@ -11,8 +11,9 @@ extension NSScreen {
     /// Returns the size of the notch on this screen (pixel-perfect using macOS APIs)
     var notchSize: CGSize {
         guard safeAreaInsets.top > 0 else {
-            // Fallback for non-notch displays (matches typical MacBook notch)
-            return CGSize(width: 224, height: 38)
+            // No camera housing: MacBook-notch width, but only as tall as the
+            // menu bar, which windows already stay below (24 pt when it hides)
+            return CGSize(width: 224, height: max(24, frame.maxY - visibleFrame.maxY))
         }
 
         let notchHeight = safeAreaInsets.top
@@ -30,12 +31,23 @@ extension NSScreen {
         return CGSize(width: notchWidth, height: notchHeight)
     }
 
+    var displayID: CGDirectDisplayID? {
+        deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
+    }
+
+    /// Names the same display across reconnects and restarts, unlike `displayID`
+    var persistentID: String {
+        if let displayID, let uuid = CGDisplayCreateUUIDFromDisplayID(displayID)?.takeRetainedValue(),
+           let string = CFUUIDCreateString(nil, uuid) {
+            return string as String
+        }
+        return localizedName
+    }
+
     /// Whether this is the built-in display
     var isBuiltinDisplay: Bool {
-        guard let screenNumber = deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID else {
-            return false
-        }
-        return CGDisplayIsBuiltin(screenNumber) != 0
+        guard let displayID else { return false }
+        return CGDisplayIsBuiltin(displayID) != 0
     }
 
     /// The built-in display (with notch on newer MacBooks)

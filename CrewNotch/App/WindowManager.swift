@@ -14,7 +14,9 @@ private let logger = Logger(subsystem: "com.karabogadev.crewnotch", category: "W
 class WindowManager {
     private(set) var windowController: NotchWindowController?
     private var isInitialLaunch = true
-    private var currentScreenFrame: NSRect?
+    /// What the current window was built for: another display of the same size
+    /// (or one back with a new ID) or a menu bar of another height needs a new one
+    private var currentScreen: (id: String, frame: NSRect, notchSize: CGSize)?
 
     /// Set up or recreate the notch window
     func setupNotchWindow() -> NotchWindowController? {
@@ -28,9 +30,10 @@ class WindowManager {
         }
 
         // Skip recreation if screen hasn't meaningfully changed
+        let built = (id: screen.persistentID, frame: screen.frame, notchSize: screen.notchSize)
         if let existingController = windowController,
-           let existingFrame = currentScreenFrame,
-           existingFrame == screen.frame {
+           let current = currentScreen,
+           current.id == built.id, current.frame == built.frame, current.notchSize == built.notchSize {
             logger.debug("Screen unchanged, skipping window recreation")
             return existingController
         }
@@ -45,7 +48,7 @@ class WindowManager {
             windowController = nil
         }
 
-        currentScreenFrame = screen.frame
+        currentScreen = built
         windowController = NotchWindowController(screen: screen, animateOnLaunch: shouldAnimate)
         windowController?.showWindow(nil)
 

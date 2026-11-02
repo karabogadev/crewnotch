@@ -70,7 +70,13 @@ class NotchViewModel: ObservableObject {
 
     // MARK: - Geometry
 
-    let geometry: NotchGeometry
+    /// Published so the notch follows a position dragged in Settings
+    @Published private(set) var geometry: NotchGeometry
+    /// Pressed and held, the closed notch follows the pointer along the top edge
+    @Published private(set) var isRepositioning = false
+    /// Saves a position the notch was dragged to; set only where it can move
+    /// (displays without a camera housing)
+    var onReposition: ((CGFloat) -> Void)?
     let spacing: CGFloat = 12
     let hasPhysicalNotch: Bool
 
@@ -121,17 +127,28 @@ class NotchViewModel: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private let events = EventMonitors.shared
     private var hoverTimer: DispatchWorkItem?
+    /// A press on the closed notch that may become a move: where it started and the notch's center then
+    private var press: (location: CGPoint, centerX: CGFloat)?
+    private var holdTimer: DispatchWorkItem?
+    private var isSnapped = false
 
     // MARK: - Initialization
 
-    init(deviceNotchRect: CGRect, screenRect: CGRect, windowHeight: CGFloat, hasPhysicalNotch: Bool) {
+    init(notchSize: CGSize, screenRect: CGRect, windowHeight: CGFloat, position: CGFloat, hasPhysicalNotch: Bool) {
         self.geometry = NotchGeometry(
-            deviceNotchRect: deviceNotchRect,
+            notchSize: notchSize,
             screenRect: screenRect,
-            windowHeight: windowHeight
+            windowHeight: windowHeight,
+            position: position
         )
         self.hasPhysicalNotch = hasPhysicalNotch
         setupEventHandlers()
+    }
+
+    /// Moves the notch along the top edge (0 left, 0.5 middle, 1 right)
+    func moveNotch(to position: CGFloat) {
+        guard position != geometry.position else { return }
+        geometry.position = position
     }
 
     // MARK: - Event Handling
@@ -148,6 +165,20 @@ class NotchViewModel: ObservableObject {
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in
                 self?.handleMouseDown()
+            }
+            .store(in: &cancellables)
+
+        events.mouseDragged
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] location in
+                self?.handleMouseDragged(location)
+            }
+            .store(in: &cancellables)
+
+        events.mouseUp
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                self?.handleMouseUp()
             }
             .store(in: &cancellables)
     }
@@ -179,7 +210,8 @@ class NotchViewModel: ObservableObject {
         // Start hover timer to auto-expand after 1 second
         if isHovering && (status == .closed || status == .popping) {
             let workItem = DispatchWorkItem { [weak self] in
-                guard let self = self, self.isHovering else { return }
+                // Holding the notch to move it isn't hovering
+                guard let self = self, self.isHovering, self.press == nil else { return }
                 self.notchOpen(reason: .hover)
             }
             hoverTimer = workItem
@@ -203,20 +235,68 @@ class NotchViewModel: ObservableObject {
                 }
             }
         case .closed, .popping:
-            if geometry.isPointInNotch(location) {
+            guard geometry.isPointInNotch(location) else { return }
+            if onReposition == nil {
                 notchOpen(reason: .click)
+            } else {
+                // Movable: a click opens on release, so a press can still become a move
+                press = (location, geometry.deviceNotchRect.midX)
+                let hold = DispatchWorkItem { [weak self] in self?.startRepositioning() }
+                holdTimer = hold
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35, execute: hold)
             }
         }
+    }
+
+    // MARK: - Moving the notch
+
+    private func handleMouseDragged(_ location: CGPoint) {
+        guard let press else { return }
+        if !isRepositioning {
+            // Dragging right away moves it too, without waiting for the hold
+            guard abs(location.x - press.location.x) > 4 else { return }
+            startRepositioning()
+        }
+
+        var centerX = press.centerX + location.x - press.location.x
+        let snapped = abs(centerX - screenRect.width / 2) < 16
+        if snapped { centerX = screenRect.width / 2 }
+        if snapped && !isSnapped {
+            NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
+        }
+        isSnapped = snapped
+
+        let position = NotchGeometry.position(forCenterX: centerX, notchWidth: geometry.notchSize.width, screenWidth: screenRect.width)
+        moveNotch(to: position)
+        onReposition?(position)
+    }
+
+    private func handleMouseUp() {
+        guard press != nil else { return }
+        let wasClick = !isRepositioning
+        press = nil
+        holdTimer?.cancel()
+        holdTimer = nil
+        isRepositioning = false
+        isSnapped = false
+        if wasClick, status != .opened { notchOpen(reason: .click) }
+    }
+
+    private func startRepositioning() {
+        guard press != nil, !isRepositioning else { return }
+        holdTimer?.cancel()
+        hoverTimer?.cancel()
+        isRepositioning = true
+        NSHapticFeedbackManager.defaultPerformer.perform(.generic, performanceTime: .now)
     }
 
     /// Re-posts a mouse click at the given screen location so it reaches windows behind us
     private func repostClickAt(_ location: CGPoint) {
         // Small delay to let the window's ignoresMouseEvents update
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
-            // Convert to CGEvent coordinate system (screen coordinates with Y from top-left)
-            guard let screen = NSScreen.main else { return }
-            let screenHeight = screen.frame.height
-            let cgPoint = CGPoint(x: location.x, y: screenHeight - location.y)
+            // CGEvent coordinates start at the primary display's top-left corner
+            guard let primary = NSScreen.screens.first else { return }
+            let cgPoint = CGPoint(x: location.x, y: primary.frame.maxY - location.y)
 
             // Create and post mouse down event
             if let mouseDown = CGEvent(

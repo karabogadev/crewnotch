@@ -15,11 +15,12 @@ struct NotificationsPane: View {
 
     @State private var previewState: NotchPreview.State = .finished
     @State private var previewDevice: NotchPreview.Device = .macBook
+    @ObservedObject private var screens = ScreenSelector.shared
 
     var body: some View {
         Form {
             Section {
-                NotchPreview(state: previewState, device: previewDevice)
+                NotchPreview(state: previewState, device: previewDevice, position: previewDevice == .monitor ? screens.monitorPreviewPosition : 0.5)
                     .frame(maxWidth: .infinity)
                     .listRowInsets(EdgeInsets())
                 Picker("State", selection: $previewState) {
@@ -176,6 +177,8 @@ struct NotchPreview: View {
 
     let state: State
     let device: Device
+    /// Where the notch sits on the monitor, as dragged in Settings → General
+    var position: CGFloat = 0.5
 
     private let sample = SessionState(sessionId: "preview", cwd: "/Users/you/storefront", agent: .claude)
 
@@ -187,11 +190,14 @@ struct NotchPreview: View {
 
             notch
                 .padding(.top, device == .macBook ? 0 : 4)
+                // Measured with the working notch, so wider states keep its center
+                .notchAnchored(at: position, notchWidth: 230, margin: 12)
         }
         .frame(height: 150)
         .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .animation(.spring(response: 0.35, dampingFraction: 0.82), value: state)
         .animation(.spring(response: 0.35, dampingFraction: 0.82), value: device)
+        .animation(.spring(response: 0.35, dampingFraction: 0.82), value: position)
     }
 
     @ViewBuilder

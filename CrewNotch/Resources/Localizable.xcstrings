@@ -5456,6 +5456,64 @@
         }
       }
     },
+    "Center": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "توسيط"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Centrar"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Centrer"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "बीच में रखें"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中央に戻す"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Centralizar"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "По центру"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ortala"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "居中"
+          }
+        }
+      }
+    },
     "Changes permissions recursively": {
       "localizations": {
         "ar": {
@@ -9178,6 +9236,122 @@
           "stringUnit": {
             "state": "translated",
             "value": "自动下载并安装更新"
+          }
+        }
+      }
+    },
+    "Drag the notch along the top edge, here or by pressing and holding it on the display. It snaps to the middle.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسحب النتوء على طول الحافة العلوية، من هنا أو بالضغط عليه مطولًا على الشاشة. يثبت في المنتصف عند الاقتراب منه."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrastra el notch por el borde superior, aquí o manteniéndolo pulsado en la pantalla. Se ajusta al centro."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faites glisser le notch le long du bord supérieur, ici ou en le maintenant enfoncé sur l’écran. Il s’aimante au centre."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नॉच को यहाँ से, या डिस्प्ले पर उसे दबाकर रखते हुए, ऊपरी किनारे पर खींचें। बीच के पास आते ही यह वहीं टिक जाता है।"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ここで、またはディスプレイ上でノッチを長押ししてドラッグすると、上端に沿って移動できます。中央に近づくと吸着します。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arraste o notch pela borda superior, aqui ou mantendo-o pressionado na tela. Ele se encaixa no centro."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перетаскивайте вырез вдоль верхнего края — здесь или зажав его на самом дисплее. У центра он примагничивается."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çentiği üst kenar boyunca sürükle: burada ya da ekranda üstüne basılı tutarak. Ortaya yaklaşınca oraya oturur."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在这里拖动刘海，或在显示器上按住刘海拖动，即可沿顶部边缘移动。靠近中间时会自动吸附。"
+          }
+        }
+      }
+    },
+    "Drag to move the notch. It snaps to the middle.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "اسحب لنقل النتوء. يثبت في المنتصف عند الاقتراب منه."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arrastra para mover el notch. Se ajusta al centro."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Faites glisser pour déplacer le notch. Il s’aimante au centre."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नॉच को हटाने के लिए खींचें। बीच के पास आते ही यह वहीं टिक जाता है।"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ドラッグでノッチを移動します。中央に近づくと吸着します。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arraste para mover o notch. Ele se encaixa no centro."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Перетащите, чтобы сдвинуть вырез. У центра он примагничивается."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çentiği taşımak için sürükle. Ortaya yaklaşınca oraya oturur."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "拖动以移动刘海，靠近中间时会自动吸附。"
           }
         }
       }
@@ -15579,6 +15753,64 @@
         }
       }
     },
+    "On this display the notch stays on the camera housing.": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "على هذه الشاشة يبقى النتوء فوق الكاميرا."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "En esta pantalla, el notch se queda sobre la cámara."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sur cet écran, le notch reste sur la caméra."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "इस डिस्प्ले पर नॉच कैमरे वाले हिस्से पर ही रहता है।"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "このディスプレイでは、ノッチはカメラ部分に固定されます。"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nesta tela, o notch fica sobre a câmera."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "На этом дисплее вырез остаётся над камерой."
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bu ekranda çentik kamera bölümünde sabit kalır."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在此显示器上，刘海固定在摄像头区域。"
+          }
+        }
+      }
+    },
     "On until %@": {
       "localizations": {
         "ar": {
@@ -21577,6 +21809,64 @@
           "stringUnit": {
             "state": "translated",
             "value": "显示完整请求"
+          }
+        }
+      }
+    },
+    "Show the notch here": {
+      "localizations": {
+        "ar": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "إظهار النتوء هنا"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar el notch aquí"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afficher le notch ici"
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "नॉच यहाँ दिखाएँ"
+          }
+        },
+        "ja": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "ここにノッチを表示"
+          }
+        },
+        "pt-BR": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mostrar o notch aqui"
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Показывать вырез здесь"
+          }
+        },
+        "tr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Çentiği burada göster"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "在此显示刘海"
           }
         }
       }

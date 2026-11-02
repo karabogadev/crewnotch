@@ -29,19 +29,12 @@ class NotchWindowController: NSWindowController {
             height: windowHeight
         )
 
-        // Device notch rect - positioned at center
-        let deviceNotchRect = CGRect(
-            x: (screenFrame.width - notchSize.width) / 2,
-            y: 0,
-            width: notchSize.width,
-            height: notchSize.height
-        )
-
         // Create view model
         self.viewModel = NotchViewModel(
-            deviceNotchRect: deviceNotchRect,
+            notchSize: notchSize,
             screenRect: screenFrame,
             windowHeight: windowHeight,
+            position: ScreenSelector.shared.position(for: screen),
             hasPhysicalNotch: screen.hasPhysicalNotch
         )
 
@@ -61,16 +54,31 @@ class NotchWindowController: NSWindowController {
 
         notchWindow.setFrame(windowFrame, display: true)
 
-        // Dynamically toggle mouse event handling based on notch state:
-        // - Closed: ignoresMouseEvents = true (clicks pass through to menu bar/apps)
-        // - Opened: ignoresMouseEvents = false (buttons inside panel work)
+        // Mouse events reach the window only where they're ours:
+        // - Opened: always, so buttons inside the panel work
+        // - Closed: clicks pass through to the menu bar and apps, except on a
+        //   display without a camera housing while the pointer is on the notch.
+        //   There the menu bar runs under it (a moved notch can cover app menus),
+        //   and pressing and holding it moves it.
+        let hasPhysicalNotch = screen.hasPhysicalNotch
+        Publishers.CombineLatest3(viewModel.$status, viewModel.$isHovering, viewModel.$isRepositioning)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak notchWindow] status, hovering, moving in
+                notchWindow?.ignoresMouseEvents = status != .opened && (hasPhysicalNotch || !(hovering || moving))
+            }
+            .store(in: &cancellables)
+
+        if !hasPhysicalNotch {
+            viewModel.onReposition = { position in
+                ScreenSelector.shared.setPosition(position, for: screen)
+            }
+        }
+
         viewModel.$status
             .receive(on: DispatchQueue.main)
-            .sink { [weak self, weak notchWindow, weak viewModel] status in
+            .sink { [weak self, weak viewModel] status in
                 switch status {
                 case .opened:
-                    // Accept mouse events when opened so buttons work
-                    notchWindow?.ignoresMouseEvents = false
                     // Don't steal focus when opened by notification (task finished)
                     // Only a deliberate open takes keyboard focus; hovering or the
                     // launch animation must not swallow what you're typing elsewhere
@@ -78,16 +86,22 @@ class NotchWindowController: NSWindowController {
                         self?.takeFocus()
                     }
                 case .closed, .popping:
-                    // Ignore mouse events when closed so clicks pass through
-                    notchWindow?.ignoresMouseEvents = true
                     PanelKeys.shared.deactivate()
                     self?.returnFocus()
                 }
             }
             .store(in: &cancellables)
 
-        // Start with ignoring mouse events (closed state)
-        notchWindow.ignoresMouseEvents = true
+        // Follow the position dragged in Settings (on the next pass, once the
+        // published dictionary holds the new value)
+        ScreenSelector.shared.$positions
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in
+                guard let self else { return }
+                viewModel.moveNotch(to: ScreenSelector.shared.position(for: self.screen))
+            }
+            .store(in: &cancellables)
 
         // Keep prompts and project names out of screen shares and recordings when asked to
         applySharingPreference()

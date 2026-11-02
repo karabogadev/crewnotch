@@ -52,10 +52,14 @@ class ScreenSelector: ObservableObject {
     @Published private(set) var availableScreens: [NSScreen] = []
     @Published private(set) var selectedScreen: NSScreen?
     @Published var selectionMode: ScreenSelectionMode = .automatic
+    /// Where the notch sits on each display without a camera housing
+    /// (0 left, 0.5 middle, 1 right), keyed by `NSScreen.persistentID`
+    @Published private(set) var positions: [String: Double] = [:]
 
     // MARK: - UserDefaults Keys
     private let modeKey = "screenSelectionMode"
     private let screenIdentifierKey = "selectedScreenIdentifier"
+    private let positionsKey = "notchPositions"
 
     // MARK: - Private State
     private var savedIdentifier: ScreenIdentifier?
@@ -92,16 +96,30 @@ class ScreenSelector: ObservableObject {
     /// Check if a screen is currently selected
     func isSelected(_ screen: NSScreen) -> Bool {
         guard let selected = selectedScreen else { return false }
-        return screenID(of: screen) == screenID(of: selected)
+        return screen.displayID == selected.displayID
     }
 
-    /// Extra height needed when picker is expanded
+    /// Where the notch sits on a display. One with a camera housing keeps it in the middle.
+    func position(for screen: NSScreen) -> CGFloat {
+        guard !screen.hasPhysicalNotch else { return 0.5 }
+        return positions[screen.persistentID].map { CGFloat($0) } ?? 0.5
+    }
+
+    func setPosition(_ position: CGFloat, for screen: NSScreen) {
+        guard !screen.hasPhysicalNotch else { return }
+        positions[screen.persistentID] = Double(position)
+        UserDefaults.standard.set(positions, forKey: positionsKey)
+    }
+
+    /// The position the Monitor preview shows: the chosen display's when it has
+    /// no camera housing, else the first connected display without one
+    var monitorPreviewPosition: CGFloat {
+        let monitor = selectedScreen.flatMap { $0.hasPhysicalNotch ? nil : $0 }
+            ?? availableScreens.first { !$0.hasPhysicalNotch }
+        return monitor.map(position(for:)) ?? 0.5
+    }
 
     // MARK: - Private Methods
-
-    private func screenID(of screen: NSScreen) -> CGDirectDisplayID? {
-        screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? CGDirectDisplayID
-    }
 
     private func resolveSelectedScreen() -> NSScreen? {
         switch selectionMode {
@@ -129,6 +147,8 @@ class ScreenSelector: ObservableObject {
            let identifier = try? JSONDecoder().decode(ScreenIdentifier.self, from: data) {
             savedIdentifier = identifier
         }
+
+        positions = UserDefaults.standard.dictionary(forKey: positionsKey) as? [String: Double] ?? [:]
     }
 
     private func savePreferences() {

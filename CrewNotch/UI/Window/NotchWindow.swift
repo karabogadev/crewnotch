@@ -93,10 +93,9 @@ class NotchPanel: NSPanel {
     }
 
     private func repostMouseEvent(_ event: NSEvent, at screenLocation: NSPoint) {
-        // Convert to CGEvent coordinate system (Y from top of screen)
-        guard let screen = NSScreen.main else { return }
-        let screenHeight = screen.frame.height
-        let cgPoint = CGPoint(x: screenLocation.x, y: screenHeight - screenLocation.y)
+        // CGEvent coordinates start at the primary display's top-left corner
+        guard let primary = NSScreen.screens.first else { return }
+        let cgPoint = CGPoint(x: screenLocation.x, y: primary.frame.maxY - screenLocation.y)
 
         let mouseType: CGEventType
         switch event.type {

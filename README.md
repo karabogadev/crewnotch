@@ -35,6 +35,7 @@ You run Claude Code in one terminal, Codex in another, Cursor and Antigravity in
 - **Pick up where you left off.** Recently ended sessions stay at the bottom of the list, and **Resume** reopens the conversation in a terminal.
 - **Token history.** Tokens per day across agents, the estimated API value of your Claude usage, and your busiest day. Share it as an image.
 - **Keep Awake.** Agents keep running when the display sleeps or the screen locks. It works on power adapter only, stops below a battery threshold and turns itself off after a time limit.
+- **Any display, any spot.** On a monitor the notch sits in the menu bar wherever you want it: press and hold it to slide it along the top edge. Settings → General shows your displays as arranged, so you can see and pick where it goes.
 - **Light or dark.** A light and a dark theme for the panel and windows, or follow the system. The closed notch always stays black.
 - **Make it yours.** Six working indicators, notch animations, materials and colors, sounds per event, text size and much more.
 - **Updates itself.** Checks for new versions daily and installs them in one click, or fully automatically if you prefer. Every update is signed and verified.
@@ -108,7 +109,7 @@ You can change everything later from the ⚙︎ in the notch.
 
 | Pane | What's inside |
 |---|---|
-| **General** | Launch at login, the notch shortcut and panel keys, hiding from screen sharing, updates, which display shows the notch, Keep Awake, the `crewnotch` command |
+| **General** | Launch at login, the notch shortcut and panel keys, hiding from screen sharing, updates, which display shows the notch and where, Keep Awake, the `crewnotch` command |
 | **Notifications** | Live notch preview, show requests, finished banner, a sound per event, Mac and phone notifications (always or when away) |
 | **Approvals** | Answer from the notch, show the full request, risky-request warnings, the Always button, answering questions |
 | **Appearance** | Theme (System, Dark or Light), text size, panel material and color, what the closed notch shows, session list options, branch, context fill, task progress, quiet sessions, recently ended sessions, working indicator, animations |

@@ -179,6 +179,7 @@ private struct GeneralPane: View {
             }
 
             Section("Show notch on") {
+                DisplayArrangement()
                 Picker("Display", selection: Binding(
                     get: { screens.selectionMode == .automatic ? nil : screens.selectedScreen.map(ScreenIdentifier.init(screen:)) },
                     set: { identifier in
@@ -187,12 +188,29 @@ private struct GeneralPane: View {
                         } else {
                             screens.selectAutomatic()
                         }
-                        NotificationCenter.default.post(name: NSApplication.didChangeScreenParametersNotification, object: nil)
+                        AppDelegate.shared?.showNotchWhereChosen()
                     }
                 )) {
                     Text("Automatic (built-in display first)").tag(ScreenIdentifier?.none)
                     ForEach(screens.availableScreens, id: \.self) { screen in
                         Text(screen.localizedName).tag(Optional(ScreenIdentifier(screen: screen)))
+                    }
+                }
+                if let screen = screens.selectedScreen {
+                    if screen.hasPhysicalNotch {
+                        Text("On this display the notch stays on the camera housing.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    } else {
+                        HStack {
+                            Text("Drag the notch along the top edge, here or by pressing and holding it on the display. It snaps to the middle.")
+                                .font(.caption).foregroundStyle(.secondary)
+                            Spacer()
+                            Button("Center") {
+                                screens.setPosition(0.5, for: screen)
+                                AppDelegate.shared?.showNotchWhereChosen()
+                            }
+                            .disabled(screens.position(for: screen) == 0.5)
+                        }
                     }
                 }
             }

@@ -232,7 +232,9 @@ struct NotchView: View {
                             .padding(.horizontal, topCornerRadius)
                     }
                     .overlay { NotchEffectsOverlay(effects: effects) }
-                    .scaleEffect(bounceScale, anchor: .top)
+                    // Lifted while it's held to be moved
+                    .scaleEffect(viewModel.isRepositioning ? 1.06 : bounceScale, anchor: .top)
+                    .animation(.spring(response: 0.25, dampingFraction: 0.7), value: viewModel.isRepositioning)
                     .shadow(
                         color: (viewModel.status == .opened || isHovering) ? .black.opacity(panelScheme == .light && viewModel.status == .opened ? 0.25 : 0.7) : .clear,
                         radius: 6
@@ -253,15 +255,10 @@ struct NotchView: View {
                             isHovering = hovering
                         }
                     }
-                    .onTapGesture {
-                        if viewModel.status != .opened {
-                            viewModel.notchOpen(reason: .click)
-                        }
-                    }
             }
         }
         .opacity(isVisible ? 1 : 0)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .notchAnchored(at: viewModel.geometry.position, notchWidth: viewModel.deviceNotchRect.width)
         // The closed notch sits on the camera housing, so only the opened panel takes the theme
         .environment(\.colorScheme, viewModel.status == .opened ? panelScheme : .dark)
         // The notch is anchored to the hardware cutout, so it never mirrors
@@ -628,7 +625,7 @@ private struct PanelResizeHandle: View {
                     .onChanged { value in
                         let start = dragStart ?? startSize
                         dragStart = start
-                        // The panel is centered, so each side moves by the drag
+                        // Both sides move by the drag (against a screen edge, the far side moves twice)
                         panelWidth = Double((start.width + value.translation.width * 2).clamped(to: viewModel.panelWidthRange))
                         panelHeight = Double((start.height + value.translation.height).clamped(to: viewModel.panelHeightRange))
                     }
