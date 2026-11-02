@@ -3,6 +3,28 @@
     <channel>
         <title>CrewNotch</title>
         <item>
+            <title>1.5.0</title>
+            <pubDate>Mon, 02 Nov 2026 09:05:41 +0300</pubDate>
+            <link>https://karabogadev.github.io/crewnotch/</link>
+            <sparkle:fullReleaseNotesLink>https://github.com/karabogadev/crewnotch/releases</sparkle:fullReleaseNotesLink>
+            <sparkle:version>17</sparkle:version>
+            <sparkle:shortVersionString>1.5.0</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>15.6</sparkle:minimumSystemVersion>
+            <description sparkle:format="markdown"><![CDATA[## The notch, anywhere on your monitor
+
+- **Move it along the top edge.** On an external monitor, press and hold the notch and slide it left or right. It snaps to the middle, and each monitor remembers its own spot. On a MacBook it stays on the camera, as before.
+- **See where it goes.** Settings → General now shows your displays as macOS arranges them, with the notch on the one it's shown on. Click a display to move it there, or drag the notch on a monitor. It glows for a moment so you can spot it.
+- **No more covering your tabs.** On a monitor the closed notch is now only as tall as the menu bar, so it no longer hangs over window tabs and title bars.
+
+## Fixes
+
+- Clicking a moved notch no longer opens the app menu behind it.
+- With the notch on a monitor of a different height, clicking outside the open panel now reaches the right spot.
+
+]]></description>
+            <enclosure url="https://github.com/karabogadev/crewnotch/releases/download/v1.5.0/CrewNotch-1.5.0.dmg" length="6095077" type="application/octet-stream" sparkle:edSignature="i/ynBzrqKgWdhi9Sd/o+9P/OZt63FWbMvl1NubglL5SIthdaBeNnCt4rou64Fo5zQqxoEsqX5TwFvbjQDzASAQ=="/>
+        </item>
+        <item>
             <title>1.4.2</title>
             <pubDate>Sun, 01 Nov 2026 21:14:29 +0300</pubDate>
             <link>https://karabogadev.github.io/crewnotch/</link>
@@ -37,23 +59,6 @@ CrewNotch now recognizes [omux](https://github.com/onurozcan/omux) as a terminal
 
 ]]></description>
             <enclosure url="https://github.com/karabogadev/crewnotch/releases/download/v1.4.1/CrewNotch-1.4.1.dmg" length="6029643" type="application/octet-stream" sparkle:edSignature="kCXurPvdY14Vq1QgWiSpDosc1ut8AHSkkmFO6kejoBOErG54b7WrDqLraw8nCzAKJr/cg09uLbWPuTW11/MwCQ=="/>
-        </item>
-        <item>
-            <title>1.4.0</title>
-            <pubDate>Sun, 01 Nov 2026 14:04:29 +0300</pubDate>
-            <link>https://karabogadev.github.io/crewnotch/</link>
-            <sparkle:fullReleaseNotesLink>https://github.com/karabogadev/crewnotch/releases</sparkle:fullReleaseNotesLink>
-            <sparkle:version>14</sparkle:version>
-            <sparkle:shortVersionString>1.4.0</sparkle:shortVersionString>
-            <sparkle:minimumSystemVersion>15.6</sparkle:minimumSystemVersion>
-            <description sparkle:format="markdown"><![CDATA[## What's new
-
-- **CrewNotch is now in the Dock.** Click its icon to open Settings. Right-click it for Settings, Token history and Check for Updates, or to quit.
-- **A real menu bar.** While CrewNotch is in front, its menu has About, Check for Updates…, Settings… (⌘,), Token history and Quit (⌘Q).
-- **Prefer the notch only?** Turn off **Show in Dock** in Settings → General. CrewNotch then lives in the notch as before, and the gear there still opens Settings.
-
-]]></description>
-            <enclosure url="https://github.com/karabogadev/crewnotch/releases/download/v1.4.0/CrewNotch-1.4.0.dmg" length="6029403" type="application/octet-stream" sparkle:edSignature="wV2uxqG4E7bm9HzFaX0K6wqU1Ng8R+HctaeZmueMKF7nw1yuRkpewYJgxPQj20GF48yddI7Lp+VSlEV52qReDg=="/>
         </item>
     </channel>
 </rss>
